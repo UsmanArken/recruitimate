@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 export function InterviewForm({ candidateId }: { candidateId: string }) {
   const router = useRouter();
@@ -24,7 +25,7 @@ export function InterviewForm({ candidateId }: { candidateId: string }) {
     });
 
     if (!res.ok) {
-      setError("Analysis failed. Check transcript length (50+ chars) and database.");
+      setError("Analysis failed. Ensure transcript is at least 50 characters.");
       setLoading(false);
       return;
     }
@@ -32,32 +33,33 @@ export function InterviewForm({ candidateId }: { candidateId: string }) {
     router.refresh();
   }
 
-  const inputClass =
-    "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm";
-
   return (
-    <form onSubmit={onSubmit} className="space-y-3">
-      <input
-        name="title"
-        required
-        placeholder="e.g. Technical round 1"
-        className={inputClass}
-      />
-      <textarea
-        name="transcript"
-        required
-        rows={10}
-        placeholder="Paste interview transcript…"
-        className={inputClass}
-      />
-      {error && <p className="text-sm text-rose-600">{error}</p>}
-      <button
-        type="submit"
-        disabled={loading}
-        className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
-      >
-        {loading ? "Analyzing…" : "Analyze interview"}
-      </button>
+    <form onSubmit={onSubmit} className="space-y-4">
+      <label className="block">
+        <span className="text-sm font-semibold">Interview round</span>
+        <input
+          name="title"
+          required
+          placeholder="e.g. Hiring manager screen"
+          className="input-hr mt-1.5"
+        />
+      </label>
+      <label className="block">
+        <span className="text-sm font-semibold">Transcript</span>
+        <textarea
+          name="transcript"
+          required
+          rows={10}
+          placeholder="Paste the full interview transcript…"
+          className="input-hr mt-1.5"
+        />
+      </label>
+      {error && (
+        <p className="rounded-lg bg-risk-bg px-3 py-2 text-sm text-risk">{error}</p>
+      )}
+      <Button type="submit" disabled={loading}>
+        {loading ? "Generating report…" : "Analyze interview"}
+      </Button>
     </form>
   );
 }

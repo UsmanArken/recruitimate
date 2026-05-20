@@ -10,9 +10,24 @@ export function formatScore(score: number | null | undefined): string {
   return `${Math.round(score * 100)}%`;
 }
 
-export function scoreColor(score: number | null | undefined): string {
+export function scoreColor(
+  score: number | null | undefined,
+  invert = false
+): string {
   if (score == null) return "text-muted";
-  if (score >= 0.75) return "text-emerald-600";
-  if (score >= 0.5) return "text-amber-600";
-  return "text-rose-600";
+  const effective = invert ? 1 - score : score;
+  if (effective >= 0.75) return "text-success";
+  if (effective >= 0.5) return "text-warning";
+  return "text-risk";
+}
+
+export function scoreBarColor(
+  score: number | null | undefined,
+  invert = false
+): string {
+  if (score == null) return "bg-border";
+  const effective = invert ? 1 - score : score;
+  if (effective >= 0.75) return "bg-success";
+  if (effective >= 0.5) return "bg-warning";
+  return "bg-risk";
 }

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { RefreshCw } from "lucide-react";
 
 export function ReanalyzeButton({ candidateId }: { candidateId: string }) {
   const router = useRouter();
@@ -19,9 +20,10 @@ export function ReanalyzeButton({ candidateId }: { candidateId: string }) {
       type="button"
       onClick={reanalyze}
       disabled={loading}
-      className="text-xs text-muted underline-offset-2 hover:underline disabled:opacity-50"
+      className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary-hover disabled:opacity-50"
     >
-      {loading ? "Re-running…" : "Re-run talent analysis"}
+      <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+      {loading ? "Refreshing…" : "Refresh talent profile"}
     </button>
   );
 }

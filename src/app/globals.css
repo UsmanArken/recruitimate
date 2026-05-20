@@ -1,19 +1,91 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-background: #fafaf9;
-  --color-foreground: #1c1917;
+  /* HR workspace canvas — warm, calm, not sterile tech-gray */
+  --color-background: #f0f4f8;
+  --color-foreground: #1a2b3c;
+
   --color-card: #ffffff;
-  --color-card-foreground: #1c1917;
-  --color-border: #e7e5e4;
-  --color-muted: #78716c;
-  --color-primary: #1c1917;
-  --color-primary-foreground: #fafaf9;
-  --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --color-card-foreground: #1a2b3c;
+
+  --color-border: #d8e2ec;
+  --color-border-subtle: #e8eef4;
+
+  --color-muted: #5c6f82;
+  --color-muted-foreground: #7a8fa3;
+
+  /* Primary — teal: growth, people, trust (common in HR/wellness SaaS) */
+  --color-primary: #0e7490;
+  --color-primary-hover: #0c6378;
+  --color-primary-foreground: #ffffff;
+
+  /* Brand navy — sidebar, headers, authority */
+  --color-brand: #1b3a5c;
+  --color-brand-light: #2a4d73;
+  --color-brand-foreground: #f0f7fc;
+
+  /* Intelligence layer accents */
+  --color-talent: #5b4d9e;
+  --color-talent-bg: #f3f0fa;
+  --color-interview: #0e7490;
+  --color-interview-bg: #ecfeff;
+  --color-decision: #2d6a4f;
+  --color-decision-bg: #edf7f1;
+
+  /* Pipeline & status */
+  --color-success: #2d6a4f;
+  --color-success-bg: #e8f5ec;
+  --color-warning: #b45309;
+  --color-warning-bg: #fff8eb;
+  --color-risk: #b44d4d;
+  --color-risk-bg: #fdf2f2;
+
+  --font-sans: var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif;
 }
 
 body {
   background: var(--color-background);
   color: var(--color-foreground);
   font-family: var(--font-sans);
+}
+
+/* Subtle workspace texture */
+.app-canvas {
+  background:
+    radial-gradient(ellipse 120% 80% at 100% -20%, rgba(14, 116, 144, 0.06), transparent 50%),
+    radial-gradient(ellipse 80% 60% at 0% 100%, rgba(27, 58, 92, 0.04), transparent 45%),
+    var(--color-background);
+}
+
+/* HR form controls */
+.input-hr {
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border);
+  background: #fff;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--color-foreground);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.input-hr:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(14, 116, 144, 0.15);
+}
+
+/* Data tables — recruiter-first */
+.table-hr thead {
+  background: #f8fafc;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.table-hr tbody tr:hover {
+  background: rgba(14, 116, 144, 0.04);
+}
+
+.table-hr tbody tr {
+  border-bottom: 1px solid var(--color-border-subtle);
+  transition: background 0.12s;
 }

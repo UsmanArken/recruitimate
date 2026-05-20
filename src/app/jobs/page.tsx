@@ -1,7 +1,8 @@
-import Link from "next/link";
 import { db } from "@/lib/db";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { PageHeader, PageBody } from "@/components/page-header";
+import { ButtonLink } from "@/components/ui/button";
+import { Briefcase, Plus, Users } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -21,44 +22,60 @@ export default async function JobsPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Jobs</h1>
-          <p className="text-sm text-muted">ATS-lite — create roles for fit scoring</p>
-        </div>
-        <Link
-          href="/jobs/new"
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-        >
+    <>
+      <PageHeader
+        title="Open roles"
+        description="Define positions to power role-fit scoring and keep candidates organized by requisition."
+      >
+        <ButtonLink href="/jobs/new">
           <Plus className="h-4 w-4" />
-          New job
-        </Link>
-      </div>
+          Post new role
+        </ButtonLink>
+      </PageHeader>
 
-      {jobs.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-sm text-muted">
-            No jobs yet. Create one to enable role fit scoring.
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          {jobs.map((job) => (
-            <Card key={job.id}>
-              <CardHeader>
-                <CardTitle>{job.title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="line-clamp-2 text-sm text-muted">{job.description}</p>
-                <p className="mt-3 text-xs text-muted">
-                  {job._count.candidates} candidate{job._count.candidates !== 1 ? "s" : ""}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-    </div>
+      <PageBody>
+        {jobs.length === 0 ? (
+          <Card>
+            <CardContent className="py-16 text-center">
+              <Briefcase className="mx-auto h-10 w-10 text-muted/50" />
+              <p className="mt-4 font-medium">No open roles yet</p>
+              <p className="mt-1 text-sm text-muted">
+                Create a requisition to match candidates against requirements.
+              </p>
+              <ButtonLink href="/jobs/new" className="mt-6">
+                Post new role
+              </ButtonLink>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            {jobs.map((job) => (
+              <Card key={job.id} className="transition hover:border-primary/30 hover:shadow-md">
+                <CardHeader>
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand/10">
+                      <Briefcase className="h-5 w-5 text-brand" />
+                    </div>
+                    <div>
+                      <CardTitle>{job.title}</CardTitle>
+                      <CardDescription className="mt-1 line-clamp-2">
+                        {job.description}
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="flex items-center gap-1.5 text-sm font-medium text-muted">
+                    <Users className="h-4 w-4" />
+                    {job._count.candidates} candidate{job._count.candidates !== 1 ? "s" : ""}{" "}
+                    in pipeline
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </PageBody>
+    </>
   );
 }

@@ -1,42 +1,93 @@
-import Link from "next/link";
-import { LayoutDashboard, Briefcase, Users, Plus } from "lucide-react";
+"use client";
 
-const nav = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/jobs", label: "Jobs", icon: Briefcase },
+import Link from "next/link";
+import { LayoutDashboard, Briefcase, Users, UserPlus, Sparkles } from "lucide-react";
+import { NavLink } from "@/components/nav-link";
+
+const workspaceNav = [
+  { href: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/candidates", label: "Candidates", icon: Users },
+  { href: "/jobs", label: "Open roles", icon: Briefcase },
 ];
 
 export function Sidebar() {
   return (
-    <aside className="flex w-56 shrink-0 flex-col border-r border-border bg-card">
-      <div className="border-b border-border px-5 py-5">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="text-lg font-bold tracking-tight">Recruitimate</span>
+    <aside className="flex w-64 shrink-0 flex-col bg-brand text-brand-foreground shadow-lg shadow-brand/20">
+      <div className="border-b border-white/10 px-5 py-6">
+        <Link href="/" className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15">
+            <Sparkles className="h-5 w-5 text-teal-200" strokeWidth={2} />
+          </div>
+          <div>
+            <span className="text-base font-semibold tracking-tight">Recruitimate</span>
+            <p className="text-[11px] font-medium text-brand-foreground/60">
+              Hiring intelligence
+            </p>
+          </div>
         </Link>
-        <p className="mt-1 text-xs text-muted">AI-Native Hiring OS</p>
       </div>
-      <nav className="flex flex-1 flex-col gap-1 p-3">
-        {nav.map(({ href, label, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground/80 transition hover:bg-muted/40 hover:text-foreground"
-          >
-            <Icon className="h-4 w-4" />
-            {label}
-          </Link>
-        ))}
-      </nav>
-      <div className="border-t border-border p-3">
+
+      <div className="flex flex-1 flex-col px-3 py-4">
+        <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-brand-foreground/45">
+          Workspace
+        </p>
+        <nav className="flex flex-col gap-0.5">
+          {workspaceNav.map((item) => (
+            <NavLink key={item.href} {...item} />
+          ))}
+        </nav>
+
+        <p className="mb-2 mt-8 px-3 text-[10px] font-semibold uppercase tracking-widest text-brand-foreground/45">
+          Intelligence
+        </p>
+        <div className="space-y-2 px-3">
+          <IntelligenceHint
+            label="Talent"
+            desc="Pre-interview profiles"
+            color="bg-violet-400/20 text-violet-100"
+          />
+          <IntelligenceHint
+            label="Interview"
+            desc="Signal analysis"
+            color="bg-teal-400/20 text-teal-100"
+          />
+          <IntelligenceHint
+            label="Decision"
+            desc="Hire recommendations"
+            color="bg-emerald-400/20 text-emerald-100"
+          />
+        </div>
+      </div>
+
+      <div className="border-t border-white/10 p-4">
         <Link
           href="/candidates/new"
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition hover:bg-primary-hover"
         >
-          <Plus className="h-4 w-4" />
+          <UserPlus className="h-4 w-4" />
           Add candidate
         </Link>
+        <p className="mt-3 text-center text-[10px] text-brand-foreground/40">
+          Built for recruiters & HR teams
+        </p>
       </div>
     </aside>
+  );
+}
+
+function IntelligenceHint({
+  label,
+  desc,
+  color,
+}: {
+  label: string;
+  desc: string;
+  color: string;
+}) {
+  return (
+    <div className={`rounded-md px-2.5 py-2 text-xs ${color}`}>
+      <span className="font-semibold">{label}</span>
+      <span className="block text-[10px] opacity-80">{desc}</span>
+    </div>
   );
 }

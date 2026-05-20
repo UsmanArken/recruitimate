@@ -2,7 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { PageHeader, PageBody } from "@/components/page-header";
+import { Button } from "@/components/ui/button";
 
 export default function NewJobPage() {
   const router = useRouter();
@@ -26,7 +28,7 @@ export default function NewJobPage() {
     });
 
     if (!res.ok) {
-      setError("Failed to create job. Is the database running?");
+      setError("Failed to create role. Is the database running?");
       setLoading(false);
       return;
     }
@@ -35,29 +37,40 @@ export default function NewJobPage() {
   }
 
   return (
-    <div className="p-8 max-w-xl">
-      <h1 className="mb-6 text-2xl font-bold">New job</h1>
-      <Card>
-        <CardHeader>
-          <CardTitle>Role details</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={onSubmit} className="space-y-4">
-            <Field label="Title" name="title" required />
-            <Field label="Description" name="description" required multiline />
-            <Field label="Requirements (for fit scoring)" name="requirements" multiline />
-            {error && <p className="text-sm text-rose-600">{error}</p>}
-            <button
-              type="submit"
-              disabled={loading}
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
-            >
-              {loading ? "Creating…" : "Create job"}
-            </button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+    <>
+      <PageHeader
+        title="Post new role"
+        description="Create a requisition so candidates can be scored against role requirements."
+      />
+      <PageBody className="max-w-xl">
+        <Card>
+          <CardHeader>
+            <CardTitle>Role details</CardTitle>
+            <CardDescription>
+              Include requirements to improve role-fit scoring accuracy.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={onSubmit} className="space-y-4">
+              <Field label="Job title" name="title" required placeholder="e.g. Senior Backend Engineer" />
+              <Field label="Description" name="description" required multiline />
+              <Field
+                label="Requirements (for fit scoring)"
+                name="requirements"
+                multiline
+                placeholder="Skills, years of experience, must-haves…"
+              />
+              {error && (
+                <p className="rounded-lg bg-risk-bg px-3 py-2 text-sm text-risk">{error}</p>
+              )}
+              <Button type="submit" disabled={loading}>
+                {loading ? "Creating…" : "Create role"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </PageBody>
+    </>
   );
 }
 
@@ -66,21 +79,26 @@ function Field({
   name,
   required,
   multiline,
+  placeholder,
 }: {
   label: string;
   name: string;
   required?: boolean;
   multiline?: boolean;
+  placeholder?: string;
 }) {
-  const className =
-    "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-foreground/10";
   return (
     <label className="block">
-      <span className="text-sm font-medium">{label}</span>
+      <span className="text-sm font-semibold text-foreground">{label}</span>
       {multiline ? (
-        <textarea name={name} required={required} rows={4} className={`mt-1 ${className}`} />
+        <textarea name={name} required={required} rows={4} className="input-hr mt-1.5" />
       ) : (
-        <input name={name} required={required} className={`mt-1 ${className}`} />
+        <input
+          name={name}
+          required={required}
+          placeholder={placeholder}
+          className="input-hr mt-1.5"
+        />
       )}
     </label>
   );

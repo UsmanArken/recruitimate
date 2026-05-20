@@ -1,20 +1,24 @@
 import type { Metadata } from "next";
-import { Sidebar } from "@/components/sidebar";
+import { Plus_Jakarta_Sans } from "next/font/google";
+import { AppShell } from "@/components/app-shell";
 import "./globals.css";
 
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-plus-jakarta",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "Recruitimate — AI-Native Hiring OS",
-  description: "Talent + Interview + Decision Intelligence for better hiring",
+  title: "Recruitimate — Hiring Intelligence for HR Teams",
+  description: "Talent, interview, and decision intelligence built for recruiters and hiring managers",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className="min-h-screen antialiased">
-        <div className="flex min-h-screen">
-          <Sidebar />
-          <main className="flex-1 overflow-auto">{children}</main>
-        </div>
+    <html lang="en" className={plusJakarta.variable}>
+      <body className={`${plusJakarta.className} min-h-screen antialiased`}>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

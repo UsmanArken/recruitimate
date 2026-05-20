@@ -2,8 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { LayerBadge } from "@/components/layer-badge";
+import { PageHeader, PageBody } from "@/components/page-header";
+import { Button } from "@/components/ui/button";
+import { TrustBanner } from "@/components/trust-banner";
 
 type Job = { id: string; title: string };
 
@@ -41,7 +44,7 @@ export default function NewCandidatePage() {
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      setError(data.error ? JSON.stringify(data.error) : "Failed to create candidate.");
+      setError(data.error ? JSON.stringify(data.error) : "Failed to add candidate.");
       setLoading(false);
       return;
     }
@@ -51,56 +54,61 @@ export default function NewCandidatePage() {
   }
 
   return (
-    <div className="p-8 max-w-2xl">
-      <div className="mb-2">
+    <>
+      <PageHeader
+        title="Add candidate"
+        description="Import an applicant to run talent intelligence and generate an initial hiring profile."
+      />
+      <PageBody className="max-w-2xl">
         <LayerBadge layer="talent" />
-      </div>
-      <h1 className="mb-1 text-2xl font-bold">Add candidate</h1>
-      <p className="mb-6 text-sm text-muted">
-        Paste a resume to run Talent Intelligence — skills, fit score, and hidden signals.
-      </p>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Candidate & resume</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={onSubmit} className="space-y-4">
-            <Field label="Full name" name="name" required />
-            <Field label="Email" name="email" type="email" />
-            <label className="block">
-              <span className="text-sm font-medium">Job (optional)</span>
-              <select name="jobId" className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm">
-                <option value="">No job — general analysis</option>
-                {jobs.map((j) => (
-                  <option key={j.id} value={j.id}>
-                    {j.title}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <Field label="LinkedIn URL" name="linkedInUrl" />
-            <Field label="GitHub URL" name="githubUrl" />
-            <Field
-              label="Resume text"
-              name="resumeText"
-              required
-              multiline
-              placeholder="Paste CV/resume content here…"
-              rows={12}
-            />
-            {error && <p className="text-sm text-rose-600">{error}</p>}
-            <button
-              type="submit"
-              disabled={loading}
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
-            >
-              {loading ? "Analyzing…" : "Analyze & create"}
-            </button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle>Applicant details</CardTitle>
+            <CardDescription>
+              Paste resume content below. We&apos;ll extract skills, fit score, and preliminary
+              signals for your review.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={onSubmit} className="space-y-4">
+              <Field label="Full name" name="name" required />
+              <Field label="Email" name="email" type="email" />
+              <label className="block">
+                <span className="text-sm font-semibold text-foreground">Open role</span>
+                <select name="jobId" className="input-hr mt-1.5">
+                  <option value="">General pipeline (no role)</option>
+                  {jobs.map((j) => (
+                    <option key={j.id} value={j.id}>
+                      {j.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <Field label="LinkedIn profile" name="linkedInUrl" />
+              <Field label="GitHub / portfolio" name="githubUrl" />
+              <Field
+                label="Resume content"
+                name="resumeText"
+                required
+                multiline
+                placeholder="Paste the candidate's CV or resume text here…"
+                rows={12}
+              />
+              <TrustBanner>
+                Analysis is explainable and advisory. Review all signals before making hiring
+                decisions.
+              </TrustBanner>
+              {error && (
+                <p className="rounded-lg bg-risk-bg px-3 py-2 text-sm text-risk">{error}</p>
+              )}
+              <Button type="submit" disabled={loading}>
+                {loading ? "Analyzing profile…" : "Add & analyze candidate"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </PageBody>
+    </>
   );
 }
 
@@ -121,21 +129,19 @@ function Field({
   rows?: number;
   type?: string;
 }) {
-  const className =
-    "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-foreground/10";
   return (
     <label className="block">
-      <span className="text-sm font-medium">{label}</span>
+      <span className="text-sm font-semibold text-foreground">{label}</span>
       {multiline ? (
         <textarea
           name={name}
           required={required}
           rows={rows ?? 4}
           placeholder={placeholder}
-          className={`mt-1 ${className}`}
+          className="input-hr mt-1.5"
         />
       ) : (
-        <input name={name} type={type} required={required} className={`mt-1 ${className}`} />
+        <input name={name} type={type} required={required} className="input-hr mt-1.5" />
       )}
     </label>
   );
