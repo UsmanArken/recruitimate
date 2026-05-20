@@ -1,0 +1,134 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PipelineStage {
+  NEW
+  TALENT_REVIEW
+  SHORTLISTED
+  INTERVIEW_SCHEDULED
+  INTERVIEWED
+  DECISION
+  HIRED
+  REJECTED
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  RECORDED
+  TRANSCRIBED
+  ANALYZED
+}
+
+model Job {
+  id          String      @id @default(cuid())
+  title       String
+  description String      @db.Text
+  requirements String?    @db.Text
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  candidates  Candidate[]
+}
+
+model Candidate {
+  id              String          @id @default(cuid())
+  name            String
+  email           String?
+  linkedInUrl     String?
+  githubUrl       String?
+  portfolioUrl    String?
+  resumeText      String?         @db.Text
+  resumeFilePath  String?
+  stage           PipelineStage   @default(NEW)
+  jobId           String?
+  job             Job?            @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  talentProfile   TalentProfile?
+  interviews      Interview[]
+  decision        Decision?
+  notes           Note[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([jobId])
+  @@index([stage])
+}
+
+model TalentProfile {
+  id              String   @id @default(cuid())
+  candidateId     String   @unique
+  candidate       Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  skills          Json     @default("[]")
+  experienceYears Float?
+  roleFitScore    Float?
+  strengths       Json     @default("[]")
+  gaps            Json     @default("[]")
+  hiddenSignals   Json     @default("[]")
+  explanation     String?  @db.Text
+  rawAnalysis     Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Interview {
+  id              String          @id @default(cuid())
+  candidateId     String
+  candidate       Candidate       @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  title           String
+  status          InterviewStatus @default(SCHEDULED)
+  scheduledAt     DateTime?
+  recordingPath   String?
+  transcript      String?         @db.Text
+  analysis        InterviewAnalysis?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([candidateId])
+}
+
+model InterviewAnalysis {
+  id                String   @id @default(cuid())
+  interviewId       String   @unique
+  interview         Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  hesitationScore   Float?
+  confidenceScore   Float?
+  clarityScore      Float?
+  consistencyScore  Float?
+  engagementScore   Float?
+  cognitiveSignals  Json     @default("[]")
+  behavioralMetrics Json   @default("[]")
+  riskFlags         Json     @default("[]")
+  explanation       String?  @db.Text
+  rawAnalysis       Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Decision {
+  id                String   @id @default(cuid())
+  candidateId       String   @unique
+  candidate         Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  hireConfidence    Float?
+  recommendation    String?
+  riskFactors       Json     @default("[]")
+  comparisonNotes   String?  @db.Text
+  explanation       String?  @db.Text
+  signalBreakdown   Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Note {
+  id          String   @id @default(cuid())
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  content     String   @db.Text
+  tags        Json     @default("[]")
+  createdAt   DateTime @default(now())
+
+  @@index([candidateId])
+}

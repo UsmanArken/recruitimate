@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recruitimate — Product & System Design Guide</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg: #fafaf9;
+      --surface: #ffffff;
+      --text: #1c1917;
+      --muted: #78716c;
+      --border: #e7e5e4;
+      --accent: #4f46e5;
+      --talent: #7c3aed;
+      --interview: #0284c7;
+      --decision: #059669;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      font-size: 16px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 100vh;
+    }
+
+    nav {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 1.5rem 1rem;
+    }
+
+    nav h2 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin: 1.25rem 0 0.5rem;
+    }
+
+    nav h2:first-child { margin-top: 0; }
+
+    nav a {
+      display: block;
+      padding: 0.35rem 0.75rem;
+      font-size: 0.875rem;
+      color: var(--text);
+      text-decoration: none;
+      border-radius: 6px;
+    }
+
+    nav a:hover { background: var(--bg); }
+
+    main {
+      max-width: 920px;
+      padding: 2.5rem 3rem 4rem;
+    }
+
+    h1 {
+      font-size: 2.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.125rem;
+      margin-bottom: 2rem;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin: 2.5rem 0 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+
+    h2:first-of-type { border-top: none; padding-top: 0; }
+
+    h3 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin: 1.5rem 0 0.75rem;
+    }
+
+    h4 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 1rem 0 0.5rem;
+    }
+
+    p { margin-bottom: 1rem; }
+
+    ul, ol {
+      margin: 0 0 1rem 1.25rem;
+    }
+
+    li { margin-bottom: 0.35rem; }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.8125rem;
+      font-weight: 500;
+    }
+
+    .badge-talent { background: #ede9fe; color: var(--talent); }
+    .badge-interview { background: #e0f2fe; color: var(--interview); }
+    .badge-decision { background: #d1fae5; color: var(--decision); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0 1.5rem;
+      font-size: 0.9rem;
+      background: var(--surface);
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    th, td {
+      padding: 0.65rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background: var(--bg);
+      font-weight: 600;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      margin: 1rem 0 1.5rem;
+    }
+
+    .card h4 { margin-top: 0; }
+
+    .diagram {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 1.25rem 0 1.75rem;
+      overflow-x: auto;
+    }
+
+    .diagram .mermaid { display: flex; justify-content: center; }
+
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: #eef2ff;
+      padding: 1rem 1.25rem;
+      border-radius: 0 8px 8px 0;
+      margin: 1rem 0 1.5rem;
+      font-size: 0.95rem;
+    }
+
+    .callout-warn {
+      border-left-color: #d97706;
+      background: #fffbeb;
+    }
+
+    .callout-success {
+      border-left-color: var(--decision);
+      background: #ecfdf5;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      nav { position: relative; height: auto; }
+      main { padding: 1.5rem; }
+      .two-col { grid-template-columns: 1fr; }
+    }
+
+    code {
+      font-family: ui-monospace, monospace;
+      font-size: 0.85em;
+      background: var(--bg);
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+    }
+
+    pre {
+      background: #1c1917;
+      color: #fafaf9;
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 0.8rem;
+      margin: 1rem 0 1.5rem;
+    }
+
+    .meta {
+      font-size: 0.875rem;
+      color: var(--muted);
+      margin-bottom: 2rem;
+    }
+
+    footer {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.875rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <nav>
+      <strong style="font-size: 1rem;">Recruitimate</strong>
+      <p style="font-size: 0.75rem; color: var(--muted); margin: 0.25rem 0 1rem;">Product & System Design</p>
+
+      <h2>Product</h2>
+      <a href="#overview">Overview</a>
+      <a href="#philosophy">Philosophy</a>
+      <a href="#architecture">3-Layer Architecture</a>
+      <a href="#modules">Core Modules</a>
+      <a href="#differentiation">Differentiation</a>
+      <a href="#functional-flow">Functional Flow</a>
+      <a href="#mvp">MVP Scope</a>
+      <a href="#roadmap">Roadmap</a>
+      <a href="#risks">Risks</a>
+      <a href="#principles">Design Principles</a>
+
+      <h2>System Design</h2>
+      <a href="#system-overview">System Overview</a>
+      <a href="#tech-stack">Tech Stack</a>
+      <a href="#data-model">Data Model</a>
+      <a href="#api-design">API Design</a>
+      <a href="#intelligence-pipeline">Intelligence Pipeline</a>
+      <a href="#deployment">Deployment</a>
+      <a href="#security">Security & Privacy</a>
+      <a href="#scalability">Scalability</a>
+    </nav>
+
+    <main>
+      <h1>Recruitimate</h1>
+      <p class="subtitle">AI-Native Hiring OS — Product Specification & System Design</p>
+      <p class="meta">Version 1.0 · Document generated from product context · May 2026</p>
+
+      <div class="badge-row">
+        <span class="badge badge-talent">🧠 Talent Intelligence</span>
+        <span class="badge badge-interview">🎤 Interview Intelligence</span>
+        <span class="badge badge-decision">📊 Decision Intelligence</span>
+      </div>
+
+      <!-- ==================== PRODUCT ==================== -->
+
+      <h2 id="overview">1. Product Overview</h2>
+      <table>
+        <tr><th>Field</th><th>Value</th></tr>
+        <tr><td>Product Name</td><td><strong>Recruitimate</strong></td></tr>
+        <tr><td>Category</td><td>AI-Native Hiring OS</td></tr>
+        <tr><td>Positioning</td><td>Combines talent intelligence + interview intelligence + decision intelligence to improve hiring quality and speed</td></tr>
+        <tr><td>Core Question</td><td>Who is this candidate? How are they performing? Should we hire them?</td></tr>
+      </table>
+
+      <p>
+        Recruitimate is a <strong>multi-layer hiring intelligence system</strong> — not a traditional ATS,
+        interview bot, or resume screener alone. Its core moat is <strong>deep interview cognition</strong>
+        combined with pre-interview talent signals and post-interview decision synthesis.
+      </p>
+
+      <h2 id="philosophy">2. Core Philosophy</h2>
+      <div class="two-col">
+        <div class="card">
+          <h4>Traditional Hiring</h4>
+          <ul>
+            <li>Resume-based</li>
+            <li>Interviewer-dependent</li>
+            <li>Subjective</li>
+            <li>Slow, inconsistent decisions</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>Recruitimate</h4>
+          <ul>
+            <li>Signal-based</li>
+            <li>AI-assisted</li>
+            <li>Decision-driven</li>
+            <li>Explainable at every layer</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout callout-success">
+        <strong>Guiding principle:</strong> Assist, don't replace humans. Show signals, not judgments.
+        Every AI output must be explainable with evidence and confidence levels.
+      </div>
+
+      <h2 id="architecture">3. Three-Layer Architecture</h2>
+      <p>The product is organized as three intelligence layers that map to the hiring lifecycle:</p>
+
+      <div class="diagram">
+        <pre class="mermaid">
+flowchart TB
+    subgraph L1["🧠 Layer 1: Talent Intelligence (Pre-Interview)"]
+        R[Resume / CV]
+        LI[LinkedIn]
+        GH[GitHub / Portfolio]
+        R --> TIE[Talent Intelligence Engine]
+        LI --> TIE
+        GH --> TIE
+        TIE --> CP[Structured Candidate Profile]
+        TIE --> RF[Role Fit Score]
+        TIE --> SG[Strengths / Gaps / Hidden Signals]
+    end
+
+    subgraph L2["🎤 Layer 2: Interview Intelligence (Core Moat)"]
+        REC[Interview Recording]
+        TR[Transcript]
+        REC --> TR
+        TR --> IIE[Interview Intelligence Engine]
+        IIE --> CS[Cognitive Signals]
+        IIE --> BM[Behavioral Metrics]
+        IIE --> CV[Cross-Signal Validation]
+        IIE --> IQ[Interview Quality Analysis]
+    end
+
+    subgraph L3["📊 Layer 3: Decision Intelligence (Post)"]
+        TIE --> DIE[Decision Intelligence Engine]
+        IIE --> DIE
+        AE[Assessment Results] --> DIE
+        DIE --> HC[Hire Confidence Score]
+        DIE --> RF2[Risk Factors]
+        DIE --> RECO[Recommendation + Explanation]
+    end
+
+    CP --> PIPE[Pipeline / ATS-lite]
+    PIPE --> INT[Interview Conducted]
+    INT --> REC
+        </pre>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Layer</th>
+            <th>Phase</th>
+            <th>Primary Question</th>
+            <th>Key Outputs</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>🧠 Talent Intelligence</td>
+            <td>Pre-Interview</td>
+            <td>Who is this candidate really?</td>
+            <td>Skill graph, fit score, strengths/gaps, hidden signals</td>
+          </tr>
+          <tr>
+            <td>🎤 Interview Intelligence</td>
+            <td>During / Post Interview</td>
+            <td>How are they performing right now?</td>
+            <td>Cognitive signals, behavioral metrics, mismatch alerts</td>
+          </tr>
+          <tr>
+            <td>📊 Decision Intelligence</td>
+            <td>Final Output</td>
+            <td>Should we hire them?</td>
+            <td>Hire confidence, risk flags, comparison, recommendation</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2 id="modules">4. Core Modules</h2>
+
+      <h3>4.1 🧠 Module 1: Talent Intelligence Engine</h3>
+      <table>
+        <tr><th>Inputs</th><td>Resume (CV), LinkedIn, GitHub/portfolio, external datasets (optional)</td></tr>
+        <tr><th>Processing</th><td>Skill graph extraction, experience depth analysis, career trajectory modeling</td></tr>
+        <tr><th>Outputs</th><td>Structured candidate profile, role fit score, strengths/gaps, hidden signals (consistency, growth rate)</td></tr>
+      </table>
+
+      <h3>4.2 🔍 Module 2: Talent Discovery Engine</h3>
+      <ul>
+        <li>AI search: <em>"Find backend engineers with distributed systems experience"</em></li>
+        <li>Multi-source ingestion</li>
+        <li>Talent pool creation</li>
+        <li>Output: Ranked candidate lists, suggested candidates from internal DB</li>
+      </ul>
+      <p><em>Status: Phase 2+</em></p>
+
+      <h3>4.3 📬 Module 3: Outreach Engine</h3>
+      <ul>
+        <li>AI-generated personalized outreach</li>
+        <li>Campaign management</li>
+        <li>Response tracking</li>
+      </ul>
+      <p><em>Status: Phase 2+</em></p>
+
+      <h3>4.4 🧩 Module 4: Pipeline / ATS-lite</h3>
+      <ul>
+        <li>Job creation</li>
+        <li>Candidate stages (pipeline)</li>
+        <li>Notes & tagging</li>
+        <li>Basic scheduling</li>
+      </ul>
+      <div class="callout">
+        <strong>Constraint:</strong> Keep lightweight — do not compete with enterprise ATS (Workday, etc.).
+      </div>
+
+      <h3>4.5 🎤 Module 5: Interview Intelligence Engine (CORE MOAT)</h3>
+
+      <h4>5.1 Cognitive Signal Engine</h4>
+      <p>Detect (with cautious, evidence-based language):</p>
+      <ul>
+        <li>Consistency / contradictions (not "lie detection")</li>
+        <li>Confidence vs hesitation</li>
+        <li>Confusion / clarity</li>
+        <li>Enthusiasm / engagement</li>
+        <li>Depth of understanding</li>
+        <li>Authenticity vs rehearsed answers</li>
+      </ul>
+
+      <h4>5.2 Behavioral Metrics Extraction</h4>
+      <table>
+        <thead><tr><th>Source</th><th>Signals</th></tr></thead>
+        <tbody>
+          <tr><td>Audio</td><td>Pauses, tone shifts</td></tr>
+          <tr><td>Video</td><td>Facial cues, engagement</td></tr>
+          <tr><td>Transcript</td><td>Semantic depth, contradictions</td></tr>
+        </tbody>
+      </table>
+
+      <h4>5.3 Interview Analysis Modes</h4>
+      <table>
+        <thead><tr><th>Phase</th><th>Capability</th></tr></thead>
+        <tbody>
+          <tr><td>Phase 1 (MVP)</td><td>Post-interview analysis</td></tr>
+          <tr><td>Phase 2</td><td>Real-time assist: suggest follow-ups, flag inconsistencies</td></tr>
+        </tbody>
+      </table>
+
+      <h4>5.4 Cross-Signal Validation</h4>
+      <ul>
+        <li>Resume claims vs interview answers</li>
+        <li>Past answers vs current answers</li>
+        <li>Output: Mismatch alerts, risk indicators (advisory only)</li>
+      </ul>
+
+      <h4>5.5 Interview Quality Analysis</h4>
+      <ul>
+        <li>Question coverage scoring</li>
+        <li>Depth of probing</li>
+        <li>Bias indicators</li>
+      </ul>
+
+      <h3>4.6 🧪 Module 6: Assessment Engine</h3>
+      <ul>
+        <li>AI-generated real-world tasks</li>
+        <li>Code / product / ops scenarios</li>
+        <li>Automated evaluation</li>
+      </ul>
+      <p><em>Status: Phase 2+</em></p>
+
+      <h3>4.7 📊 Module 7: Decision Intelligence Engine</h3>
+      <table>
+        <tr><th>Inputs</th><td>Talent signals, interview signals, assessment results</td></tr>
+        <tr><th>Outputs</th><td>Hire confidence score, risk factors, candidate comparison, recommendation with explanation</td></tr>
+      </table>
+
+      <h3>4.8 🤖 Module 8: AI Copilot Interface</h3>
+      <ul>
+        <li><em>"Show top candidates for this role"</em></li>
+        <li><em>"Why is candidate A better than B?"</em></li>
+        <li><em>"Summarize this interview"</em></li>
+      </ul>
+      <p><em>Status: Phase 2+</em></p>
+
+      <h3>4.9 🔁 Module 9: Learning Engine</h3>
+      <ul>
+        <li>Learns from: hiring outcomes, recruiter feedback</li>
+        <li>Improves: scoring models, recommendations over time</li>
+      </ul>
+      <p><em>Status: Phase 3</em></p>
+
+      <h2 id="differentiation">5. Key Differentiation</h2>
+      <div class="two-col">
+        <div class="card">
+          <h4>You are NOT</h4>
+          <ul>
+            <li>A full ATS replacement</li>
+            <li>An interview replacement bot</li>
+            <li>A resume-only screener</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>You ARE</h4>
+          <ul>
+            <li>A multi-layer hiring intelligence system</li>
+            <li>Deep interview cognition as core moat</li>
+            <li>Explainable, signal-driven decisions</li>
+          </ul>
+        </div>
+      </div>
+
+      <h2 id="functional-flow">6. End-to-End Functional Flow</h2>
+      <div class="diagram">
+        <pre class="mermaid">
+sequenceDiagram
+    participant R as Recruiter
+    participant SYS as Recruitimate
+    participant T as Talent Engine
+    participant I as Interview Engine
+    participant D as Decision Engine
+    participant C as Candidate
+
+    R->>SYS: Create job + add candidate
+    C->>SYS: Resume / profile data ingested
+    SYS->>T: Parse resume, extract signals
+    T-->>SYS: Talent profile + fit score
+    SYS-->>R: Review talent intelligence
+
+    R->>SYS: Shortlist candidate
+    R->>C: Conduct interview (recorded)
+    C->>SYS: Recording + transcript
+    SYS->>I: Post-interview analysis
+    I-->>SYS: Cognitive + behavioral signals
+    SYS->>I: Cross-signal validation
+    I-->>SYS: Mismatch alerts (advisory)
+
+    SYS->>D: Synthesize all signals
+    D-->>SYS: Hire confidence + recommendation
+    SYS-->>R: Decision dashboard (explainable)
+    R->>SYS: Human final decision
+        </pre>
+      </div>
+
+      <ol>
+        <li>Candidate enters system</li>
+        <li>Talent intelligence builds structured profile</li>
+        <li>Candidate shortlisted via pipeline</li>
+        <li>Interview conducted (recorded)</li>
+        <li>Interview intelligence extracts signals from transcript/audio/video</li>
+        <li>Cross-signal validation runs (resume vs interview)</li>
+        <li>Decision engine generates recommendation with explanation</li>
+        <li>Human makes final hire/reject decision</li>
+      </ol>
+
+      <h2 id="mvp">7. MVP Scope (Phase 1)</h2>
+      <h3>Must Build</h3>
+      <table>
+        <thead><tr><th>Layer</th><th>MVP Features</th><th>Implementation Status</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Talent Intelligence</td>
+            <td>Resume parsing, basic skill extraction, simple fit scoring</td>
+            <td>✅ Built</td>
+          </tr>
+          <tr>
+            <td>Interview Intelligence</td>
+            <td>Transcription (paste), post-interview analysis: hesitation, confidence, clarity, consistency</td>
+            <td>✅ Built (transcript paste; recording upload Phase 2)</td>
+          </tr>
+          <tr>
+            <td>Decision Output</td>
+            <td>Candidate summary, risk flags, basic scoring dashboard</td>
+            <td>✅ Built</td>
+          </tr>
+          <tr>
+            <td>ATS-lite</td>
+            <td>Jobs, pipeline stages, candidate list</td>
+            <td>✅ Built</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Skip Initially</h3>
+      <ul>
+        <li>Real-time interview assist</li>
+        <li>Full ATS feature parity</li>
+        <li>Outreach automation</li>
+        <li>Deep CV + video fusion models</li>
+        <li>Talent discovery / passive sourcing</li>
+        <li>Learning engine</li>
+      </ul>
+
+      <h2 id="roadmap">8. Product Roadmap</h2>
+      <div class="diagram">
+        <pre class="mermaid">
+timeline
+    title Recruitimate Roadmap
+    section Phase 1 — MVP
+        Talent Intelligence : Resume parsing, fit scoring
+        Interview Intelligence : Post-interview transcript analysis
+        Decision Dashboard : Hire confidence, risk flags
+        ATS-lite : Jobs, pipeline stages
+    section Phase 2
+        Real-time interview assist : Follow-up suggestions
+        Cross-signal validation : Resume vs interview
+        AI interview questions : Role-specific generation
+        Outreach engine : Personalized campaigns
+        Audio/video ingestion : Whisper + media pipeline
+    section Phase 3
+        Predictive hiring success : Outcome modeling
+        Learning engine : Feedback loops
+        Org-level analytics : Team hiring insights
+        Passive candidate signals : External data fusion
+        </pre>
+      </div>
+
+      <h2 id="risks">9. Risks & Mitigations</h2>
+      <table>
+        <thead><tr><th>Risk</th><th>Description</th><th>Mitigation</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Accuracy Risk</strong></td>
+            <td>False "truthfulness" or deception detection</td>
+            <td>Never label deception; use consistency hints with low confidence; human review required</td>
+          </tr>
+          <tr>
+            <td><strong>Trust Risk</strong></td>
+            <td>Black-box AI rejected by users</td>
+            <td>Every signal includes evidence + confidence; full explanation on every score</td>
+          </tr>
+          <tr>
+            <td><strong>UX Risk</strong></td>
+            <td>Too complex → low adoption</td>
+            <td>Single candidate page shows all 3 layers; minimal navigation; progressive disclosure</td>
+          </tr>
+          <tr>
+            <td><strong>Compliance Risk</strong></td>
+            <td>Biometric / bias in video analysis</td>
+            <td>Opt-in recording; bias indicators surfaced to interviewer; audit logs (Phase 2+)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2 id="principles">10. Key Design Principles</h2>
+      <ol>
+        <li><strong>Explain everything</strong> — no black-box scores</li>
+        <li><strong>Assist, don't replace</strong> — humans make final decisions</li>
+        <li><strong>Show signals, not judgments</strong> — "hesitation markers" not "candidate is lying"</li>
+        <li><strong>Keep UI minimal</strong> — three layers visible, no feature bloat</li>
+      </ol>
+
+      <!-- ==================== SYSTEM DESIGN ==================== -->
+
+      <h2 id="system-overview">11. System Design Overview</h2>
+      <p>
+        The MVP implementation uses a <strong>modular monolith</strong> pattern: a Next.js full-stack application
+        with intelligence engines as isolated library modules, backed by PostgreSQL.
+        This allows fast iteration while keeping clear boundaries for future service extraction.
+      </p>
+
+      <div class="diagram">
+        <pre class="mermaid">
+flowchart LR
+    subgraph Client["Client Layer"]
+        WEB[Next.js Web App<br/>React + Tailwind]
+    end
+
+    subgraph App["Application Layer"]
+        API[API Routes<br/>REST]
+        ENG[Intelligence Engines<br/>talent · interview · decision]
+    end
+
+    subgraph Data["Data Layer"]
+        PG[(PostgreSQL)]
+        FS[File Storage<br/>S3 / local — Phase 2]
+    end
+
+    subgraph External["External Services"]
+        OAI[OpenAI API<br/>GPT-4o-mini + Whisper]
+    end
+
+    WEB --> API
+    API --> ENG
+    ENG --> OAI
+    API --> PG
+    API --> FS
+        </pre>
+      </div>
+
+      <h3>11.1 High-Level Component Diagram</h3>
+      <div class="diagram">
+        <pre class="mermaid">
+C4Context
+    title Recruitimate System Context
+
+    Person(recruiter, "Recruiter", "Reviews candidates and makes hire decisions")
+    Person(candidate, "Candidate", "Provides resume and participates in interviews")
+
+    System(recruitimate, "Recruitimate", "AI-Native Hiring OS with 3 intelligence layers")
+
+    System_Ext(openai, "OpenAI", "LLM analysis and transcription")
+    System_Ext(linkedin, "LinkedIn", "Profile data — Phase 2")
+    System_Ext(github, "GitHub", "Portfolio data — Phase 2")
+
+    Rel(recruiter, recruitimate, "Uses")
+    Rel(candidate, recruitimate, "Submits data via recruiter")
+    Rel(recruitimate, openai, "Analysis requests")
+    Rel(recruitimate, linkededin, "Profile ingestion — future")
+    Rel(recruitimate, github, "Repo analysis — future")
+        </pre>
+      </div>
+
+      <h2 id="tech-stack">12. Technology Stack</h2>
+      <table>
+        <thead><tr><th>Layer</th><th>Technology</th><th>Rationale</th></tr></thead>
+        <tbody>
+          <tr><td>Frontend</td><td>Next.js 15 (App Router), React 19, TypeScript</td><td>SSR dashboard, API colocation, type safety</td></tr>
+          <tr><td>Styling</td><td>Tailwind CSS 4</td><td>Minimal, fast UI iteration</td></tr>
+          <tr><td>Backend</td><td>Next.js API Routes</td><td>MVP simplicity; extract to FastAPI later if needed</td></tr>
+          <tr><td>Database</td><td>PostgreSQL 16 + Prisma ORM</td><td>Relational hiring data, migrations, type-safe queries</td></tr>
+          <tr><td>AI / LLM</td><td>OpenAI (gpt-4o-mini, Whisper)</td><td>Resume/interview analysis; heuristic fallback without key</td></tr>
+          <tr><td>Validation</td><td>Zod</td><td>API input schemas</td></tr>
+          <tr><td>Infra (dev)</td><td>Docker Compose (Postgres)</td><td>Local development parity</td></tr>
+          <tr><td>Infra (prod)</td><td>Vercel / AWS (TBD)</td><td>Next.js native deploy; S3 for media Phase 2</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="data-model">13. Data Model</h2>
+      <p>Core entities and relationships for the MVP schema:</p>
+
+      <div class="diagram">
+        <pre class="mermaid">
+erDiagram
+    Job ||--o{ Candidate : has
+    Candidate ||--o| TalentProfile : has
+    Candidate ||--o{ Interview : has
+    Candidate ||--o| Decision : has
+    Candidate ||--o{ Note : has
+    Interview ||--o| InterviewAnalysis : has
+
+    Job {
+        string id PK
+        string title
+        text description
+        text requirements
+    }
+
+    Candidate {
+        string id PK
+        string name
+        string email
+        enum stage
+        text resumeText
+        string jobId FK
+    }
+
+    TalentProfile {
+        string id PK
+        string candidateId FK
+        json skills
+        float roleFitScore
+        json strengths
+        json gaps
+        json hiddenSignals
+        text explanation
+    }
+
+    Interview {
+        string id PK
+        string candidateId FK
+        string title
+        enum status
+        text transcript
+    }
+
+    InterviewAnalysis {
+        string id PK
+        string interviewId FK
+        float hesitationScore
+        float confidenceScore
+        float clarityScore
+        float consistencyScore
+        json cognitiveSignals
+        json riskFlags
+    }
+
+    Decision {
+        string id PK
+        string candidateId FK
+        float hireConfidence
+        string recommendation
+        json riskFactors
+        text explanation
+    }
+        </pre>
+      </div>
+
+      <h3>13.1 Pipeline Stages</h3>
+      <div class="diagram">
+        <pre class="mermaid">
+stateDiagram-v2
+    [*] --> NEW
+    NEW --> TALENT_REVIEW : Resume ingested
+    TALENT_REVIEW --> SHORTLISTED : Recruiter shortlists
+    SHORTLISTED --> INTERVIEW_SCHEDULED : Interview planned
+    INTERVIEW_SCHEDULED --> INTERVIEWED : Interview completed
+    INTERVIEWED --> DECISION : Analysis complete
+    DECISION --> HIRED : Offer extended
+    DECISION --> REJECTED : Not proceeding
+    TALENT_REVIEW --> REJECTED
+    SHORTLISTED --> REJECTED
+    INTERVIEWED --> REJECTED
+        </pre>
+      </div>
+
+      <h2 id="api-design">14. API Design</h2>
+      <table>
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>GET</td><td><code>/api/jobs</code></td><td>List all jobs</td></tr>
+          <tr><td>POST</td><td><code>/api/jobs</code></td><td>Create job</td></tr>
+          <tr><td>GET</td><td><code>/api/candidates</code></td><td>List candidates with profiles</td></tr>
+          <tr><td>POST</td><td><code>/api/candidates</code></td><td>Create candidate + run talent + decision engines</td></tr>
+          <tr><td>GET</td><td><code>/api/candidates/:id</code></td><td>Full candidate with 3 layers</td></tr>
+          <tr><td>POST</td><td><code>/api/candidates/:id/talent</code></td><td>Re-run talent intelligence</td></tr>
+          <tr><td>POST</td><td><code>/api/candidates/:id/interviews</code></td><td>Submit transcript → interview + decision analysis</td></tr>
+        </tbody>
+      </table>
+
+      <h3>14.1 API Request Flow — Create Candidate</h3>
+      <div class="diagram">
+        <pre class="mermaid">
+flowchart TD
+    A[POST /api/candidates] --> B{Validate input<br/>Zod schema}
+    B -->|Invalid| E[400 Error]
+    B -->|Valid| C[Load job requirements]
+    C --> D[Talent Engine<br/>analyzeTalent]
+    D --> F[Create Candidate + TalentProfile]
+    F --> G[Decision Engine<br/>talent-only mode]
+    G --> H[Create Decision record]
+    H --> I[201 Response]
+        </pre>
+      </div>
+
+      <h2 id="intelligence-pipeline">15. Intelligence Processing Pipeline</h2>
+
+      <h3>15.1 Talent Engine Pipeline</h3>
+      <div class="diagram">
+        <pre class="mermaid">
+flowchart LR
+    A[Resume Text] --> B{OpenAI<br/>available?}
+    B -->|Yes| C[GPT-4o-mini<br/>JSON extraction]
+    B -->|No| D[Heuristic Parser<br/>keyword + tenure]
+    C --> E[Structured Output]
+    D --> E
+    E --> F[skills]
+    E --> G[roleFitScore]
+    E --> H[strengths / gaps]
+    E --> I[hiddenSignals<br/>with evidence]
+        </pre>
+      </div>
+
+      <h3>15.2 Interview Engine Pipeline</h3>
+      <div class="diagram">
+        <pre class="mermaid">
+flowchart LR
+    A[Transcript] --> B[Resume Context<br/>optional]
+    B --> C{OpenAI?}
+    C -->|Yes| D[Semantic Analysis]
+    C -->|No| E[Filler word heuristics]
+    D --> F[Scores]
+    E --> F
+    F --> G[hesitation]
+    F --> H[confidence]
+    F --> I[clarity]
+    F --> J[consistency]
+    F --> K[cognitiveSignals]
+    F --> L[riskFlags]
+        </pre>
+      </div>
+
+      <h3>15.3 Decision Engine — Signal Synthesis</h3>
+      <div class="diagram">
+        <pre class="mermaid">
+flowchart TB
+    T[Talent Signals<br/>roleFitScore, gaps] --> W{Weighting}
+    I[Interview Signals<br/>confidence, clarity, etc.] --> W
+    W -->|No interview| TW[Talent weight: 100%]
+    W -->|With interview| BW[Talent: 40% · Interview: 60%]
+    TW --> HC[Hire Confidence Score]
+    BW --> HC
+    HC --> R[Recommendation<br/>strong_yes → strong_no]
+    HC --> RF[Risk Factors<br/>merged from both layers]
+    HC --> EX[Human-readable Explanation]
+        </pre>
+      </div>
+
+      <h3>15.4 Signal Object Schema (All Layers)</h3>
+      <pre>{
+  "label": "string — signal name",
+  "value": "string — what was observed",
+  "evidence": "string — quote or metric from source",
+  "confidence": "low | medium | high"
+}</pre>
+
+      <h2 id="deployment">16. Deployment Architecture</h2>
+      <h3>16.1 Development</h3>
+      <pre>docker compose up -d    # PostgreSQL
+cp .env.example .env
+npm run db:push
+npm run dev               # http://localhost:3000</pre>
+
+      <h3>16.2 Production (Target)</h3>
+      <div class="diagram">
+        <pre class="mermaid">
+flowchart TB
+    subgraph Internet
+        U[Users]
+    end
+
+    subgraph Vercel["Vercel Edge / Serverless"]
+        NX[Next.js App]
+    end
+
+    subgraph AWS["AWS — Phase 2+"]
+        RDS[(RDS PostgreSQL)]
+        S3[S3 — recordings/resumes]
+        SQS[SQS — async analysis jobs]
+        LAMBDA[Lambda workers<br/>transcription, video]
+    end
+
+    subgraph AI
+        OAI[OpenAI API]
+    end
+
+    U --> NX
+    NX --> RDS
+    NX --> OAI
+    NX --> S3
+    S3 --> SQS
+    SQS --> LAMBDA
+    LAMBDA --> OAI
+        </pre>
+      </div>
+
+      <h2 id="security">17. Security & Privacy</h2>
+      <table>
+        <thead><tr><th>Concern</th><th>Approach</th></tr></thead>
+        <tbody>
+          <tr><td>API keys</td><td>Environment variables only; never client-exposed</td></tr>
+          <tr><td>PII (resumes, transcripts)</td><td>Encrypted at rest (RDS); access via authenticated API (auth Phase 2)</td></tr>
+          <tr><td>AI data handling</td><td>OpenAI API with data retention policies; minimize payload size</td></tr>
+          <tr><td>Recordings</td><td>Explicit consent before recording; retention policy TBD</td></tr>
+          <tr><td>Audit trail</td><td>Timestamps on all intelligence outputs; version re-analysis (Phase 2)</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="scalability">18. Scalability & Future Architecture</h2>
+      <p>As interview video processing and real-time assist are added, extract heavy workloads:</p>
+      <div class="diagram">
+        <pre class="mermaid">
+flowchart LR
+    subgraph Monolith["Current — Modular Monolith"]
+        WEB2[Next.js]
+        ENG2[Engines]
+    end
+
+    subgraph Future["Phase 2+ — Service Extraction"]
+        API2[API Gateway]
+        TAL[Talent Service]
+        INT[Interview Service]
+        DEC[Decision Service]
+        MEDIA[Media Pipeline<br/>transcribe · analyze]
+        QUEUE[Job Queue]
+    end
+
+    Monolith -.->|Extract when needed| Future
+    API2 --> TAL
+    API2 --> INT
+    API2 --> DEC
+    INT --> QUEUE
+    QUEUE --> MEDIA
+    MEDIA --> INT
+    TAL --> DEC
+    INT --> DEC
+        </pre>
+      </div>
+
+      <h3>18.1 Module-to-Service Mapping (Future)</h3>
+      <table>
+        <thead><tr><th>Module</th><th>Future Service</th><th>Trigger for Extraction</th></tr></thead>
+        <tbody>
+          <tr><td>Talent Intelligence</td><td>talent-service</td><td>High-volume resume ingestion</td></tr>
+          <tr><td>Interview Intelligence</td><td>interview-service</td><td>Real-time + video processing load</td></tr>
+          <tr><td>Decision Intelligence</td><td>decision-service</td><td>Multi-candidate batch comparisons</td></tr>
+          <tr><td>Media Pipeline</td><td>media-worker</td><td>Whisper + computer vision jobs</td></tr>
+        </tbody>
+      </table>
+
+      <h2>19. Project Structure (Codebase)</h2>
+      <pre>recruitimate/
+├── docs/
+│   └── recruitimate-product-guide.html   ← this document
+├── prisma/
+│   └── schema.prisma                     ← data model
+├── src/
+│   ├── app/                              ← pages + API routes
+│   │   ├── api/candidates/
+│   │   ├── api/jobs/
+│   │   ├── candidates/[id]/              ← 3-layer profile UI
+│   │   └── ...
+│   ├── components/                       ← UI components
+│   └── lib/intelligence/                 ← core engines
+│       ├── talent/engine.ts
+│       ├── interview/engine.ts
+│       └── decision/engine.ts
+├── docker-compose.yml
+├── ARCHITECTURE.md
+└── README.md</pre>
+
+      <h2>20. Appendix — Module Priority Matrix</h2>
+      <table>
+        <thead>
+          <tr><th>Module</th><th>Priority</th><th>Phase</th><th>Moat Value</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Interview Intelligence Engine</td><td>P0</td><td>1</td><td>★★★★★ Core</td></tr>
+          <tr><td>Talent Intelligence Engine</td><td>P0</td><td>1</td><td>★★★★☆</td></tr>
+          <tr><td>Decision Intelligence Engine</td><td>P0</td><td>1</td><td>★★★★☆</td></tr>
+          <tr><td>Pipeline / ATS-lite</td><td>P1</td><td>1</td><td>★★★☆☆</td></tr>
+          <tr><td>Cross-Signal Validation</td><td>P1</td><td>2</td><td>★★★★☆</td></tr>
+          <tr><td>Real-time Interview Assist</td><td>P1</td><td>2</td><td>★★★★★</td></tr>
+          <tr><td>AI Copilot</td><td>P2</td><td>2</td><td>★★★☆☆</td></tr>
+          <tr><td>Assessment Engine</td><td>P2</td><td>2</td><td>★★★☆☆</td></tr>
+          <tr><td>Talent Discovery</td><td>P2</td><td>2+</td><td>★★☆☆☆</td></tr>
+          <tr><td>Outreach Engine</td><td>P3</td><td>2+</td><td>★★☆☆☆</td></tr>
+          <tr><td>Learning Engine</td><td>P3</td><td>3</td><td>★★★★☆</td></tr>
+        </tbody>
+      </table>
+
+      <footer>
+        <p><strong>Recruitimate</strong> — Product & System Design Guide v1.0</p>
+        <p>Confidential · Internal use · Open <code>docs/recruitimate-product-guide.html</code> in any browser</p>
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: "neutral",
+      securityLevel: "loose",
+      flowchart: { curve: "basis" },
+    });
+  </script>
+</body>
+</html>
