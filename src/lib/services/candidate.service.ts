@@ -6,6 +6,7 @@ import {
 } from "@/lib/db/includes";
 import { badRequest, notFound } from "@/lib/api/errors";
 import { assertPermission } from "@/lib/auth/permission.service";
+import { organizationFilter } from "@/lib/auth/platform-admin";
 import {
   assertCandidateAccess,
   candidatesWhereClause,
@@ -34,7 +35,7 @@ export async function getCandidateById(ctx: AuthContext, id: string) {
   await assertCandidateAccess(ctx, id);
 
   const candidate = await db.candidate.findFirst({
-    where: { id, organizationId: ctx.organizationId },
+    where: { id, ...organizationFilter(ctx) },
     include: candidateDetailInclude,
   });
   if (!candidate) throw notFound("Candidate");
@@ -94,7 +95,7 @@ export async function rerunTalentAnalysis(ctx: AuthContext, candidateId: string)
   const { jobId } = await assertCandidateAccess(ctx, candidateId);
 
   const candidate = await db.candidate.findFirst({
-    where: { id: candidateId, organizationId: ctx.organizationId },
+    where: { id: candidateId, ...organizationFilter(ctx) },
     include: candidateWithJobAndInterviewsInclude,
   });
 

@@ -10,6 +10,7 @@ declare module "next-auth" {
       image?: string | null;
       organizationId?: string;
       roleCode?: string;
+      isPlatformAdmin?: boolean;
     };
   }
 }
@@ -19,5 +20,6 @@ declare module "next-auth/jwt" {
     organizationId?: string;
     roleCode?: string;
     roleId?: string;
+    isPlatformAdmin?: boolean;
   }
 }

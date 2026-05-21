@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { jobListInclude } from "@/lib/db/includes";
 import { notFound } from "@/lib/api/errors";
 import { assertPermission } from "@/lib/auth/permission.service";
+import { organizationFilter } from "@/lib/auth/platform-admin";
 import { canAccessJob, jobsWhereClause } from "@/lib/auth/scope.service";
 import type { AuthContext } from "@/lib/auth/types";
 import type { CreateJobInput } from "@/lib/validators/job";
@@ -31,7 +32,7 @@ export async function createJob(ctx: AuthContext, input: CreateJobInput) {
 
 export async function findJobById(ctx: AuthContext, id: string) {
   const job = await db.job.findFirst({
-    where: { id, organizationId: ctx.organizationId },
+    where: { id, ...organizationFilter(ctx) },
   });
   if (!job) return null;
   if (!(await canAccessJob(ctx, id))) return null;

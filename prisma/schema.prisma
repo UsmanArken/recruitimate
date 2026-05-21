@@ -16,6 +16,8 @@ model User {
   emailVerified DateTime?
   image         String?
   passwordHash  String?
+  /// Platform operator (SaaS super admin). Never set via public signup.
+  isPlatformAdmin Boolean @default(false)
   accounts      Account[]
   sessions      Session[]
   memberships   OrganizationMember[]
@@ -89,6 +91,7 @@ model Role {
 enum RoleScope {
   ORGANIZATION
   JOB
+  PLATFORM
 }
 
 model Permission {

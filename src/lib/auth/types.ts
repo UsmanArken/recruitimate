@@ -6,6 +6,8 @@ export type AuthContext = {
   roleCode: string;
   userEmail: string;
   userName: string | null;
+  /** Cross-tenant platform operator (SaaS super admin). */
+  isPlatformAdmin: boolean;
 };
 
 export type PermissionCheck = {

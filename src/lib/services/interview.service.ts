@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { candidateWithTalentInclude } from "@/lib/db/includes";
 import { notFound } from "@/lib/api/errors";
+import { organizationFilter } from "@/lib/auth/platform-admin";
 import { assertPermission } from "@/lib/auth/permission.service";
 import { assertCandidateAccess } from "@/lib/auth/scope.service";
 import type { AuthContext } from "@/lib/auth/types";
@@ -27,7 +28,7 @@ export async function createInterviewAndAnalyze(
   }
 
   const candidate = await db.candidate.findFirst({
-    where: { id: candidateId, organizationId: ctx.organizationId },
+    where: { id: candidateId, ...organizationFilter(ctx) },
     include: candidateWithTalentInclude,
   });
 

@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { forbidden, unauthorized } from "@/lib/api/errors";
+import { isPlatformSuperAdmin } from "@/lib/auth/platform-admin";
 import type { AuthContext, PermissionCheck } from "@/lib/auth/types";
 
 const JOB_INTERVIEWER_ROLE_CODE = "JOB_INTERVIEWER";
@@ -65,6 +66,7 @@ export async function hasPermission(
   ctx: AuthContext,
   check: PermissionCheck
 ): Promise<boolean> {
+  if (isPlatformSuperAdmin(ctx)) return true;
   const effective = await getEffectivePermissionCodes(ctx, check.jobId);
   const candidates = resolvePermissionCodes(check);
   return candidates.some((code) => effective.has(code));

@@ -37,6 +37,7 @@ MVP-027,MVP,Pipeline,—,Basic interview scheduling,Schedule datetime field cale
 MVP-028,MVP,Platform,—,Authentication,Login signup invite NextAuth sessions,P0,Done,,
 MVP-029,MVP,Platform,—,Database ACL engine,Role Permission RolePermission org-scoped data,P0,Done,MVP-028,
 MVP-029b,MVP,Platform,—,Job interviewer assignments,JobAssignment + JOB_INTERVIEWER role permissions,P1,Done,MVP-029,/jobs/[id] team panel
+MVP-029c,MVP,Platform,—,Platform super admin,PLATFORM_SUPER_ADMIN seed + SUPER_ADMIN_EMAIL login promote + /admin,P0,Done,MVP-029,db:seed db:bootstrap-admin
 MVP-030,MVP,Interview Intelligence,Interview,Interview recording upload,Upload audio/video file store reference,P1,Not Started,,Can defer to Phase 2
 MVP-031,MVP,Interview Intelligence,Interview,Whisper transcription,Auto-generate transcript from recording,P1,Not Started,MVP-030,
 MVP-032,MVP,UI,—,Empty states and onboarding,First-run guidance for new HR users,P2,Not Started,,

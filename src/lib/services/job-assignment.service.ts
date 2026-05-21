@@ -21,7 +21,7 @@ export async function getJobWithTeam(ctx: AuthContext, jobId: string) {
   await getJobById(ctx, jobId);
 
   const job = await db.job.findFirst({
-    where: { id: jobId, organizationId: ctx.organizationId },
+    where: { id: jobId },
     include: jobDetailInclude,
   });
   if (!job) throw notFound("Job");
@@ -30,10 +30,10 @@ export async function getJobWithTeam(ctx: AuthContext, jobId: string) {
 
 export async function listAssignableMembers(ctx: AuthContext, jobId: string) {
   await assertPermission(ctx, { resource: "jobs", action: "update" });
-  await getJobById(ctx, jobId);
+  const job = await getJobById(ctx, jobId);
 
   return db.organizationMember.findMany({
-    where: { organizationId: ctx.organizationId },
+    where: { organizationId: job.organizationId },
     include: {
       user: { select: { id: true, name: true, email: true } },
       role: { select: { code: true, name: true } },
@@ -48,10 +48,10 @@ export async function assignToJob(
   input: CreateJobAssignmentInput
 ) {
   await assertPermission(ctx, { resource: "jobs", action: "update" });
-  await getJobById(ctx, jobId);
+  const job = await getJobById(ctx, jobId);
 
   const member = await db.organizationMember.findFirst({
-    where: { userId: input.userId, organizationId: ctx.organizationId },
+    where: { userId: input.userId, organizationId: job.organizationId },
   });
   if (!member) throw badRequest("User is not in your organization", "NOT_MEMBER");
 

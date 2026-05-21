@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { badRequest } from "@/lib/api/errors";
+import { isReservedSuperAdminEmail } from "@/lib/auth/platform-admin";
 
 function slugify(name: string): string {
   const base = name
@@ -28,6 +29,12 @@ export async function signupWithOrganization(input: {
   organizationName: string;
 }) {
   const email = input.email.toLowerCase();
+  if (isReservedSuperAdminEmail(email)) {
+    throw badRequest(
+      "This email is reserved for platform administration. Sign in after running db:seed or contact your operator.",
+      "RESERVED_EMAIL"
+    );
+  }
   const existing = await db.user.findUnique({ where: { email } });
   if (existing) throw badRequest("Email already registered", "EMAIL_EXISTS");
 

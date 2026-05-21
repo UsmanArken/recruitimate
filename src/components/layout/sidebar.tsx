@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { LayoutDashboard, Briefcase, Users, UserPlus, Sparkles } from "lucide-react";
+import { LayoutDashboard, Briefcase, Users, UserPlus, Sparkles, Shield } from "lucide-react";
+import { AdminNavLink } from "@/components/layout/admin-nav-link";
 import { NavLink } from "@/components/layout/nav-link";
 import { UserMenu } from "@/components/layout/user-menu";
 
@@ -36,6 +37,7 @@ export function Sidebar() {
           {workspaceNav.map((item) => (
             <NavLink key={item.href} {...item} />
           ))}
+          <AdminNavLink href="/admin" label="Platform admin" icon={Shield} />
         </nav>
 
         <p className="mb-2 mt-8 px-3 text-[10px] font-semibold uppercase tracking-widest text-brand-foreground/45">

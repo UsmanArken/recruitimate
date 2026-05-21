@@ -13,7 +13,9 @@ export function UserMenu() {
         <div className="mb-3 px-2">
           <p className="truncate text-xs font-semibold text-white">{session.user.name}</p>
           <p className="truncate text-[10px] text-brand-foreground/50">
-            {session.user.roleCode?.replace(/_/g, " ").toLowerCase()}
+            {session.user.isPlatformAdmin
+              ? "platform super admin"
+              : session.user.roleCode?.replace(/_/g, " ").toLowerCase()}
           </p>
         </div>
       )}

@@ -1,8 +1,15 @@
 import { PrismaClient, RoleScope } from "@prisma/client";
+import {
+  ensurePlatformAdminUser,
+  seedSuperAdminEmail,
+  seedSuperAdminPassword,
+} from "../src/lib/auth/platform-admin";
 
 const prisma = new PrismaClient();
 
 const PERMISSIONS: { code: string; resource: string; action: string; description: string }[] = [
+  { code: "platform.admin", resource: "platform", action: "admin", description: "Full platform administration" },
+  { code: "platform.orgs.read", resource: "platform", action: "orgs_read", description: "View all tenant organizations" },
   { code: "org.read", resource: "org", action: "read", description: "View organization" },
   { code: "org.update", resource: "org", action: "update", description: "Update organization settings" },
   { code: "members.read", resource: "members", action: "read", description: "View team members" },
@@ -29,8 +36,9 @@ const PERMISSIONS: { code: string; resource: string; action: string; description
 ];
 
 const ROLE_PERMISSIONS: Record<string, string[]> = {
-  ORG_OWNER: PERMISSIONS.map((p) => p.code),
-  ORG_ADMIN: PERMISSIONS.map((p) => p.code),
+  PLATFORM_SUPER_ADMIN: PERMISSIONS.map((p) => p.code),
+  ORG_OWNER: PERMISSIONS.filter((p) => !p.code.startsWith("platform.")).map((p) => p.code),
+  ORG_ADMIN: PERMISSIONS.filter((p) => !p.code.startsWith("platform.")).map((p) => p.code),
   RECRUITER: [
     "org.read",
     "members.read",
@@ -78,6 +86,13 @@ const JOB_ROLE_INTERVIEWER: string[] = [
 ];
 
 const ROLES: { code: string; name: string; description: string; scope: RoleScope; permissions: string[] }[] = [
+  {
+    code: "PLATFORM_SUPER_ADMIN",
+    name: "Platform Super Admin",
+    description: "SaaS operator with cross-tenant access",
+    scope: RoleScope.PLATFORM,
+    permissions: ROLE_PERMISSIONS.PLATFORM_SUPER_ADMIN,
+  },
   {
     code: "ORG_OWNER",
     name: "Organization Owner",
@@ -159,6 +174,15 @@ async function main() {
   }
 
   console.log("Seeded permissions and roles (database ACL rules).");
+
+  const adminEmail = seedSuperAdminEmail();
+  const adminPassword = seedSuperAdminPassword();
+  await ensurePlatformAdminUser({
+    email: adminEmail,
+    password: adminPassword,
+    name: "Platform Super Admin",
+  });
+  console.log(`Platform super admin ready: ${adminEmail} (password from SUPER_ADMIN_PASSWORD or seed default)`);
 }
 
 main()
