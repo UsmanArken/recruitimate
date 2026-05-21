@@ -1,14 +1,29 @@
 import { db } from "@/lib/db";
 import { candidateListInclude } from "@/lib/db/includes";
+import { assertPermission } from "@/lib/auth/permission.service";
+import { candidatesWhereClause } from "@/lib/auth/scope.service";
+import type { AuthContext } from "@/lib/auth/types";
 
-export async function getDashboardData() {
+export async function getDashboardData(ctx: AuthContext) {
+  await assertPermission(ctx, { resource: "candidates", action: "read" });
+
+  const candidateWhere = await candidatesWhereClause(ctx);
+
   const [candidateCount, jobCount, interviewedCount, decisions, recentCandidates] =
     await Promise.all([
-      db.candidate.count(),
-      db.job.count(),
-      db.candidate.count({ where: { stage: "INTERVIEWED" } }),
-      db.decision.findMany({ where: { hireConfidence: { not: null } } }),
+      db.candidate.count({ where: candidateWhere }),
+      db.job.count({ where: { organizationId: ctx.organizationId } }),
+      db.candidate.count({
+        where: { ...candidateWhere, stage: "INTERVIEWED" },
+      }),
+      db.decision.findMany({
+        where: {
+          candidate: candidateWhere,
+          hireConfidence: { not: null },
+        },
+      }),
       db.candidate.findMany({
+        where: candidateWhere,
         take: 5,
         orderBy: { updatedAt: "desc" },
         include: candidateListInclude,

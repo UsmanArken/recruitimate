@@ -1,5 +1,6 @@
 import { handleRouteError, jsonCreated } from "@/lib/api/response";
 import { parseJsonBody } from "@/lib/api/request";
+import { requireApiAuth } from "@/lib/api/context";
 import { createInterviewSchema } from "@/lib/validators/interview";
 import * as interviewService from "@/lib/services/interview.service";
 
@@ -8,9 +9,10 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const ctx = await requireApiAuth();
     const { id } = await params;
     const input = await parseJsonBody(req, createInterviewSchema);
-    const result = await interviewService.createInterviewAndAnalyze(id, input);
+    const result = await interviewService.createInterviewAndAnalyze(ctx, id, input);
     return jsonCreated(result);
   } catch (error) {
     return handleRouteError(error);

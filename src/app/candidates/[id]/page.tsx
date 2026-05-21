@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { requireAuthContext } from "@/lib/auth/session";
 import { getCandidateById } from "@/lib/services/candidate.service";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LayerBadge } from "@/components/features/intelligence/layer-badge";
@@ -27,7 +28,8 @@ export default async function CandidateDetailPage({
   let candidate: Awaited<ReturnType<typeof getCandidateById>> | null = null;
 
   try {
-    candidate = await getCandidateById(id);
+    const ctx = await requireAuthContext();
+    candidate = await getCandidateById(ctx, id);
   } catch {
     notFound();
   }

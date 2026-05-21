@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { requireAuthContext } from "@/lib/auth/session";
 import { listCandidates } from "@/lib/services/candidate.service";
 import { formatScore, scoreColor } from "@/lib/utils";
 import { PageHeader, PageBody } from "@/components/layout/page-header";
@@ -14,7 +15,8 @@ export default async function CandidatesPage() {
   let candidates: Awaited<ReturnType<typeof listCandidates>> = [];
 
   try {
-    candidates = await listCandidates();
+    const ctx = await requireAuthContext();
+    candidates = await listCandidates(ctx);
   } catch {
     // DB not ready
   }

@@ -7,6 +7,163 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─── Auth (NextAuth / Auth.js) ─────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  accounts      Account[]
+  sessions      Session[]
+  memberships   OrganizationMember[]
+  invitesSent   Invite[]  @relation("InvitesSent")
+  jobAssignments JobAssignment[]
+  jobsManaged   Job[]     @relation("JobHiringManager")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── Organization & RBAC (database rule engine) ─────────────────────────────
+
+model Organization {
+  id        String               @id @default(cuid())
+  name      String
+  slug      String               @unique
+  members   OrganizationMember[]
+  invites   Invite[]
+  jobs      Job[]
+  candidates Candidate[]
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+}
+
+model Role {
+  id          String           @id @default(cuid())
+  code        String           @unique
+  name        String
+  description String?
+  scope       RoleScope        @default(ORGANIZATION)
+  permissions RolePermission[]
+  members     OrganizationMember[]
+  invites     Invite[]
+  createdAt   DateTime         @default(now())
+}
+
+enum RoleScope {
+  ORGANIZATION
+  JOB
+}
+
+model Permission {
+  id          String           @id @default(cuid())
+  code        String           @unique
+  resource    String
+  action      String
+  description String?
+  roleLinks   RolePermission[]
+  createdAt   DateTime         @default(now())
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model OrganizationMember {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String
+  roleId         String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           Role         @relation(fields: [roleId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+}
+
+model Invite {
+  id             String       @id @default(cuid())
+  email          String
+  token          String       @unique
+  organizationId String
+  roleId         String
+  invitedById    String
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role           Role         @relation(fields: [roleId], references: [id])
+  invitedBy      User         @relation("InvitesSent", fields: [invitedById], references: [id])
+  createdAt      DateTime     @default(now())
+
+  @@index([token])
+  @@index([email, organizationId])
+}
+
+/// Job-level access (e.g. interviewer on a specific requisition)
+model JobAssignment {
+  id             String             @id @default(cuid())
+  jobId          String
+  userId         String
+  assignmentRole JobAssignmentRole
+  job            Job                @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime           @default(now())
+
+  @@unique([jobId, userId, assignmentRole])
+  @@index([userId])
+}
+
+enum JobAssignmentRole {
+  HIRING_MANAGER
+  INTERVIEWER
+}
+
+// ─── Hiring domain ───────────────────────────────────────────────────────────
+
 enum PipelineStage {
   NEW
   TALENT_REVIEW
@@ -26,17 +183,26 @@ enum InterviewStatus {
 }
 
 model Job {
-  id          String      @id @default(cuid())
-  title       String
-  description String      @db.Text
-  requirements String?    @db.Text
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  candidates  Candidate[]
+  id               String          @id @default(cuid())
+  organizationId   String
+  title            String
+  description      String          @db.Text
+  requirements     String?         @db.Text
+  hiringManagerId  String?
+  organization     Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  hiringManager    User?           @relation("JobHiringManager", fields: [hiringManagerId], references: [id], onDelete: SetNull)
+  assignments      JobAssignment[]
+  candidates       Candidate[]
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([organizationId])
+  @@index([hiringManagerId])
 }
 
 model Candidate {
   id              String          @id @default(cuid())
+  organizationId  String
   name            String
   email           String?
   linkedInUrl     String?
@@ -46,6 +212,7 @@ model Candidate {
   resumeFilePath  String?
   stage           PipelineStage   @default(NEW)
   jobId           String?
+  organization    Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   job             Job?            @relation(fields: [jobId], references: [id], onDelete: SetNull)
   talentProfile   TalentProfile?
   interviews      Interview[]
@@ -54,81 +221,83 @@ model Candidate {
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
+  @@index([organizationId])
   @@index([jobId])
   @@index([stage])
 }
 
 model TalentProfile {
-  id              String   @id @default(cuid())
-  candidateId     String   @unique
+  id              String    @id @default(cuid())
+  candidateId     String    @unique
   candidate       Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  skills          Json     @default("[]")
+  skills          Json      @default("[]")
   experienceYears Float?
   roleFitScore    Float?
-  strengths       Json     @default("[]")
-  gaps            Json     @default("[]")
-  hiddenSignals   Json     @default("[]")
-  explanation     String?  @db.Text
+  strengths       Json      @default("[]")
+  gaps            Json      @default("[]")
+  hiddenSignals   Json      @default("[]")
+  explanation     String?   @db.Text
   rawAnalysis     Json?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 }
 
 model Interview {
-  id              String          @id @default(cuid())
+  id              String             @id @default(cuid())
   candidateId     String
-  candidate       Candidate       @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  candidate       Candidate          @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   title           String
-  status          InterviewStatus @default(SCHEDULED)
+  status          InterviewStatus    @default(SCHEDULED)
   scheduledAt     DateTime?
   recordingPath   String?
-  transcript      String?         @db.Text
+  transcript      String?            @db.Text
   analysis        InterviewAnalysis?
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
 
   @@index([candidateId])
 }
 
 model InterviewAnalysis {
-  id                String   @id @default(cuid())
-  interviewId       String   @unique
+  id                String    @id @default(cuid())
+  interviewId       String    @unique
   interview         Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
   hesitationScore   Float?
   confidenceScore   Float?
   clarityScore      Float?
   consistencyScore  Float?
   engagementScore   Float?
-  cognitiveSignals  Json     @default("[]")
-  behavioralMetrics Json   @default("[]")
-  riskFlags         Json     @default("[]")
-  explanation       String?  @db.Text
+  cognitiveSignals  Json      @default("[]")
+  behavioralMetrics Json      @default("[]")
+  riskFlags         Json      @default("[]")
+  explanation       String?   @db.Text
   rawAnalysis       Json?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 }
 
 model Decision {
-  id                String   @id @default(cuid())
-  candidateId       String   @unique
+  id                String    @id @default(cuid())
+  candidateId       String    @unique
   candidate         Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   hireConfidence    Float?
   recommendation    String?
-  riskFactors       Json     @default("[]")
-  comparisonNotes   String?  @db.Text
-  explanation       String?  @db.Text
+  riskFactors       Json      @default("[]")
+  comparisonNotes   String?   @db.Text
+  explanation       String?   @db.Text
   signalBreakdown   Json?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 }
 
 model Note {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   candidateId String
+  authorId    String?
   candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  content     String   @db.Text
-  tags        Json     @default("[]")
-  createdAt   DateTime @default(now())
+  content     String    @db.Text
+  tags        Json      @default("[]")
+  createdAt   DateTime  @default(now())
 
   @@index([candidateId])
 }

@@ -6,6 +6,7 @@ import { StatCard } from "@/components/features/dashboard/stat-card";
 import { StageBadge } from "@/components/features/candidates/stage-badge";
 import { Avatar } from "@/components/features/candidates/avatar";
 import { ButtonLink } from "@/components/ui/button";
+import { requireAuthContext } from "@/lib/auth/session";
 import { getDashboardData } from "@/lib/services/dashboard.service";
 import { formatScore, scoreColor } from "@/lib/utils";
 import { ArrowRight, Users, Briefcase, Mic, TrendingUp, UserPlus } from "lucide-react";
@@ -17,7 +18,8 @@ export default async function DashboardPage() {
   let recent: Awaited<ReturnType<typeof getDashboardData>>["recentCandidates"] = [];
 
   try {
-    const data = await getDashboardData();
+    const ctx = await requireAuthContext();
+    const data = await getDashboardData(ctx);
     stats = data.stats;
     recent = data.recentCandidates;
   } catch {

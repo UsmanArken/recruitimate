@@ -5,32 +5,46 @@ import {
   candidateWithJobAndInterviewsInclude,
 } from "@/lib/db/includes";
 import { badRequest, notFound } from "@/lib/api/errors";
+import { assertPermission } from "@/lib/auth/permission.service";
+import {
+  assertCandidateAccess,
+  candidatesWhereClause,
+} from "@/lib/auth/scope.service";
 import { analyzeTalent } from "@/lib/intelligence/talent/engine";
 import { generateDecision } from "@/lib/intelligence/decision/engine";
 import { toInterviewIntelligenceResult } from "@/lib/intelligence/mappers";
+import type { AuthContext } from "@/lib/auth/types";
 import type { CreateCandidateInput } from "@/lib/validators/candidate";
-import { findJobById } from "@/lib/services/job.service";
+import { getJobById } from "@/lib/services/job.service";
 import { upsertTalentProfile } from "@/lib/services/talent-profile.service";
 import { upsertDecision } from "@/lib/services/decision.service";
 
-export async function listCandidates() {
+export async function listCandidates(ctx: AuthContext) {
+  await assertPermission(ctx, { resource: "candidates", action: "read" });
+  const where = await candidatesWhereClause(ctx);
   return db.candidate.findMany({
+    where,
     include: candidateListInclude,
     orderBy: { updatedAt: "desc" },
   });
 }
 
-export async function getCandidateById(id: string) {
-  const candidate = await db.candidate.findUnique({
-    where: { id },
+export async function getCandidateById(ctx: AuthContext, id: string) {
+  await assertPermission(ctx, { resource: "candidates", action: "read" });
+  await assertCandidateAccess(ctx, id);
+
+  const candidate = await db.candidate.findFirst({
+    where: { id, organizationId: ctx.organizationId },
     include: candidateDetailInclude,
   });
   if (!candidate) throw notFound("Candidate");
   return candidate;
 }
 
-export async function createCandidate(input: CreateCandidateInput) {
-  const job = input.jobId ? await findJobById(input.jobId) : null;
+export async function createCandidate(ctx: AuthContext, input: CreateCandidateInput) {
+  await assertPermission(ctx, { resource: "candidates", action: "create" });
+
+  const job = input.jobId ? await getJobById(ctx, input.jobId) : null;
 
   const talent = await analyzeTalent(
     input.resumeText,
@@ -43,7 +57,8 @@ export async function createCandidate(input: CreateCandidateInput) {
     data: {
       name: input.name,
       email: input.email || null,
-      jobId: input.jobId || null,
+      organizationId: ctx.organizationId,
+      jobId: job?.id ?? null,
       resumeText: input.resumeText,
       linkedInUrl: input.linkedInUrl || null,
       githubUrl: input.githubUrl || null,
@@ -74,14 +89,17 @@ export async function createCandidate(input: CreateCandidateInput) {
   });
 }
 
-export async function rerunTalentAnalysis(candidateId: string) {
-  const candidate = await db.candidate.findUnique({
-    where: { id: candidateId },
+export async function rerunTalentAnalysis(ctx: AuthContext, candidateId: string) {
+  await assertPermission(ctx, { resource: "intelligence", action: "run" });
+  const { jobId } = await assertCandidateAccess(ctx, candidateId);
+
+  const candidate = await db.candidate.findFirst({
+    where: { id: candidateId, organizationId: ctx.organizationId },
     include: candidateWithJobAndInterviewsInclude,
   });
 
   if (!candidate) throw notFound("Candidate");
-  if (!candidate.resumeText) throw badRequest("No resume text on file", "NO_RESUME");
+  if (!candidate.resumeText) throw badRequest("No resume text", "NO_RESUME");
 
   const talent = await analyzeTalent(
     candidate.resumeText,
@@ -99,5 +117,5 @@ export async function rerunTalentAnalysis(candidateId: string) {
   const decision = await generateDecision(talent, interviewResult, candidate.name);
   await upsertDecision(candidateId, decision);
 
-  return { talent, decision };
+  return { talent, decision, jobId };
 }

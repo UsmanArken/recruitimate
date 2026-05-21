@@ -26,6 +26,7 @@ src/
     ├── config/                       # env.ts
     ├── db/                           # includes.ts (Prisma include shapes)
     ├── validators/                   # Zod schemas (shared API + forms)
+    ├── auth/                         # Session, DB permission engine, scope
     ├── services/                     # Business orchestration
     │   ├── candidate.service.ts
     │   ├── interview.service.ts
@@ -75,14 +76,6 @@ HTTP Request
 4. **Do** keep intelligence logic in `lib/intelligence/` (portable to workers later).
 5. **Do** use `AppError` + `handleRouteError` in API routes.
 
-## Next: MVP-028 Authentication
+## Authentication & ACL
 
-Add:
-
-```
-src/middleware.ts
-src/lib/auth/           # session, providers
-src/app/(auth)/login/
-```
-
-Auth checks belong in middleware and services — not duplicated in every route.
+See [AUTH-ACL.md](./AUTH-ACL.md). Permissions live in `Role` + `Permission` + `RolePermission` tables (database rule engine). Enforced in `lib/auth/permission.service.ts` and `lib/services/*` via `AuthContext`.

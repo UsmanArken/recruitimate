@@ -1,6 +1,9 @@
 import { db } from "@/lib/db";
 import { candidateWithTalentInclude } from "@/lib/db/includes";
 import { notFound } from "@/lib/api/errors";
+import { assertPermission } from "@/lib/auth/permission.service";
+import { assertCandidateAccess } from "@/lib/auth/scope.service";
+import type { AuthContext } from "@/lib/auth/types";
 import { analyzeInterview } from "@/lib/intelligence/interview/engine";
 import { generateDecision } from "@/lib/intelligence/decision/engine";
 import { toTalentIntelligenceResult } from "@/lib/intelligence/mappers";
@@ -8,11 +11,23 @@ import type { CreateInterviewInput } from "@/lib/validators/interview";
 import { upsertDecision } from "@/lib/services/decision.service";
 
 export async function createInterviewAndAnalyze(
+  ctx: AuthContext,
   candidateId: string,
   input: CreateInterviewInput
 ) {
-  const candidate = await db.candidate.findUnique({
-    where: { id: candidateId },
+  await assertPermission(ctx, { resource: "interviews", action: "create" });
+  const { jobId } = await assertCandidateAccess(ctx, candidateId);
+
+  if (jobId) {
+    await assertPermission(ctx, {
+      resource: "interviews",
+      action: "create",
+      jobId,
+    });
+  }
+
+  const candidate = await db.candidate.findFirst({
+    where: { id: candidateId, organizationId: ctx.organizationId },
     include: candidateWithTalentInclude,
   });
 

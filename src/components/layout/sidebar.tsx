@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { LayoutDashboard, Briefcase, Users, UserPlus, Sparkles } from "lucide-react";
 import { NavLink } from "@/components/layout/nav-link";
+import { UserMenu } from "@/components/layout/user-menu";
 
 const workspaceNav = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
@@ -59,7 +60,7 @@ export function Sidebar() {
         </div>
       </div>
 
-      <div className="border-t border-white/10 p-4">
+      <div className="p-4">
         <Link
           href="/candidates/new"
           className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition hover:bg-primary-hover"
@@ -67,10 +68,8 @@ export function Sidebar() {
           <UserPlus className="h-4 w-4" />
           Add candidate
         </Link>
-        <p className="mt-3 text-center text-[10px] text-brand-foreground/40">
-          Built for recruiters & HR teams
-        </p>
       </div>
+      <UserMenu />
     </aside>
   );
 }

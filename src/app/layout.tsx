@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
-import { AppShell } from "@/components/layout/app-shell";
+import { ConditionalShell } from "@/components/layout/conditional-shell";
+import { AuthSessionProvider } from "@/components/providers/session-provider";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -18,7 +19,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={plusJakarta.variable}>
       <body className={`${plusJakarta.className} min-h-screen antialiased`}>
-        <AppShell>{children}</AppShell>
+        <AuthSessionProvider>
+          <ConditionalShell>{children}</ConditionalShell>
+        </AuthSessionProvider>
       </body>
     </html>
   );

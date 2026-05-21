@@ -17,6 +17,14 @@ export function badRequest(message: string, code = "BAD_REQUEST"): AppError {
   return new AppError(message, 400, code);
 }
 
+export function unauthorized(message = "Unauthorized"): AppError {
+  return new AppError(message, 401, "UNAUTHORIZED");
+}
+
+export function forbidden(message = "Forbidden"): AppError {
+  return new AppError(message, 403, "FORBIDDEN");
+}
+
 export function isAppError(error: unknown): error is AppError {
   return error instanceof AppError;
 }
