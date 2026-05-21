@@ -68,16 +68,20 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Project structure
 
+Layered architecture — full guide: [docs/STRUCTURE.md](./docs/STRUCTURE.md)
+
 ```
 src/
-├── app/                    # Pages & API routes
-├── components/             # UI (minimal, explainable)
+├── app/              # Routes only (thin API + pages)
+├── components/
+│   ├── ui/           # Primitives
+│   ├── layout/       # Shell, sidebar
+│   └── features/     # candidates · intelligence UI
 └── lib/
-    └── intelligence/       # Core moat
-        ├── talent/           # Layer 1 engine
-        ├── interview/      # Layer 2 engine
-        └── decision/       # Layer 3 engine
-prisma/schema.prisma        # Data model
+    ├── services/     # Business orchestration
+    ├── intelligence/ # Core AI engines (moat)
+    ├── validators/   # Shared Zod schemas
+    └── api/          # Errors & responses
 ```
 
 ## Design principles

@@ -1,22 +1,16 @@
-import { db } from "@/lib/db";
+import { listJobs } from "@/lib/services/job.service";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { PageHeader, PageBody } from "@/components/page-header";
+import { PageHeader, PageBody } from "@/components/layout/page-header";
 import { ButtonLink } from "@/components/ui/button";
 import { Briefcase, Plus, Users } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 export default async function JobsPage() {
-  let jobs = [] as Array<
-    Awaited<ReturnType<typeof db.job.findUnique>> & {
-      _count: { candidates: number };
-    }
-  >;
+  let jobs: Awaited<ReturnType<typeof listJobs>> = [];
+
   try {
-    jobs = await db.job.findMany({
-      include: { _count: { select: { candidates: true } } },
-      orderBy: { createdAt: "desc" },
-    });
+    jobs = await listJobs();
   } catch {
     // DB not ready
   }

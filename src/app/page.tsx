@@ -1,53 +1,25 @@
 import Link from "next/link";
-import { db } from "@/lib/db";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LayerBadge } from "@/components/layer-badge";
-import { PageHeader, PageBody } from "@/components/page-header";
-import { StatCard } from "@/components/stat-card";
-import { StageBadge } from "@/components/stage-badge";
-import { Avatar } from "@/components/avatar";
+import { LayerBadge } from "@/components/features/intelligence/layer-badge";
+import { PageHeader, PageBody } from "@/components/layout/page-header";
+import { StatCard } from "@/components/features/dashboard/stat-card";
+import { StageBadge } from "@/components/features/candidates/stage-badge";
+import { Avatar } from "@/components/features/candidates/avatar";
 import { ButtonLink } from "@/components/ui/button";
+import { getDashboardData } from "@/lib/services/dashboard.service";
 import { formatScore, scoreColor } from "@/lib/utils";
-import { Users, Briefcase, Mic, TrendingUp, ArrowRight, UserPlus } from "lucide-react";
+import { ArrowRight, Users, Briefcase, Mic, TrendingUp, UserPlus } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   let stats = { candidates: 0, jobs: 0, interviewed: 0, avgConfidence: null as number | null };
-  let recent = [] as Array<{
-    id: string;
-    name: string;
-    stage: string;
-    job: { title: string } | null;
-    decision: { hireConfidence: number | null } | null;
-  }>;
+  let recent: Awaited<ReturnType<typeof getDashboardData>>["recentCandidates"] = [];
 
   try {
-    const [candidateCount, jobCount, interviewedCount, decisions, recentCandidates] =
-      await Promise.all([
-        db.candidate.count(),
-        db.job.count(),
-        db.candidate.count({ where: { stage: "INTERVIEWED" } }),
-        db.decision.findMany({ where: { hireConfidence: { not: null } } }),
-        db.candidate.findMany({
-          take: 5,
-          orderBy: { updatedAt: "desc" },
-          include: { job: true, decision: true, talentProfile: true },
-        }),
-      ]);
-
-    const avg =
-      decisions.length > 0
-        ? decisions.reduce((s, d) => s + (d.hireConfidence ?? 0), 0) / decisions.length
-        : null;
-
-    stats = {
-      candidates: candidateCount,
-      jobs: jobCount,
-      interviewed: interviewedCount,
-      avgConfidence: avg,
-    };
-    recent = recentCandidates;
+    const data = await getDashboardData();
+    stats = data.stats;
+    recent = data.recentCandidates;
   } catch {
     // DB not connected yet
   }

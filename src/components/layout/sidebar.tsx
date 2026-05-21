@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { LayoutDashboard, Briefcase, Users, UserPlus, Sparkles } from "lucide-react";
-import { NavLink } from "@/components/nav-link";
+import { NavLink } from "@/components/layout/nav-link";
 
 const workspaceNav = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },

@@ -1,18 +1,18 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { db } from "@/lib/db";
+import { getCandidateById } from "@/lib/services/candidate.service";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LayerBadge } from "@/components/layer-badge";
-import { ScoreBadge } from "@/components/score-badge";
-import { SignalList } from "@/components/signal-list";
-import { RecommendationBadge } from "@/components/recommendation-badge";
-import { TrustBanner } from "@/components/trust-banner";
-import { StageBadge } from "@/components/stage-badge";
-import { Avatar } from "@/components/avatar";
-import { PageBody } from "@/components/page-header";
+import { LayerBadge } from "@/components/features/intelligence/layer-badge";
+import { ScoreBadge } from "@/components/features/intelligence/score-badge";
+import { SignalList } from "@/components/features/intelligence/signal-list";
+import { RecommendationBadge } from "@/components/features/intelligence/recommendation-badge";
+import { TrustBanner } from "@/components/features/intelligence/trust-banner";
+import { StageBadge } from "@/components/features/candidates/stage-badge";
+import { Avatar } from "@/components/features/candidates/avatar";
+import { InterviewForm } from "@/components/features/candidates/interview-form";
+import { ReanalyzeButton } from "@/components/features/candidates/reanalyze-button";
+import { PageBody } from "@/components/layout/page-header";
 import type { Signal } from "@/lib/intelligence/types";
-import { InterviewForm } from "./interview-form";
-import { ReanalyzeButton } from "./reanalyze-button";
 import { ChevronLeft, Mail } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -24,18 +24,10 @@ export default async function CandidateDetailPage({
 }) {
   const { id } = await params;
 
-  let candidate = null;
+  let candidate: Awaited<ReturnType<typeof getCandidateById>> | null = null;
 
   try {
-    candidate = await db.candidate.findUnique({
-      where: { id },
-      include: {
-        job: true,
-        talentProfile: true,
-        decision: true,
-        interviews: { include: { analysis: true }, orderBy: { createdAt: "desc" } },
-      },
-    });
+    candidate = await getCandidateById(id);
   } catch {
     notFound();
   }

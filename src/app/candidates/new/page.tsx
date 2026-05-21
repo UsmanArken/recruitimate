@@ -3,10 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { LayerBadge } from "@/components/layer-badge";
-import { PageHeader, PageBody } from "@/components/page-header";
+import { LayerBadge } from "@/components/features/intelligence/layer-badge";
+import { PageHeader, PageBody } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
-import { TrustBanner } from "@/components/trust-banner";
+import { TrustBanner } from "@/components/features/intelligence/trust-banner";
 
 type Job = { id: string; title: string };
 

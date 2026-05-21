@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { db } from "@/lib/db";
+import { listCandidates } from "@/lib/services/candidate.service";
 import { formatScore, scoreColor } from "@/lib/utils";
-import { PageHeader, PageBody } from "@/components/page-header";
-import { StageBadge } from "@/components/stage-badge";
-import { Avatar } from "@/components/avatar";
+import { PageHeader, PageBody } from "@/components/layout/page-header";
+import { StageBadge } from "@/components/features/candidates/stage-badge";
+import { Avatar } from "@/components/features/candidates/avatar";
 import { ButtonLink } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { UserPlus, Users } from "lucide-react";
@@ -11,19 +11,10 @@ import { UserPlus, Users } from "lucide-react";
 export const dynamic = "force-dynamic";
 
 export default async function CandidatesPage() {
-  let candidates = [] as Awaited<
-    ReturnType<
-      typeof db.candidate.findMany<{
-        include: { job: true; talentProfile: true; decision: true };
-      }>
-    >
-  >;
+  let candidates: Awaited<ReturnType<typeof listCandidates>> = [];
 
   try {
-    candidates = await db.candidate.findMany({
-      include: { job: true, talentProfile: true, decision: true },
-      orderBy: { updatedAt: "desc" },
-    });
+    candidates = await listCandidates();
   } catch {
     // DB not ready
   }

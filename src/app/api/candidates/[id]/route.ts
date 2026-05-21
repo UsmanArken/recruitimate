@@ -1,24 +1,15 @@
-import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { handleRouteError, jsonOk } from "@/lib/api/response";
+import * as candidateService from "@/lib/services/candidate.service";
 
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
-  const candidate = await db.candidate.findUnique({
-    where: { id },
-    include: {
-      job: true,
-      talentProfile: true,
-      decision: true,
-      interviews: { include: { analysis: true }, orderBy: { createdAt: "desc" } },
-      notes: { orderBy: { createdAt: "desc" } },
-    },
-  });
-
-  if (!candidate) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  try {
+    const { id } = await params;
+    const candidate = await candidateService.getCandidateById(id);
+    return jsonOk(candidate);
+  } catch (error) {
+    return handleRouteError(error);
   }
-  return NextResponse.json(candidate);
 }

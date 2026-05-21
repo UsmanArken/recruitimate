@@ -12,6 +12,10 @@ Recruitimate is **not** an ATS, interview bot, or resume screener alone. It is a
 | Interview Intelligence | `src/lib/intelligence/interview/` | Transcript (+ resume for consistency hints) | Cognitive/behavioral signals, risk flags |
 | Decision Intelligence | `src/lib/intelligence/decision/` | Talent + interview results | Hire confidence, recommendation, explanation |
 
+## Code structure
+
+See [docs/STRUCTURE.md](./docs/STRUCTURE.md) for the layered layout (`app` → `services` → `intelligence` → Prisma).
+
 ## Data flow
 
 ```
