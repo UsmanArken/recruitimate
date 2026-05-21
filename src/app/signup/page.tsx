@@ -4,7 +4,10 @@ import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { AlertCircle, Building2, Loader2, Lock, Mail, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AuthLayout } from "@/components/features/auth/auth-layout";
+import { AuthField } from "@/components/features/auth/auth-field";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -51,56 +54,68 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-6">
-      <div className="w-full max-w-md rounded-xl border border-border bg-card p-8 shadow-lg">
-        <h1 className="text-2xl font-bold text-foreground">Create workspace</h1>
-        <p className="mt-1 text-sm text-muted">
-          Self-signup — you become organization owner with full access.
-        </p>
-
-        <form onSubmit={onSubmit} className="mt-6 space-y-4">
-          <label className="block">
-            <span className="text-sm font-semibold">Your name</span>
-            <input name="name" required className="input-hr mt-1.5" />
-          </label>
-          <label className="block">
-            <span className="text-sm font-semibold">Work email</span>
-            <input name="email" type="email" required className="input-hr mt-1.5" />
-          </label>
-          <label className="block">
-            <span className="text-sm font-semibold">Password</span>
-            <input
-              name="password"
-              type="password"
-              required
-              minLength={8}
-              className="input-hr mt-1.5"
-            />
-          </label>
-          <label className="block">
-            <span className="text-sm font-semibold">Organization name</span>
-            <input
-              name="organizationName"
-              required
-              placeholder="Acme Talent Team"
-              className="input-hr mt-1.5"
-            />
-          </label>
-          {error && (
-            <p className="rounded-lg bg-risk-bg px-3 py-2 text-sm text-risk">{error}</p>
-          )}
-          <Button type="submit" disabled={loading} className="w-full">
-            {loading ? "Creating…" : "Create workspace"}
-          </Button>
-        </form>
-
-        <p className="mt-6 text-center text-sm text-muted">
+    <AuthLayout
+      title="Create your workspace"
+      subtitle="Start hiring with intelligence—your organization, your pipeline, full owner access."
+      footer={
+        <>
           Already have an account?{" "}
-          <Link href="/login" className="font-semibold text-primary hover:underline">
+          <Link
+            href="/login"
+            className="font-semibold text-primary transition hover:text-primary-hover hover:underline"
+          >
             Sign in
           </Link>
-        </p>
-      </div>
-    </div>
+        </>
+      }
+    >
+      <form onSubmit={onSubmit} className="space-y-4">
+        <AuthField label="Your name" name="name" icon={User} required autoComplete="name" />
+        <AuthField
+          label="Work email"
+          name="email"
+          type="email"
+          icon={Mail}
+          required
+          autoComplete="email"
+        />
+        <AuthField
+          label="Password"
+          name="password"
+          type="password"
+          icon={Lock}
+          required
+          minLength={8}
+          autoComplete="new-password"
+          placeholder="At least 8 characters"
+        />
+        <AuthField
+          label="Organization name"
+          name="organizationName"
+          icon={Building2}
+          required
+          placeholder="Acme Talent Team"
+        />
+        {error && (
+          <div
+            role="alert"
+            className="flex gap-3 rounded-xl border border-risk/20 bg-risk-bg px-4 py-3 text-sm text-risk"
+          >
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <p>{error}</p>
+          </div>
+        )}
+        <Button type="submit" disabled={loading} className="mt-2 h-11 w-full text-base">
+          {loading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Creating workspace…
+            </>
+          ) : (
+            "Create workspace"
+          )}
+        </Button>
+      </form>
+    </AuthLayout>
   );
 }

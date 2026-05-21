@@ -4,7 +4,10 @@ import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Loader2, Lock, Mail, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AuthLayout } from "@/components/features/auth/auth-layout";
+import { AuthField } from "@/components/features/auth/auth-field";
 
 function LoginForm() {
   const router = useRouter();
@@ -27,7 +30,7 @@ function LoginForm() {
 
     setLoading(false);
     if (res?.error) {
-      setError("Invalid email or password");
+      setError("Invalid email or password. Check your credentials and try again.");
       return;
     }
     router.push(callbackUrl);
@@ -35,42 +38,82 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-6">
-      <div className="w-full max-w-md rounded-xl border border-border bg-card p-8 shadow-lg">
-        <h1 className="text-2xl font-bold text-foreground">Sign in</h1>
-        <p className="mt-1 text-sm text-muted">Recruitimate hiring intelligence</p>
-
-        <form onSubmit={onSubmit} className="mt-6 space-y-4">
-          <label className="block">
-            <span className="text-sm font-semibold">Email</span>
-            <input name="email" type="email" required className="input-hr mt-1.5" />
-          </label>
-          <label className="block">
-            <span className="text-sm font-semibold">Password</span>
-            <input name="password" type="password" required className="input-hr mt-1.5" />
-          </label>
-          {error && (
-            <p className="rounded-lg bg-risk-bg px-3 py-2 text-sm text-risk">{error}</p>
-          )}
-          <Button type="submit" disabled={loading} className="w-full">
-            {loading ? "Signing in…" : "Sign in"}
-          </Button>
-        </form>
-
-        <p className="mt-6 text-center text-sm text-muted">
+    <AuthLayout
+      title="Welcome back"
+      subtitle="Sign in to your hiring workspace—candidates, roles, and intelligence in one place."
+      footer={
+        <>
           New team?{" "}
-          <Link href="/signup" className="font-semibold text-primary hover:underline">
-            Create workspace
+          <Link
+            href="/signup"
+            className="font-semibold text-primary transition hover:text-primary-hover hover:underline"
+          >
+            Create a workspace
           </Link>
-        </p>
-      </div>
+        </>
+      }
+    >
+      <form onSubmit={onSubmit} className="space-y-5">
+        <AuthField
+          label="Work email"
+          name="email"
+          type="email"
+          icon={Mail}
+          required
+          autoComplete="email"
+          placeholder="you@company.com"
+        />
+        <AuthField
+          label="Password"
+          name="password"
+          type="password"
+          icon={Lock}
+          required
+          autoComplete="current-password"
+          placeholder="••••••••"
+        />
+
+        {error && (
+          <div
+            role="alert"
+            className="flex gap-3 rounded-xl border border-risk/20 bg-risk-bg px-4 py-3 text-sm text-risk"
+          >
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <p>{error}</p>
+          </div>
+        )}
+
+        <Button type="submit" disabled={loading} className="mt-2 h-11 w-full text-base">
+          {loading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Signing in…
+            </>
+          ) : (
+            "Sign in"
+          )}
+        </Button>
+      </form>
+
+      <p className="mt-6 border-t border-border-subtle pt-6 text-center text-xs leading-relaxed text-muted">
+        By signing in you agree to use Recruitimate as an advisory tool—final hiring
+        decisions remain with your team.
+      </p>
+    </AuthLayout>
+  );
+}
+
+function LoginFallback() {
+  return (
+    <div className="app-canvas flex min-h-screen items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
     </div>
   );
 }
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+    <Suspense fallback={<LoginFallback />}>
       <LoginForm />
     </Suspense>
   );

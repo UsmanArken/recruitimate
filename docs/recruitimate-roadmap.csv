@@ -1,12 +1,13 @@
 ID,Milestone,Category,Layer,Task,Description,Priority,Status,Depends On,Notes
 F-001,Foundation,Platform,—,Project scaffold,Next.js 15 + TypeScript + Prisma + PostgreSQL + Docker Compose,P0,Done,,
 F-002,Foundation,Platform,—,Git repository,Initialize repo connect remote CI-ready structure,P0,Done,,
-F-003,Foundation,Platform,—,Environment configuration,.env.example DATABASE_URL OPENAI_API_KEY app URL,P0,Done,,
+F-003,Foundation,Platform,—,Environment configuration,.env.example DATABASE_URL OPENAI_API_KEY AUTH_SECRET AUTH_URL SUPER_ADMIN_EMAIL/PASSWORD,P0,Done,,
 F-004,Foundation,Platform,—,Core data model,Jobs Candidates TalentProfile Interview Decision Note pipeline stages,P0,Done,,
-F-005,Foundation,Documentation,—,README and architecture docs,Developer onboarding and layer mapping,P1,Done,,
+F-005,Foundation,Documentation,—,README and architecture docs,Developer onboarding STRUCTURE.md AUTH-ACL.md layer mapping,P1,Done,,
 F-006,Foundation,Documentation,—,Product and system design guide,HTML doc with Mermaid diagrams in docs/,P1,Done,,
 F-007,Foundation,UI,—,HR-themed design system,Navy sidebar teal primary pipeline badges trust banners,P1,Done,,
 F-008,Foundation,UI,—,App shell and navigation,Dashboard Candidates Open roles sidebar active states,P0,Done,,
+F-009,Foundation,Platform,—,Layered application architecture,Thin API routes services validators feature components,P1,Done,,
 MVP-001,MVP,Talent Intelligence,Talent,Resume text ingestion,Paste resume on candidate create triggers talent analysis,P0,Done,,
 MVP-002,MVP,Talent Intelligence,Talent,Talent intelligence engine,Skill extraction fit score strengths gaps hidden signals with evidence,P0,Done,MVP-001,
 MVP-003,MVP,Talent Intelligence,Talent,Role-aware fit scoring,Match candidate skills against job requirements when role assigned,P0,Done,MVP-002,
@@ -20,30 +21,30 @@ MVP-010,MVP,Interview Intelligence,Interview,Interview risk flags,Advisory follo
 MVP-011,MVP,Decision Intelligence,Decision,Decision engine synthesis,Combine talent and interview into hire confidence recommendation,P0,Done,MVP-002,
 MVP-012,MVP,Decision Intelligence,Decision,Explainable recommendations,Human-readable explanation and signal breakdown,P0,Done,MVP-011,
 MVP-013,MVP,Decision Intelligence,Decision,Risk factors output,Merge talent gaps and interview flags into decision,P1,Done,MVP-011,
-MVP-014,MVP,Pipeline,—,Job / requisition CRUD,Create and list open roles with description and requirements,P0,Done,,
+MVP-014,MVP,Pipeline,—,Job / requisition CRUD,Create list and detail open roles with description requirements and team panel,P0,Done,,/jobs/[id]
 MVP-015,MVP,Pipeline,—,Candidate CRUD,Add list view candidate profiles linked to jobs,P0,Done,,
 MVP-016,MVP,Pipeline,—,Pipeline stages,NEW through HIRED/REJECTED stage tracking on candidates,P1,Done,MVP-015,
 MVP-017,MVP,Pipeline,—,Stage badges UI,ATS-style pipeline stage labels in list and profile,P2,Done,MVP-016,
 MVP-018,MVP,UI,—,Hiring dashboard,Stats and recent pipeline activity,P0,Done,,
 MVP-019,MVP,UI,—,Three-layer candidate profile,Talent Interview Decision sections on single page,P0,Done,,
 MVP-020,MVP,UI,—,Trust and advisory messaging,Banners clarifying AI assists does not replace human judgment,P1,Done,,
-MVP-021,MVP,API,—,REST API routes,Jobs candidates talent re-run interviews endpoints,P0,Done,,
-MVP-022,MVP,Platform,—,Local development runbook,Docker Postgres db push npm run dev documented,P1,Done,,
+MVP-021,MVP,API,—,REST API routes,Jobs candidates talent re-run interviews auth invites admin endpoints,P0,Done,,
+MVP-022,MVP,Platform,—,Local development runbook,Docker Postgres db push db:seed npm run dev documented,P1,Done,,
 MVP-023,MVP,Talent Intelligence,Talent,Resume PDF upload,Upload PDF/DOCX and extract text automatically,P1,Not Started,,MVP gap
 MVP-024,MVP,Talent Intelligence,Talent,LinkedIn profile ingestion,Fetch or paste LinkedIn data into talent engine,P2,Not Started,,
 MVP-025,MVP,Talent Intelligence,Talent,GitHub / portfolio parsing,Extract signals from repos and portfolio URLs,P2,Not Started,,
 MVP-026,MVP,Pipeline,—,Candidate notes and tagging,Notes model exists — build UI to add view tags,P1,Not Started,MVP-015,
 MVP-027,MVP,Pipeline,—,Basic interview scheduling,Schedule datetime field calendar invite stub,P2,Not Started,,
-MVP-028,MVP,Platform,—,Authentication,Login signup invite NextAuth sessions,P0,Done,,
-MVP-029,MVP,Platform,—,Database ACL engine,Role Permission RolePermission org-scoped data,P0,Done,MVP-028,
-MVP-029b,MVP,Platform,—,Job interviewer assignments,JobAssignment + JOB_INTERVIEWER role permissions,P1,Done,MVP-029,/jobs/[id] team panel
-MVP-029c,MVP,Platform,—,Platform super admin,PLATFORM_SUPER_ADMIN seed + SUPER_ADMIN_EMAIL login promote + /admin,P0,Done,MVP-029,db:seed db:bootstrap-admin
+MVP-028,MVP,Platform,—,Authentication,Login signup invite NextAuth JWT sessions middleware,P0,Done,,
+MVP-029,MVP,Platform,—,Database ACL engine,Role Permission RolePermission org-scoped data organizationId on entities,P0,Done,MVP-028,
+MVP-029b,MVP,Platform,—,Job interviewer assignments,JobAssignment + JOB_INTERVIEWER role permissions job team UI,P1,Done,MVP-029,/jobs/[id] team panel
+MVP-029c,MVP,Platform,—,Platform super admin,PLATFORM_SUPER_ADMIN seed env bootstrap login sync cross-tenant /admin,P0,Done,MVP-029,db:seed db:bootstrap-admin SUPER_ADMIN_EMAIL
 MVP-030,MVP,Interview Intelligence,Interview,Interview recording upload,Upload audio/video file store reference,P1,Not Started,,Can defer to Phase 2
 MVP-031,MVP,Interview Intelligence,Interview,Whisper transcription,Auto-generate transcript from recording,P1,Not Started,MVP-030,
 MVP-032,MVP,UI,—,Empty states and onboarding,First-run guidance for new HR users,P2,Not Started,,
 MVP-033,MVP,Platform,—,Error handling and logging,Consistent API errors request logging,P1,Not Started,,
 MVP-034,MVP,Platform,—,MVP QA and test plan,End-to-end checklist for demo-ready quality,P1,Not Started,,
-MVP-035,MVP,Platform,—,MVP deployment,Deploy to staging Vercel/Railway + managed Postgres,P1,Not Started,MVP-028,
+MVP-035,MVP,Platform,—,MVP deployment,Deploy to staging Vercel/Railway + managed Postgres,P1,Not Started,MVP-029c,
 P2-001,Phase 2,Interview Intelligence,Interview,Real-time interview assist,Live suggestions follow-up questions during interview,P0,Not Started,MVP-031,Core Phase 2 moat
 P2-002,Phase 2,Interview Intelligence,Interview,Real-time inconsistency flags,Flag contradictions as they occur in live transcript,P1,Not Started,P2-001,
 P2-003,Phase 2,Interview Intelligence,Interview,Cross-signal validation,Compare resume claims vs interview answers,P0,Not Started,MVP-008,
@@ -77,8 +78,9 @@ P3-005,Phase 3,Analytics,—,Org-level hiring analytics,Team dashboards time-to-
 P3-006,Phase 3,Analytics,—,Bias and fairness reporting,Aggregate bias indicators across interviews,P1,Not Started,P2-006,
 P3-007,Phase 3,Talent Intelligence,Talent,Passive candidate signals,External labor market data integration,P2,Not Started,,
 P3-008,Phase 3,Talent Intelligence,Talent,Career trajectory modeling,Long-term growth consistency signals,P2,Not Started,,
-P3-009,Phase 3,Platform,—,Multi-tenant organizations,Separate workspaces per company,P1,Not Started,MVP-028,
-P3-010,Phase 3,Platform,—,Team and seat management,Invite users assign roles per org,P1,Not Started,P3-009,
+P3-009,Phase 3,Platform,—,Multi-tenant organizations,Organization model slug org-scoped jobs and candidates signup per tenant,P1,Done,MVP-028,MVP baseline
+P3-010,Phase 3,Platform,—,Team and seat management,Invite users org roles settings/team job interviewer assignments,P1,Done,MVP-029|MVP-029b
+P3-011,Phase 3,Platform,—,Platform admin enhancements,Tenant impersonation usage analytics billing hooks,P2,Not Started,MVP-029c,Extends CP-024
 CP-001,Complete Product,Platform,—,Production infrastructure,HA Postgres Redis CDN monitoring alerting,P0,Not Started,MVP-035,
 CP-002,Complete Product,Platform,—,CI/CD pipeline,Automated test lint build deploy on merge,P0,Not Started,,
 CP-003,Complete Product,Platform,—,Automated test suite,Unit integration E2E for intelligence engines,P0,Not Started,,
@@ -102,7 +104,7 @@ CP-020,Complete Product,UI,—,Accessibility WCAG 2.1 AA,Screen reader keyboard 
 CP-021,Complete Product,Platform,—,Performance at scale,Support 10k+ candidates sub-second list views,P1,Not Started,CP-013,
 CP-022,Complete Product,Platform,—,Internationalization,i18n for multi-region HR teams,P3,Not Started,,
 CP-023,Complete Product,Commercial,—,Billing and subscriptions,Stripe plans seat-based pricing,P2,Not Started,P3-009,
-CP-024,Complete Product,Commercial,—,Admin console,Super-admin org management usage analytics,P2,Not Started,P3-009,
+CP-024,Complete Product,Commercial,—,Admin console,Super-admin org list platform stats cross-tenant view,P2,Done,MVP-029c,/admin MVP; usage analytics in P3-011
 CP-025,Complete Product,Documentation,—,Customer help center,Recruiter guides FAQs video walkthroughs,P2,Not Started,,
 CP-026,Complete Product,Documentation,—,API documentation,OpenAPI spec developer portal,P2,Not Started,CP-012,
 CP-027,Complete Product,Quality,—,Intelligence accuracy benchmarking,Lab dataset precision/recall metrics per signal,P1,Not Started,CP-015,
