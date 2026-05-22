@@ -60,6 +60,16 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+### Quality checks
+
+```bash
+npm run db:seed          # required before qa:db
+npm run qa               # lint, types, build, unit tests, DB smoke
+npm run qa:api           # optional — with npm run dev running
+```
+
+See [docs/QA.md](./docs/QA.md) for the full checklist and CI suggestions.
+
 ### Typical flow
 
 1. **Create a job** → `/jobs/new` (enables role fit scoring)

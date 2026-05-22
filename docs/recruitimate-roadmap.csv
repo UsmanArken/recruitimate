@@ -43,7 +43,7 @@ MVP-030,MVP,Interview Intelligence,Interview,Interview recording upload,Upload a
 MVP-031,MVP,Interview Intelligence,Interview,Whisper transcription,Auto-generate transcript from recording,P1,Not Started,MVP-030,
 MVP-032,MVP,UI,—,Empty states and onboarding,First-run guidance for new HR users,P2,Not Started,,
 MVP-033,MVP,Platform,—,Error handling and logging,Consistent API errors request logging,P1,Not Started,,
-MVP-034,MVP,Platform,—,MVP QA and test plan,End-to-end checklist for demo-ready quality,P1,Not Started,,
+MVP-034,MVP,Platform,—,MVP QA and test plan,Automated npm run qa scripts + manual demo checklist in docs/QA.md,P1,Done,,
 MVP-035,MVP,Platform,—,MVP deployment,Deploy to staging Vercel/Railway + managed Postgres,P1,Not Started,MVP-029c,
 P2-001,Phase 2,Interview Intelligence,Interview,Real-time interview assist,Live suggestions follow-up questions during interview,P0,Not Started,MVP-031,Core Phase 2 moat
 P2-002,Phase 2,Interview Intelligence,Interview,Real-time inconsistency flags,Flag contradictions as they occur in live transcript,P1,Not Started,P2-001,

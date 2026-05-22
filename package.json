@@ -12,7 +12,13 @@
     "db:studio": "prisma studio",
     "db:migrate": "prisma migrate dev",
     "db:seed": "npx tsx prisma/seed.ts",
-    "db:bootstrap-admin": "npx tsx prisma/bootstrap-admin.ts"
+    "db:bootstrap-admin": "npx tsx prisma/bootstrap-admin.ts",
+    "typecheck": "tsc --noEmit",
+    "qa": "tsx scripts/qa/run.ts",
+    "qa:static": "tsx scripts/qa/run.ts --static-only",
+    "qa:unit": "tsx --test scripts/qa/intelligence.test.ts scripts/qa/validators.test.ts",
+    "qa:db": "tsx scripts/qa/db-smoke.ts",
+    "qa:api": "tsx scripts/qa/api-smoke.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
