@@ -8,32 +8,32 @@ F-006,Foundation,Documentation,—,Product and system design guide,HTML doc with
 F-007,Foundation,UI,—,HR-themed design system,Navy sidebar teal primary pipeline badges trust banners,P1,Done,,
 F-008,Foundation,UI,—,App shell and navigation,Dashboard Candidates Open roles sidebar active states,P0,Done,,
 F-009,Foundation,Platform,—,Layered application architecture,Thin API routes services validators feature components,P1,Done,,
-MVP-001,MVP,Talent Intelligence,Talent,Resume text ingestion,Paste resume on candidate create triggers talent analysis,P0,Done,,
+MVP-001,MVP,Talent Intelligence,Talent,Resume text ingestion,Paste or upload resume on intake; creates person + first JobApplication with talent analysis,P0,Done,MVP-015,
 MVP-002,MVP,Talent Intelligence,Talent,Talent intelligence engine,Skill extraction fit score strengths gaps hidden signals with evidence,P0,Done,MVP-001,
 MVP-003,MVP,Talent Intelligence,Talent,Role-aware fit scoring,Match candidate skills against job requirements when role assigned,P0,Done,MVP-002,
 MVP-004,MVP,Talent Intelligence,Talent,Heuristic fallback analysis,Works without OpenAI API key for local dev,P1,Done,MVP-002,
 MVP-005,MVP,Talent Intelligence,Talent,OpenAI-powered analysis,Optional GPT-4o-mini JSON extraction for talent profile,P1,Done,MVP-002,
 MVP-006,MVP,Talent Intelligence,Talent,Re-run talent analysis,Refresh talent and decision per JobApplication from campaign profile,P2,Done,MVP-015b,/api/applications/[id]/talent
-MVP-007,MVP,Interview Intelligence,Interview,Transcript ingestion,Paste interview transcript post-interview analysis,P0,Done,,
+MVP-007,MVP,Interview Intelligence,Interview,Transcript ingestion,Paste transcript on campaign profile; triggers analysis and stage INTERVIEWED,P0,Done,MVP-015b,
 MVP-008,MVP,Interview Intelligence,Interview,Post-interview signal analysis,Hesitation confidence clarity consistency engagement scores,P0,Done,MVP-007,
 MVP-009,MVP,Interview Intelligence,Interview,Cognitive and behavioral signals,Structured signals with evidence and confidence levels,P0,Done,MVP-008,
 MVP-010,MVP,Interview Intelligence,Interview,Interview risk flags,Advisory follow-up flags not deception claims,P1,Done,MVP-008,
-MVP-011,MVP,Decision Intelligence,Decision,Decision engine synthesis,Combine talent and interview into hire confidence recommendation,P0,Done,MVP-002,
+MVP-011,MVP,Decision Intelligence,Decision,Decision engine synthesis,Per-application hire confidence from talent + interview signals,P0,Done,MVP-002|MVP-015b,
 MVP-012,MVP,Decision Intelligence,Decision,Explainable recommendations,Human-readable explanation and signal breakdown,P0,Done,MVP-011,
 MVP-013,MVP,Decision Intelligence,Decision,Risk factors output,Merge talent gaps and interview flags into decision,P1,Done,MVP-011,
 MVP-014,MVP,Pipeline,—,Job / requisition CRUD,Create list and detail open roles with description requirements and team panel,P0,Done,,/jobs/[id]
 MVP-015,MVP,Pipeline,—,Candidate CRUD,Person record + applications per open position; list one row per campaign,P0,Done,,
-MVP-015b,MVP,Pipeline,—,Multi-position applications,Same resume reviewed for multiple jobs via JobApplication unique candidate+job,P1,Done,MVP-015,/candidates/[id]/applications/[id]
-MVP-016,MVP,Pipeline,—,Pipeline stages,NEW through HIRED/REJECTED per JobApplication not per person,P1,Done,MVP-015,
+MVP-015b,MVP,Pipeline,—,Multi-position applications,JobApplication per candidate+job; person hub; apply-to-position; campaign profile,P1,Done,MVP-015,/candidates/[id]/applications/[id]
+MVP-016,MVP,Pipeline,—,Pipeline stages,NEW through HIRED/REJECTED per JobApplication; auto advance on interview,P1,Done,MVP-015,No manual stage editor yet
 MVP-017,MVP,Pipeline,—,Stage badges UI,ATS-style pipeline stage labels in list and profile,P2,Done,MVP-016,
 MVP-018,MVP,UI,—,Hiring dashboard,People + position-review stats and recent application activity,P0,Done,MVP-015b,
 MVP-019,MVP,UI,—,Three-layer candidate profile,Talent Interview Decision per application; person hub lists campaigns,P0,Done,MVP-015b,/candidates/[id]/applications/[id]
 MVP-020,MVP,UI,—,Trust and advisory messaging,Banners clarifying AI assists does not replace human judgment,P1,Done,,
 MVP-021,MVP,API,—,REST API routes,Jobs candidates applications talent interviews resume parse auth invites admin,P0,Done,MVP-015b,
-MVP-022,MVP,Platform,—,Local development runbook,Docker Postgres db push db:seed npm run dev documented,P1,Done,,
+MVP-022,MVP,Platform,—,Local development runbook,Docker Postgres db push db:seed db:migrate-applications npm run dev documented,P1,Done,,
 MVP-023,MVP,Talent Intelligence,Talent,Resume PDF upload,Upload PDF/DOCX parse API and new-candidate upload UI,P1,Done,,pdf-parse mammoth
-MVP-024,MVP,Talent Intelligence,Talent,LinkedIn profile ingestion,Fetch or paste LinkedIn data into talent engine,P2,Not Started,,
-MVP-025,MVP,Talent Intelligence,Talent,GitHub / portfolio parsing,Extract signals from repos and portfolio URLs,P2,Not Started,,
+MVP-024,MVP,Talent Intelligence,Talent,LinkedIn profile ingestion,Fetch or paste LinkedIn data into talent engine,P2,Not Started,,URL field on intake only
+MVP-025,MVP,Talent Intelligence,Talent,GitHub / portfolio parsing,Extract signals from repos and portfolio URLs,P2,Not Started,,URL fields on intake only
 MVP-026,MVP,Pipeline,—,Candidate notes and tagging,Notes model exists — build UI to add view tags,P1,Not Started,MVP-015,
 MVP-027,MVP,Pipeline,—,Basic interview scheduling,Schedule datetime field calendar invite stub,P2,Not Started,,
 MVP-028,MVP,Platform,—,Authentication,Login signup invite NextAuth JWT sessions middleware,P0,Done,,
@@ -42,13 +42,14 @@ MVP-029b,MVP,Platform,—,Job interviewer assignments,JobAssignment + JOB_INTERV
 MVP-029c,MVP,Platform,—,Platform super admin,PLATFORM_SUPER_ADMIN seed env bootstrap login sync cross-tenant /admin,P0,Done,MVP-029,db:seed db:bootstrap-admin SUPER_ADMIN_EMAIL
 MVP-030,MVP,Interview Intelligence,Interview,Interview recording upload,Upload audio/video file store reference,P1,Not Started,,Can defer to Phase 2
 MVP-031,MVP,Interview Intelligence,Interview,Whisper transcription,Auto-generate transcript from recording,P1,Not Started,MVP-030,
-MVP-032,MVP,UI,—,Empty states and onboarding,First-run guidance for new HR users,P2,Not Started,,
-MVP-033,MVP,Platform,—,Error handling and logging,Consistent API errors request logging,P1,Not Started,,
+MVP-032,MVP,UI,—,Empty states and onboarding,First-run guidance for new HR users,P2,In Progress,,Partial: dashboard/jobs/candidates empty cards
+MVP-033,MVP,Platform,—,Error handling and logging,AppError + handleRouteError on API routes; structured JSON errors,P1,In Progress,,Centralized request logging not implemented
 MVP-034,MVP,Platform,—,MVP QA and test plan,Automated npm run qa scripts + manual demo checklist in docs/QA.md,P1,Done,,resume-extract validators intelligence
 MVP-035,MVP,Platform,—,MVP deployment,Deploy to staging Vercel/Railway + managed Postgres,P1,Not Started,MVP-029c,
 MVP-036,MVP,Decision Intelligence,Decision,Phased hiring intelligence,Role fit and hire confidence only with campaign + interview; honest pending states,P1,Done,MVP-015b,candidate-context IntelligencePhasePanel
-MVP-037,MVP,UI,—,Applicant intake position picker,Server-loaded open roles; compact custom dropdown (scrollable menu),P1,Done,MVP-023,MVP-014,/candidates/new
+MVP-037,MVP,UI,—,Applicant intake position picker,Server-loaded open roles; compact custom dropdown (scrollable menu),P1,Done,MVP-014|MVP-023,/candidates/new
 MVP-038,MVP,Platform,—,JobApplication DB migration,prisma/migrate-to-applications.ts for legacy Candidate.jobId upgrades,P2,Done,MVP-015b,npm run db:migrate-applications
+MVP-039,MVP,UI,—,Auth experience redesign,HR-themed login/signup with AuthLayout and AuthField components,P2,Done,MVP-028,/login /signup
 P2-001,Phase 2,Interview Intelligence,Interview,Real-time interview assist,Live suggestions follow-up questions during interview,P0,Not Started,MVP-031,Core Phase 2 moat
 P2-002,Phase 2,Interview Intelligence,Interview,Real-time inconsistency flags,Flag contradictions as they occur in live transcript,P1,Not Started,P2-001,
 P2-003,Phase 2,Interview Intelligence,Interview,Cross-signal validation,Compare resume claims vs interview answers,P0,Not Started,MVP-008,

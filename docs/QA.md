@@ -38,9 +38,9 @@ npm run db:seed
 | Automated | Manual (demo checklist) |
 |-----------|-------------------------|
 | Lint / types / build | Sign in as org owner |
-| Talent / interview / decision heuristics | Create job → add candidate → upload PDF/DOCX or paste resume |
-| Resume extract helpers (normalize, file types) | Verify extracted text in textarea before submit |
-| Zod validators | Add interview transcript → verify 3 layers update |
+| Talent / interview / decision heuristics | Create job → intake: pick position → upload PDF/DOCX or paste resume |
+| Resume extract helpers (normalize, file types) | Open campaign profile; apply same person to second job |
+| Zod validators | Add interview transcript on campaign → verify 3 layers + phased states |
 | DB roles, permissions, super admin | Invite teammate → accept invite |
 | Public/protected HTTP routes | Job team assign interviewer |
 | | Platform admin `/admin` (super admin only) |
@@ -72,10 +72,13 @@ Run `qa:api` against a preview deployment URL after deploy.
 
 ## Remaining MVP dev (while you set up production)
 
-| ID | Task | Priority |
-|----|------|----------|
-| MVP-023 | Resume PDF upload | P1 |
-| MVP-026 | Candidate notes UI | P1 |
-| MVP-033 | Error handling & logging | P1 |
-| MVP-035 | MVP deployment | P1 (your track) |
-| MVP-032 | Empty states / onboarding | P2 |
+| ID | Task | Priority | Status |
+|----|------|----------|--------|
+| MVP-026 | Candidate notes UI | P1 | Not Started |
+| MVP-033 | Error handling & logging (finish request logging) | P1 | In Progress |
+| MVP-035 | MVP deployment | P1 | Not Started |
+| MVP-032 | Empty states / onboarding polish | P2 | In Progress |
+| MVP-024 | LinkedIn ingestion | P2 | Not Started |
+| MVP-025 | GitHub / portfolio parsing | P2 | Not Started |
+| MVP-027 | Interview scheduling stub | P2 | Not Started |
+| MVP-030–031 | Recording + Whisper | P1 | Not Started (defer OK) |
