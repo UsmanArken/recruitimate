@@ -27,8 +27,8 @@ Project setup, docs, HR UI shell — **mostly complete**.
 ### MVP (Phase 1) — ship to first recruiters
 **Goal:** Talent + post-interview analysis + decision dashboard + ATS-lite.
 
-- **Done:** Core engines, jobs/candidates, 3-layer UI, API, local dev.
-- **Remaining for a shippable MVP:** Auth, PDF resume upload, notes UI, error handling, QA, staging deploy.
+- **Done:** Core engines, auth/ACL, multi-position applications (`JobApplication`), PDF resume upload, phased intelligence, applicant intake picker, QA scripts, platform admin.
+- **Remaining for a shippable MVP:** Notes UI (MVP-026), error handling (MVP-033), empty states (MVP-032), staging deploy (MVP-035).
 
 ### Phase 2 — core moat expansion
 **Goal:** Real-time interview assist, cross-signal validation, media pipeline, discovery, outreach, assessments, copilot.
@@ -47,8 +47,8 @@ Open the CSV in Excel, Google Sheets, or Cursor — change the **Status** column
 
 All tasks with ID `MVP-*` at **Done**, especially:
 
-- MVP-028 Authentication  
-- MVP-023 Resume PDF upload  
-- MVP-033 Error handling  
+- MVP-028 Authentication · MVP-029c Platform super admin  
+- MVP-015b Multi-position applications · MVP-036 Phased intelligence  
+- MVP-023 Resume PDF upload · MVP-037 Applicant intake picker  
 - MVP-034 QA test plan  
-- MVP-035 MVP deployment  
+- MVP-033 Error handling · MVP-035 MVP deployment (still open)  
