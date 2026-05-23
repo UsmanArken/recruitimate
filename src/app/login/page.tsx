@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { signIn } from "next-auth/react";
+import { getSession, signIn } from "next-auth/react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, Lock, Mail, AlertCircle } from "lucide-react";
@@ -33,7 +33,15 @@ function LoginForm() {
       setError("Invalid email or password. Check your credentials and try again.");
       return;
     }
-    router.push(callbackUrl);
+
+    const session = await getSession();
+    const destination = session?.user?.isPlatformAdmin
+      ? "/admin"
+      : callbackUrl.startsWith("/admin")
+        ? "/"
+        : callbackUrl;
+
+    router.push(destination);
     router.refresh();
   }
 

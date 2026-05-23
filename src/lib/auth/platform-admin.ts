@@ -1,4 +1,6 @@
 import bcrypt from "bcryptjs";
+import type { Prisma } from "@prisma/client";
+import { forbidden } from "@/lib/api/errors";
 import { db } from "@/lib/db";
 import type { AuthContext } from "@/lib/auth/types";
 
@@ -26,6 +28,24 @@ export function isReservedSuperAdminEmail(email: string): boolean {
 
 export function isPlatformSuperAdmin(ctx: AuthContext): boolean {
   return ctx.isPlatformAdmin === true;
+}
+
+/** Customer tenants only (excludes internal platform org from SaaS metrics). */
+export function customerOrganizationWhere(): Prisma.OrganizationWhereInput {
+  return { slug: { not: SYSTEM_ORG_SLUG } };
+}
+
+/** Platform operators browse all tenants but cannot mutate hiring data without impersonation. */
+export function isPlatformReadOnlyWorkspace(ctx: AuthContext): boolean {
+  return isPlatformSuperAdmin(ctx) && !ctx.actingOrganizationId;
+}
+
+export function assertTenantWorkspaceWrite(ctx: AuthContext): void {
+  if (!isPlatformReadOnlyWorkspace(ctx)) return;
+  throw forbidden(
+    "Platform operators cannot change hiring data in the workspace. Use Platform admin or impersonate a tenant.",
+    "TENANT_CONTEXT_REQUIRED"
+  );
 }
 
 /** Org filter for tenant-scoped queries; empty for platform super admin (all tenants). */

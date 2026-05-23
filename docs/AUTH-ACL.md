@@ -7,9 +7,11 @@
 | `PLATFORM_SUPER_ADMIN` | Platform Super Admin | Cross-tenant (`RoleScope.PLATFORM`) |
 
 - Flag: `User.isPlatformAdmin` (never set by public `/signup`).
-- Internal org: slug `recruitimate-platform` (operator workspace, excluded from tenant list on `/admin`).
-- Bypasses org-scoped ACL and sees **all** jobs/candidates across tenants.
-- Console: `/admin` (organizations, platform stats).
+- Internal org: slug `recruitimate-platform` (excluded from `/admin` tenant list and customer metrics).
+- **Home:** `/admin` after login — not the tenant hiring dashboard.
+- **Browse mode:** optional read-only hiring UI via `/candidates?operatorBrowse=1` (8h cookie); writes blocked with `TENANT_CONTEXT_REQUIRED`.
+- Cross-tenant **read** when browsing; platform stats count **customer orgs only**.
+- Console: `/admin` (organizations, platform stats). Impersonation: P3-011.
 
 ### Bootstrap (both methods)
 

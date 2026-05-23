@@ -1,18 +1,22 @@
 import Link from "next/link";
 import { requireAuthContext } from "@/lib/auth/session";
+import { isPlatformReadOnlyWorkspace } from "@/lib/auth/platform-admin";
 import { listJobs } from "@/lib/services/job.service";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { PageHeader, PageBody } from "@/components/layout/page-header";
 import { ButtonLink } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { ArrowRight, Briefcase, Plus, Users } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 export default async function JobsPage() {
   let jobs: Awaited<ReturnType<typeof listJobs>> = [];
+  let readOnly = false;
 
   try {
     const ctx = await requireAuthContext();
+    readOnly = isPlatformReadOnlyWorkspace(ctx);
     jobs = await listJobs(ctx);
   } catch {
     // DB not ready
@@ -24,24 +28,29 @@ export default async function JobsPage() {
         title="Open roles"
         description="Define positions to power role-fit scoring and keep candidates organized by requisition."
       >
-        <ButtonLink href="/jobs/new">
-          <Plus className="h-4 w-4" />
-          Post new role
-        </ButtonLink>
+        {!readOnly && (
+          <ButtonLink href="/jobs/new">
+            <Plus className="h-4 w-4" />
+            Post new role
+          </ButtonLink>
+        )}
       </PageHeader>
 
       <PageBody>
         {jobs.length === 0 ? (
           <Card>
-            <CardContent className="py-16 text-center">
-              <Briefcase className="mx-auto h-10 w-10 text-muted/50" />
-              <p className="mt-4 font-medium">No open roles yet</p>
-              <p className="mt-1 text-sm text-muted">
-                Create a requisition to match candidates against requirements.
-              </p>
-              <ButtonLink href="/jobs/new" className="mt-6">
-                Post new role
-              </ButtonLink>
+            <CardContent className="p-0">
+              <EmptyState
+                icon={Briefcase}
+                title="No open roles yet"
+                description="Every hiring campaign starts with a requisition. Add the role title, description, and requirements so Recruitimate can score role fit on resumes."
+                primaryAction={
+                  readOnly
+                    ? { href: "/admin", label: "Open Platform admin" }
+                    : { href: "/jobs/new", label: "Post your first role" }
+                }
+                secondaryAction={{ href: "/", label: "Back to dashboard" }}
+              />
             </CardContent>
           </Card>
         ) : (

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LayerBadge } from "@/components/features/intelligence/layer-badge";
 import { PageHeader, PageBody } from "@/components/layout/page-header";
@@ -6,8 +7,12 @@ import { StatCard } from "@/components/features/dashboard/stat-card";
 import { StageBadge } from "@/components/features/candidates/stage-badge";
 import { Avatar } from "@/components/features/candidates/avatar";
 import { ButtonLink } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { GettingStartedCard } from "@/components/features/onboarding/getting-started-card";
 import { requireAuthContext } from "@/lib/auth/session";
+import { isPlatformReadOnlyWorkspace } from "@/lib/auth/platform-admin";
 import { getDashboardData } from "@/lib/services/dashboard.service";
+import { getWorkspaceOnboarding } from "@/lib/services/onboarding.service";
 import { formatScore, scoreColor } from "@/lib/utils";
 import { ArrowRight, Users, Briefcase, Mic, TrendingUp, UserPlus } from "lucide-react";
 
@@ -31,12 +36,22 @@ export default async function DashboardPage() {
     avgConfidence: null as number | null,
   };
   let recent: Awaited<ReturnType<typeof getDashboardData>>["recentApplications"] = [];
+  let onboarding: Awaited<ReturnType<typeof getWorkspaceOnboarding>> | null = null;
+  let readOnly = false;
 
   try {
     const ctx = await requireAuthContext();
-    const data = await getDashboardData(ctx);
+    if (isPlatformReadOnlyWorkspace(ctx)) {
+      redirect("/admin");
+    }
+    readOnly = isPlatformReadOnlyWorkspace(ctx);
+    const [data, onboardingState] = await Promise.all([
+      getDashboardData(ctx),
+      getWorkspaceOnboarding(ctx),
+    ]);
     stats = data.stats;
     recent = data.recentApplications;
+    onboarding = onboardingState;
   } catch {
     // DB not connected yet
   }
@@ -45,15 +60,23 @@ export default async function DashboardPage() {
     <>
       <PageHeader
         title="Hiring dashboard"
-        description="Your team's command center for talent review, interview signals, and hire recommendations."
+        description={
+          readOnly
+            ? "Cross-tenant read-only view of customer hiring activity."
+            : "Your team's command center for talent review, interview signals, and hire recommendations."
+        }
       >
-        <ButtonLink href="/candidates/new">
-          <UserPlus className="h-4 w-4" />
-          Add candidate
-        </ButtonLink>
+        {!readOnly && (
+          <ButtonLink href="/candidates/new">
+            <UserPlus className="h-4 w-4" />
+            Add candidate
+          </ButtonLink>
+        )}
       </PageHeader>
 
       <PageBody>
+        {onboarding && !readOnly && <GettingStartedCard onboarding={onboarding} />}
+
         <div className="mb-6 flex flex-wrap gap-2">
           <LayerBadge layer="talent" size="sm" />
           <LayerBadge layer="interview" size="sm" />
@@ -93,18 +116,29 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent className="p-0">
             {recent.length === 0 ? (
-              <div className="px-6 py-14 text-center">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-brand/10">
-                  <Users className="h-7 w-7 text-brand" />
-                </div>
-                <p className="font-medium text-foreground">No applications in your pipeline yet</p>
-                <p className="mt-1 text-sm text-muted">
-                  Add a candidate linked to an open position to start screening.
-                </p>
-                <ButtonLink href="/candidates/new" className="mt-5">
-                  Add first candidate
-                </ButtonLink>
-              </div>
+              <EmptyState
+                icon={Users}
+                title="No pipeline activity yet"
+                description={
+                  onboarding?.steps.postRole
+                    ? "You have open positions — add an applicant to start talent screening for a specific hiring campaign."
+                    : "Start by posting an open position, then add applicants linked to that requisition."
+                }
+                primaryAction={
+                  readOnly
+                    ? { href: "/admin", label: "Open Platform admin" }
+                    : onboarding?.steps.postRole
+                      ? { href: "/candidates/new", label: "Add first applicant" }
+                      : { href: "/jobs/new", label: "Post open position" }
+                }
+                secondaryAction={
+                  readOnly
+                    ? { href: "/candidates", label: "Browse applicants" }
+                    : onboarding?.steps.postRole
+                      ? { href: "/jobs", label: "View open roles" }
+                      : { href: "/candidates/new", label: "Skip to add applicant" }
+                }
+              />
             ) : (
               <ul>
                 {recent.map((app) => (

@@ -24,6 +24,7 @@ model User {
   invitesSent   Invite[]  @relation("InvitesSent")
   jobAssignments JobAssignment[]
   jobsManaged   Job[]     @relation("JobHiringManager")
+  candidateNotes Note[]    @relation("NoteAuthor")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -316,9 +317,11 @@ model Note {
   candidateId String
   authorId    String?
   candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  author      User?     @relation("NoteAuthor", fields: [authorId], references: [id], onDelete: SetNull)
   content     String    @db.Text
   tags        Json      @default("[]")
   createdAt   DateTime  @default(now())
 
   @@index([candidateId])
+  @@index([authorId])
 }

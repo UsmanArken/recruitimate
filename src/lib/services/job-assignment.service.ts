@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { badRequest, notFound } from "@/lib/api/errors";
+import { assertTenantWorkspaceWrite } from "@/lib/auth/platform-admin";
 import { assertPermission } from "@/lib/auth/permission.service";
 import { getJobById } from "@/lib/services/job.service";
 import type { AuthContext } from "@/lib/auth/types";
@@ -94,6 +95,7 @@ export async function removeJobAssignment(
   jobId: string,
   assignmentId: string
 ) {
+  assertTenantWorkspaceWrite(ctx);
   await assertPermission(ctx, { resource: "jobs", action: "update" });
   await getJobById(ctx, jobId);
 

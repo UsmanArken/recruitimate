@@ -16,7 +16,13 @@ type Member = {
   role: { code: string; name: string };
 };
 
-export function JobAssignmentsPanel({ jobId }: { jobId: string }) {
+export function JobAssignmentsPanel({
+  jobId,
+  readOnly = false,
+}: {
+  jobId: string;
+  readOnly?: boolean;
+}) {
   const router = useRouter();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
@@ -34,8 +40,8 @@ export function JobAssignmentsPanel({ jobId }: { jobId: string }) {
     const data = await res.json();
     setAssignments(data.job.assignments ?? []);
     setMembers(data.members ?? []);
-    setCanManage(Boolean(data.canManage));
-  }, [jobId]);
+    setCanManage(!readOnly && Boolean(data.canManage));
+  }, [jobId, readOnly]);
 
   useEffect(() => {
     void load();

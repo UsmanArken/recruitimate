@@ -53,7 +53,9 @@ npm run db:seed
 4. **Interview** — Paste transcript; interview + decision sections refresh.
 5. **Intelligence** — Re-run talent analysis; scores stay in 0–1 range.
 6. **ACL** — Recruiter vs hiring manager see expected jobs/candidates.
-7. **Super admin** — `/admin` lists tenants; dashboard shows cross-tenant counts.
+7. **Super admin** — Login lands on `/admin`; tenant list excludes `recruitimate-platform`; stats are customer-only; hiring workspace blocked until **Browse hiring pipeline**; POST hiring APIs return 403 `TENANT_CONTEXT_REQUIRED`.
+8. **Notes** — On candidate person profile add tagged note; appears in list; delete works.
+9. **Onboarding** — New workspace shows getting-started checklist; empty states guide post role vs add applicant.
 
 ## CI (when you add production)
 
@@ -74,10 +76,8 @@ Run `qa:api` against a preview deployment URL after deploy.
 
 | ID | Task | Priority | Status |
 |----|------|----------|--------|
-| MVP-026 | Candidate notes UI | P1 | Not Started |
 | MVP-033 | Error handling & logging (finish request logging) | P1 | In Progress |
 | MVP-035 | MVP deployment | P1 | Not Started |
-| MVP-032 | Empty states / onboarding polish | P2 | In Progress |
 | MVP-024 | LinkedIn ingestion | P2 | Not Started |
 | MVP-025 | GitHub / portfolio parsing | P2 | Not Started |
 | MVP-027 | Interview scheduling stub | P2 | Not Started |

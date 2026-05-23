@@ -27,8 +27,8 @@ Project setup, docs, HR UI shell — **mostly complete**.
 ### MVP (Phase 1) — ship to first recruiters
 **Goal:** Talent + post-interview analysis + decision dashboard + ATS-lite.
 
-- **Done:** Core engines, auth/ACL, multi-position applications (`JobApplication`), PDF resume upload, phased intelligence, applicant intake picker, QA scripts, platform admin.
-- **Remaining for a shippable MVP:** Notes UI (MVP-026), finish error logging (MVP-033), onboarding polish (MVP-032), staging deploy (MVP-035). Optional: LinkedIn/GitHub ingestion (MVP-024/025), recording (MVP-030/031).
+- **Done:** Core engines, auth/ACL, multi-position applications (`JobApplication`), PDF resume upload, phased intelligence, applicant intake picker, QA scripts, platform admin, operator workspace guard (MVP-029d), notes (MVP-026), onboarding (MVP-032).
+- **Remaining for a shippable MVP:** Finish error logging (MVP-033), staging deploy (MVP-035). Optional: LinkedIn/GitHub ingestion (MVP-024/025), scheduling stub (MVP-027), recording (MVP-030/031).
 
 ### Phase 2 — core moat expansion
 **Goal:** Real-time interview assist, cross-signal validation, media pipeline, discovery, outreach, assessments, copilot.
@@ -49,9 +49,9 @@ Use `|` in **Depends On** when a task has multiple prerequisites (e.g. `MVP-014|
 
 | Status | Count | IDs |
 |--------|------:|-----|
-| **Done** | 33 | MVP-001–023, 015b, 028–029, 029b, 029c, 034, 036–039 |
-| **In Progress** | 2 | MVP-032 (partial empty states), MVP-033 (API errors yes; request logging no) |
-| **Not Started** | 7 | MVP-024–027, 030–031, 035 |
+| **Done** | 35 | MVP-001–023, 026, 028–029, 029b, 029c, 032, 034, 036–039 |
+| **In Progress** | 1 | MVP-033 (API errors yes; request logging no) |
+| **Not Started** | 6 | MVP-024–025, 027, 030–031, 035 |
 
 Foundation (F-001–F-009) and shipped Phase 3 items (P3-009, P3-010, CP-024) are **Done** as marked.
 
@@ -59,7 +59,7 @@ Foundation (F-001–F-009) and shipped Phase 3 items (P3-009, P3-010, CP-024) ar
 
 All tasks with ID `MVP-*` at **Done**, especially:
 
-- MVP-028 Authentication · MVP-029c Platform super admin  
+- MVP-028 Authentication · MVP-029c Platform super admin · MVP-029d Operator workspace guard  
 - MVP-015b Multi-position applications · MVP-036 Phased intelligence  
 - MVP-023 Resume PDF upload · MVP-037 Applicant intake picker  
 - MVP-034 QA test plan  

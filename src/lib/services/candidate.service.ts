@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 import { applicationDetailInclude, candidatePersonInclude } from "@/lib/db/includes";
 import { notFound } from "@/lib/api/errors";
 import { assertPermission } from "@/lib/auth/permission.service";
-import { organizationFilter } from "@/lib/auth/platform-admin";
+import { assertTenantWorkspaceWrite, organizationFilter } from "@/lib/auth/platform-admin";
 import {
   assertCandidateAccess,
   candidatesWhereClause,
@@ -37,9 +37,11 @@ export async function getCandidateById(ctx: AuthContext, id: string) {
 }
 
 export async function createCandidate(ctx: AuthContext, input: CreateCandidateInput) {
+  assertTenantWorkspaceWrite(ctx);
   await assertPermission(ctx, { resource: "candidates", action: "create" });
 
   const job = await getJobById(ctx, input.jobId);
+  const organizationId = ctx.actingOrganizationId ?? ctx.organizationId;
 
   const { talent, decision } = await computeTalentAndDecision({
     candidateName: input.name,
@@ -56,13 +58,13 @@ export async function createCandidate(ctx: AuthContext, input: CreateCandidateIn
     data: {
       name: input.name,
       email: input.email || null,
-      organizationId: ctx.organizationId,
+      organizationId,
       resumeText: input.resumeText,
       linkedInUrl: input.linkedInUrl || null,
       githubUrl: input.githubUrl || null,
       applications: {
         create: {
-          organizationId: ctx.organizationId,
+          organizationId,
           jobId: job.id,
           stage: "TALENT_REVIEW",
           talentProfile: { create: talentForStorage(talent) },

@@ -1,72 +1,84 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { createCandidateSchema } from "../../src/lib/validators/candidate";
+import { createNoteSchema, parseTagsInput } from "../../src/lib/validators/note";
 import { createJobSchema } from "../../src/lib/validators/job";
 import {
-  configuredSuperAdminEmail,
   isReservedSuperAdminEmail,
   organizationFilter,
 } from "../../src/lib/auth/platform-admin";
-import type { AuthContext } from "../../src/lib/auth/types";
 
 describe("Validators", () => {
   it("rejects short resume on candidate create", () => {
-    const parsed = createCandidateSchema.safeParse({
-      name: "Test",
+    const result = createCandidateSchema.safeParse({
+      name: "Jane",
+      jobId: "job-1",
       resumeText: "too short",
     });
-    assert.equal(parsed.success, false);
+    assert.equal(result.success, false);
   });
 
   it("accepts valid candidate payload", () => {
-    const parsed = createCandidateSchema.safeParse({
+    const result = createCandidateSchema.safeParse({
       name: "Jane Doe",
-      email: "jane@example.com",
-      jobId: "clxyz123",
-      resumeText: "Twenty characters minimum for resume body text here.",
+      jobId: "clxyz123456789",
+      resumeText: "x".repeat(25),
     });
-    assert.equal(parsed.success, true);
+    assert.equal(result.success, true);
   });
 
   it("requires open position on create", () => {
-    const parsed = createCandidateSchema.safeParse({
-      name: "Jane Doe",
-      resumeText: "Twenty characters minimum for resume body text here.",
+    const result = createCandidateSchema.safeParse({
+      name: "Jane",
+      resumeText: "x".repeat(25),
     });
-    assert.equal(parsed.success, false);
+    assert.equal(result.success, false);
   });
 
   it("requires job title", () => {
-    const parsed = createJobSchema.safeParse({
-      title: "",
-      description: "Role description",
+    const result = createJobSchema.safeParse({ title: "", description: "desc" });
+    assert.equal(result.success, false);
+  });
+
+  it("accepts valid note with tags", () => {
+    const result = createNoteSchema.safeParse({
+      content: "Strong phone screen.",
+      tags: ["phone-screen", "follow-up"],
     });
-    assert.equal(parsed.success, false);
+    assert.equal(result.success, true);
+  });
+
+  it("parses comma-separated tags", () => {
+    assert.deepEqual(parseTagsInput("Phone Screen, follow-up, follow-up"), [
+      "phone-screen",
+      "follow-up",
+    ]);
   });
 });
 
 describe("Platform admin helpers", () => {
   it("organizationFilter removes org scope for platform admin", () => {
-    const ctx = {
-      userId: "u1",
-      organizationId: "org1",
-      memberId: "m1",
-      roleId: "r1",
-      roleCode: "PLATFORM_SUPER_ADMIN",
-      userEmail: "admin@test.com",
-      userName: "Admin",
-      isPlatformAdmin: true,
-    } satisfies AuthContext;
-    assert.deepEqual(organizationFilter(ctx), {});
+    assert.deepEqual(
+      organizationFilter({
+        userId: "u1",
+        organizationId: "org1",
+        memberId: "m1",
+        roleId: "r1",
+        roleCode: "PLATFORM_SUPER_ADMIN",
+        userEmail: "admin@test.io",
+        userName: "Admin",
+        isPlatformAdmin: true,
+      }),
+      {}
+    );
   });
 
   it("isReservedSuperAdminEmail respects SUPER_ADMIN_EMAIL env", () => {
     const prev = process.env.SUPER_ADMIN_EMAIL;
-    process.env.SUPER_ADMIN_EMAIL = "ops@recruitimate.test";
-    assert.equal(isReservedSuperAdminEmail("ops@recruitimate.test"), true);
-    assert.equal(isReservedSuperAdminEmail("other@test.com"), false);
+    process.env.SUPER_ADMIN_EMAIL = "admin@test.io";
+    assert.equal(isReservedSuperAdminEmail("admin@test.io"), true);
+    assert.equal(isReservedSuperAdminEmail("other@test.io"), false);
     if (prev === undefined) delete process.env.SUPER_ADMIN_EMAIL;
     else process.env.SUPER_ADMIN_EMAIL = prev;
-    void configuredSuperAdminEmail();
   });
 });

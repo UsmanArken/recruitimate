@@ -2,9 +2,9 @@ import { db } from "@/lib/db";
 import { applicationListInclude } from "@/lib/db/includes";
 import { assertPermission } from "@/lib/auth/permission.service";
 import {
-  applicationsWhereClause,
-  candidatesWhereClause,
-  jobsWhereClause,
+  metricsApplicationsWhereClause,
+  metricsCandidatesWhereClause,
+  metricsJobsWhereClause,
 } from "@/lib/auth/scope.service";
 import type { AuthContext } from "@/lib/auth/types";
 
@@ -12,9 +12,9 @@ export async function getDashboardData(ctx: AuthContext) {
   await assertPermission(ctx, { resource: "candidates", action: "read" });
 
   const [applicationWhere, candidateWhere, jobWhere] = await Promise.all([
-    applicationsWhereClause(ctx),
-    candidatesWhereClause(ctx),
-    jobsWhereClause(ctx),
+    metricsApplicationsWhereClause(ctx),
+    metricsCandidatesWhereClause(ctx),
+    metricsJobsWhereClause(ctx),
   ]);
 
   const [candidateCount, applicationCount, jobCount, interviewedCount, decisions, recentApplications] =

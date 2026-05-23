@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 import { jobListInclude } from "@/lib/db/includes";
 import { notFound } from "@/lib/api/errors";
 import { assertPermission } from "@/lib/auth/permission.service";
-import { organizationFilter } from "@/lib/auth/platform-admin";
+import { assertTenantWorkspaceWrite, organizationFilter } from "@/lib/auth/platform-admin";
 import { canAccessJob, jobsWhereClause } from "@/lib/auth/scope.service";
 import type { AuthContext } from "@/lib/auth/types";
 import type { CreateJobInput } from "@/lib/validators/job";
@@ -18,11 +18,13 @@ export async function listJobs(ctx: AuthContext) {
 }
 
 export async function createJob(ctx: AuthContext, input: CreateJobInput) {
+  assertTenantWorkspaceWrite(ctx);
   await assertPermission(ctx, { resource: "jobs", action: "create" });
+  const organizationId = ctx.actingOrganizationId ?? ctx.organizationId;
   return db.job.create({
     data: {
       ...input,
-      organizationId: ctx.organizationId,
+      organizationId,
       hiringManagerId:
         ctx.roleCode === "HIRING_MANAGER" ? ctx.userId : undefined,
     },

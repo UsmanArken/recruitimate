@@ -21,8 +21,8 @@ export function unauthorized(message = "Unauthorized"): AppError {
   return new AppError(message, 401, "UNAUTHORIZED");
 }
 
-export function forbidden(message = "Forbidden"): AppError {
-  return new AppError(message, 403, "FORBIDDEN");
+export function forbidden(message = "Forbidden", code = "FORBIDDEN"): AppError {
+  return new AppError(message, 403, code);
 }
 
 export function isAppError(error: unknown): error is AppError {

@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { requireAuthContext } from "@/lib/auth/session";
+import { isPlatformReadOnlyWorkspace } from "@/lib/auth/platform-admin";
 import { listApplications } from "@/lib/services/application.service";
+import { listJobs } from "@/lib/services/job.service";
 import { formatScore, scoreColor } from "@/lib/utils";
 import { PageHeader, PageBody } from "@/components/layout/page-header";
 import { StageBadge } from "@/components/features/candidates/stage-badge";
 import { Avatar } from "@/components/features/candidates/avatar";
 import { ButtonLink } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { UserPlus, Users } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -23,13 +26,20 @@ function decisionStatusLabel(
 
 export default async function CandidatesPage() {
   let applications: Awaited<ReturnType<typeof listApplications>> = [];
+  let jobCount = 0;
+  let readOnly = false;
 
   try {
     const ctx = await requireAuthContext();
-    applications = await listApplications(ctx);
+    readOnly = isPlatformReadOnlyWorkspace(ctx);
+    const [apps, jobs] = await Promise.all([listApplications(ctx), listJobs(ctx)]);
+    applications = apps;
+    jobCount = jobs.length;
   } catch {
     // DB not ready
   }
+
+  const hasRoles = jobCount > 0;
 
   return (
     <>
@@ -37,24 +47,41 @@ export default async function CandidatesPage() {
         title="Candidates"
         description="One applicant can be in review for multiple open positions — each row is a separate hiring campaign."
       >
-        <ButtonLink href="/candidates/new">
-          <UserPlus className="h-4 w-4" />
-          Add candidate
-        </ButtonLink>
+        {!readOnly && (
+          <ButtonLink href={hasRoles ? "/candidates/new" : "/jobs/new"}>
+            <UserPlus className="h-4 w-4" />
+            {hasRoles ? "Add candidate" : "Post open position"}
+          </ButtonLink>
+        )}
       </PageHeader>
 
       <PageBody>
         {applications.length === 0 ? (
           <Card>
-            <CardContent className="py-16 text-center">
-              <Users className="mx-auto h-10 w-10 text-muted/50" />
-              <p className="mt-4 font-medium">No applications yet</p>
-              <p className="mt-1 text-sm text-muted">
-                Import an applicant and link them to an open position to start screening.
-              </p>
-              <ButtonLink href="/candidates/new" className="mt-6">
-                Add candidate
-              </ButtonLink>
+            <CardContent className="p-0">
+              <EmptyState
+                icon={Users}
+                title="No applicants in review yet"
+                description={
+                  hasRoles
+                    ? "Add someone to an open position to run resume screening, role fit, and interview intelligence for that campaign."
+                    : "Post an open position first — applicants are always evaluated against a specific hiring campaign."
+                }
+                primaryAction={
+                  readOnly
+                    ? { href: "/admin", label: "Open Platform admin" }
+                    : hasRoles
+                      ? { href: "/candidates/new", label: "Add first applicant" }
+                      : { href: "/jobs/new", label: "Post open position" }
+                }
+                secondaryAction={
+                  readOnly
+                    ? undefined
+                    : hasRoles
+                      ? { href: "/jobs", label: "View open roles" }
+                      : { href: "/", label: "See getting started guide" }
+                }
+              />
             </CardContent>
           </Card>
         ) : (

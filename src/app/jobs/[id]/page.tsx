@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAuthContext } from "@/lib/auth/session";
+import { isPlatformReadOnlyWorkspace } from "@/lib/auth/platform-admin";
 import * as jobAssignmentService from "@/lib/services/job-assignment.service";
 import { hasPermission } from "@/lib/auth/permission.service";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,7 +23,9 @@ export default async function JobDetailPage({
   try {
     const ctx = await requireAuthContext();
     job = await jobAssignmentService.getJobWithTeam(ctx, id);
-    canManageTeam = await hasPermission(ctx, { resource: "jobs", action: "update" });
+    const readOnly = isPlatformReadOnlyWorkspace(ctx);
+    canManageTeam =
+      !readOnly && (await hasPermission(ctx, { resource: "jobs", action: "update" }));
   } catch {
     notFound();
   }
@@ -84,7 +87,7 @@ export default async function JobDetailPage({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <JobAssignmentsPanel jobId={job.id} />
+            <JobAssignmentsPanel jobId={job.id} readOnly={!canManageTeam} />
           </CardContent>
         </Card>
       </PageBody>

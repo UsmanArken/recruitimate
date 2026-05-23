@@ -5,7 +5,7 @@ import {
 } from "@/lib/db/includes";
 import { badRequest, notFound } from "@/lib/api/errors";
 import { assertPermission } from "@/lib/auth/permission.service";
-import { organizationFilter } from "@/lib/auth/platform-admin";
+import { assertTenantWorkspaceWrite, organizationFilter } from "@/lib/auth/platform-admin";
 import {
   assertApplicationAccess,
   applicationsWhereClause,
@@ -43,7 +43,9 @@ export async function createApplicationForCandidate(
   candidateId: string,
   jobId: string
 ) {
+  assertTenantWorkspaceWrite(ctx);
   await assertPermission(ctx, { resource: "candidates", action: "create" });
+  const organizationId = ctx.actingOrganizationId ?? ctx.organizationId;
 
   const candidate = await db.candidate.findFirst({
     where: { id: candidateId, ...organizationFilter(ctx) },
@@ -74,7 +76,7 @@ export async function createApplicationForCandidate(
 
   return db.jobApplication.create({
     data: {
-      organizationId: ctx.organizationId,
+      organizationId,
       candidateId: candidate.id,
       jobId: job.id,
       stage: "TALENT_REVIEW",
@@ -97,6 +99,7 @@ export async function rerunApplicationIntelligence(
   ctx: AuthContext,
   applicationId: string
 ) {
+  assertTenantWorkspaceWrite(ctx);
   await assertPermission(ctx, { resource: "intelligence", action: "run" });
   const application = await getApplicationById(ctx, applicationId);
 

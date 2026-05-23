@@ -5,7 +5,7 @@ import { isPlatformSuperAdmin } from "@/lib/auth/platform-admin";
 import * as platformAdminService from "@/lib/services/platform-admin.service";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader, PageBody } from "@/components/layout/page-header";
-import { Building2, Briefcase, ChevronLeft, Shield, Users, type LucideIcon } from "lucide-react";
+import { Building2, Briefcase, Eye, Shield, Users, type LucideIcon } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -20,26 +20,34 @@ export default async function AdminPage() {
     platformAdminService.getPlatformStats(ctx),
   ]);
 
-  const tenants = organizations.filter((o) => o.slug !== "recruitimate-platform");
+  const tenants = organizations;
 
   return (
     <>
-      <div className="border-b border-border bg-card px-8 py-4">
-        <Link
-          href="/"
-          className="mb-3 inline-flex items-center gap-1 text-sm font-medium text-muted hover:text-primary"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Back to workspace
-        </Link>
-      </div>
-
       <PageHeader
         title="Platform administration"
-        description="Cross-tenant view for SaaS operators. Customer signups never receive this access."
+        description="Your home as a SaaS operator — tenant list and platform metrics. Customer signups never receive this access."
       />
 
       <PageBody>
+        <Card className="mb-8 border-primary/20 bg-primary/5">
+          <CardContent className="flex flex-wrap items-center justify-between gap-4 py-4">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Customer hiring data</p>
+              <p className="text-sm text-muted">
+                Optional read-only view across tenants — no posting roles or changing records.
+              </p>
+            </div>
+            <Link
+              href="/candidates?operatorBrowse=1"
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary-hover"
+            >
+              <Eye className="h-4 w-4" />
+              Browse hiring pipeline
+            </Link>
+          </CardContent>
+        </Card>
+
         <div className="mb-8 grid gap-4 sm:grid-cols-4">
           <Stat label="Organizations" value={stats.organizations} icon={Building2} />
           <Stat label="Users" value={stats.users} icon={Users} />

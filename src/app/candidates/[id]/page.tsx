@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { requireAuthContext } from "@/lib/auth/session";
+import { isPlatformReadOnlyWorkspace } from "@/lib/auth/platform-admin";
 import { getCandidateById } from "@/lib/services/candidate.service";
 import { listJobs } from "@/lib/services/job.service";
 import { formatScore, scoreColor } from "@/lib/utils";
@@ -8,6 +9,7 @@ import { PageBody } from "@/components/layout/page-header";
 import { StageBadge } from "@/components/features/candidates/stage-badge";
 import { Avatar } from "@/components/features/candidates/avatar";
 import { ApplyToPosition } from "@/components/features/candidates/apply-to-position";
+import { CandidateNotesPanel } from "@/components/features/candidates/candidate-notes-panel";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronLeft, Mail, Briefcase } from "lucide-react";
 
@@ -31,9 +33,11 @@ export default async function CandidatePersonPage({
 
   let candidate: Awaited<ReturnType<typeof getCandidateById>> | null = null;
   let openJobs: { id: string; title: string }[] = [];
+  let readOnly = false;
 
   try {
     const ctx = await requireAuthContext();
+    readOnly = isPlatformReadOnlyWorkspace(ctx);
     const [candidateRow, jobRows] = await Promise.all([
       getCandidateById(ctx, id),
       listJobs(ctx),
@@ -47,6 +51,13 @@ export default async function CandidatePersonPage({
   if (!candidate) notFound();
 
   const appliedJobIds = candidate.applications.map((a) => a.jobId);
+  const notesForPanel = candidate.notes.map((n) => ({
+    id: n.id,
+    content: n.content,
+    tags: n.tags,
+    createdAt: n.createdAt.toISOString(),
+    author: n.author,
+  }));
 
   return (
     <>
@@ -127,24 +138,34 @@ export default async function CandidatePersonPage({
           </Card>
         </section>
 
-        <section>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Apply to another position</CardTitle>
-              <CardDescription>
-                Reuse the same resume for a different hiring campaign — role fit and decisions
-                are computed per position.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ApplyToPosition
-                candidateId={candidate.id}
-                excludeJobIds={appliedJobIds}
-                initialJobs={openJobs}
-              />
-            </CardContent>
-          </Card>
+        <section className="mb-8">
+          <CandidateNotesPanel
+            candidateId={candidate.id}
+            initialNotes={notesForPanel}
+            readOnly={readOnly}
+          />
         </section>
+
+        {!readOnly && (
+          <section>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Apply to another position</CardTitle>
+                <CardDescription>
+                  Reuse the same resume for a different hiring campaign — role fit and decisions
+                  are computed per position.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ApplyToPosition
+                  candidateId={candidate.id}
+                  excludeJobIds={appliedJobIds}
+                  initialJobs={openJobs}
+                />
+              </CardContent>
+            </Card>
+          </section>
+        )}
       </PageBody>
     </>
   );

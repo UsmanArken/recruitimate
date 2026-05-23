@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { requireAuthContext } from "@/lib/auth/session";
+import { isPlatformReadOnlyWorkspace } from "@/lib/auth/platform-admin";
 import { getApplicationById } from "@/lib/services/application.service";
 import { getIntelligencePhase } from "@/lib/intelligence/candidate-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,9 +27,11 @@ export default async function ApplicationDetailPage({
   const { id: candidateId, applicationId } = await params;
 
   let application: Awaited<ReturnType<typeof getApplicationById>> | null = null;
+  let readOnly = false;
 
   try {
     const ctx = await requireAuthContext();
+    readOnly = isPlatformReadOnlyWorkspace(ctx);
     application = await getApplicationById(ctx, applicationId);
   } catch {
     notFound();
@@ -113,7 +116,7 @@ export default async function ApplicationDetailPage({
           <section>
             <div className="mb-3 flex items-center justify-between gap-2">
               <LayerBadge layer="talent" />
-              <ReanalyzeButton applicationId={application.id} />
+              {!readOnly && <ReanalyzeButton applicationId={application.id} />}
             </div>
             <Card>
               <CardHeader>
@@ -222,6 +225,16 @@ export default async function ApplicationDetailPage({
                     <p className="text-xs italic text-muted">{ia.explanation}</p>
                   )}
                 </CardContent>
+              </Card>
+            ) : readOnly ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Interview not recorded</CardTitle>
+                  <CardDescription>
+                    Platform operators can view customer hiring data but cannot submit
+                    interviews from the workspace.
+                  </CardDescription>
+                </CardHeader>
               </Card>
             ) : (
               <Card>

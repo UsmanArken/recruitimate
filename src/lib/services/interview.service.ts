@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { applicationDetailInclude } from "@/lib/db/includes";
 import { badRequest, notFound } from "@/lib/api/errors";
-import { organizationFilter } from "@/lib/auth/platform-admin";
+import { assertTenantWorkspaceWrite, organizationFilter } from "@/lib/auth/platform-admin";
 import { assertPermission } from "@/lib/auth/permission.service";
 import { assertApplicationAccess } from "@/lib/auth/scope.service";
 import type { AuthContext } from "@/lib/auth/types";
@@ -14,6 +14,7 @@ export async function createInterviewAndAnalyze(
   applicationId: string,
   input: CreateInterviewInput
 ) {
+  assertTenantWorkspaceWrite(ctx);
   await assertPermission(ctx, { resource: "interviews", action: "create" });
   const { jobId } = await assertApplicationAccess(ctx, applicationId);
 

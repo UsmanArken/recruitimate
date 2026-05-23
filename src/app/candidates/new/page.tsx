@@ -1,4 +1,6 @@
+import { redirect } from "next/navigation";
 import { requireAuthContext } from "@/lib/auth/session";
+import { isPlatformReadOnlyWorkspace } from "@/lib/auth/platform-admin";
 import { listJobs } from "@/lib/services/job.service";
 import { NewCandidateForm } from "@/components/features/candidates/new-candidate-form";
 import { PageHeader, PageBody } from "@/components/layout/page-header";
@@ -11,6 +13,9 @@ export default async function NewCandidatePage() {
 
   try {
     const ctx = await requireAuthContext();
+    if (isPlatformReadOnlyWorkspace(ctx)) {
+      redirect("/admin");
+    }
     const rows = await listJobs(ctx);
     jobs = rows.map((j) => ({ id: j.id, title: j.title }));
   } catch {

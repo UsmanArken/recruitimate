@@ -50,6 +50,7 @@ export async function getAuthContext(): Promise<AuthContext | null> {
     userEmail: user.email,
     userName: user.name,
     isPlatformAdmin: user.isPlatformAdmin,
+    actingOrganizationId: null,
   };
 }
 

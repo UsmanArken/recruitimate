@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { forbidden, notFound } from "@/lib/api/errors";
 import { hasPermission } from "@/lib/auth/permission.service";
 import {
+  customerOrganizationWhere,
   isPlatformSuperAdmin,
   organizationFilter,
 } from "@/lib/auth/platform-admin";
@@ -83,6 +84,34 @@ export async function candidatesWhereClause(
       some: { jobId: { in: jobIds.length ? jobIds : ["__none__"] } },
     },
   };
+}
+
+/** Dashboard / onboarding counts — customer tenants only for platform operators. */
+export async function metricsJobsWhereClause(
+  ctx: AuthContext
+): Promise<Prisma.JobWhereInput> {
+  if (isPlatformSuperAdmin(ctx)) {
+    return { organization: customerOrganizationWhere() };
+  }
+  return jobsWhereClause(ctx);
+}
+
+export async function metricsApplicationsWhereClause(
+  ctx: AuthContext
+): Promise<Prisma.JobApplicationWhereInput> {
+  if (isPlatformSuperAdmin(ctx)) {
+    return { organization: customerOrganizationWhere() };
+  }
+  return applicationsWhereClause(ctx);
+}
+
+export async function metricsCandidatesWhereClause(
+  ctx: AuthContext
+): Promise<Prisma.CandidateWhereInput> {
+  if (isPlatformSuperAdmin(ctx)) {
+    return { organization: customerOrganizationWhere() };
+  }
+  return candidatesWhereClause(ctx);
 }
 
 export async function assertApplicationAccess(

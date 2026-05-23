@@ -24,6 +24,12 @@ export const candidatePersonInclude = {
     },
     orderBy: { updatedAt: "desc" as const },
   },
+  notes: {
+    include: {
+      author: { select: { id: true, name: true, email: true } },
+    },
+    orderBy: { createdAt: "desc" as const },
+  },
 } satisfies Prisma.CandidateInclude;
 
 export const jobListInclude = {
