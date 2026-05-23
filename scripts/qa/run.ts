@@ -45,6 +45,7 @@ async function main() {
       "--test",
       "scripts/qa/intelligence.test.ts",
       "scripts/qa/validators.test.ts",
+      "scripts/qa/resume-extract.test.ts",
     ])
   );
 

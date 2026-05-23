@@ -1,4 +1,8 @@
 import { chatJson } from "../ai";
+import {
+  buildDeferredDecision,
+  getIntelligencePhase,
+} from "../candidate-context";
 import type {
   DecisionIntelligenceResult,
   InterviewIntelligenceResult,
@@ -71,11 +75,25 @@ function heuristicDecision(
 export async function generateDecision(
   talent: TalentIntelligenceResult | null,
   interview: InterviewIntelligenceResult | null,
-  candidateName: string
+  candidateName: string,
+  context: { jobId: string | null; jobTitle?: string | null }
 ): Promise<DecisionIntelligenceResult> {
+  const phase = getIntelligencePhase(
+    context.jobId,
+    Boolean(interview)
+  );
+
+  if (phase === "needs_role") {
+    return buildDeferredDecision("needs_role");
+  }
+  if (phase === "talent_screening") {
+    return buildDeferredDecision("talent_screening", context.jobTitle);
+  }
+
   const fallback = heuristicDecision(talent, interview);
 
   const userPrompt = `Candidate: ${candidateName}
+Role: ${context.jobTitle ?? "Assigned requisition"}
 Talent signals: ${JSON.stringify(talent)}
 Interview signals: ${JSON.stringify(interview)}`;
 

@@ -50,7 +50,7 @@ export default async function JobDetailPage({
         <div className="mb-8 grid gap-4 sm:grid-cols-3">
           <div className="rounded-xl border border-border bg-card p-4">
             <p className="text-xs font-semibold uppercase text-muted">Candidates</p>
-            <p className="mt-1 text-2xl font-bold">{job._count.candidates}</p>
+            <p className="mt-1 text-2xl font-bold">{job._count.applications}</p>
           </div>
           <div className="rounded-xl border border-border bg-card p-4 sm:col-span-2">
             <p className="text-xs font-semibold uppercase text-muted">Hiring manager</p>

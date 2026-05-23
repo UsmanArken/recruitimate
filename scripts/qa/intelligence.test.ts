@@ -20,6 +20,7 @@ describe("Talent intelligence (heuristic)", () => {
 
     assert.ok(result.skills.includes("typescript"));
     assert.equal(result.experienceYears, 8);
+    assert.ok(result.roleFitScore != null);
     assert.ok(result.roleFitScore >= 0.4 && result.roleFitScore <= 1);
     assert.ok(result.strengths.length > 0);
     assert.ok(result.explanation.length > 0);
@@ -65,10 +66,14 @@ describe("Decision intelligence (heuristic)", () => {
     const interview = await analyzeInterview(
       "Clear answers on system design. Owned API and database choices."
     );
-    const decision = await generateDecision(talent, interview, "Jane Doe");
+    const decision = await generateDecision(talent, interview, "Jane Doe", {
+      jobId: "job-1",
+      jobTitle: "Full Stack",
+    });
 
     if (prev) process.env.OPENAI_API_KEY = prev;
 
+    assert.ok(decision.hireConfidence != null);
     assert.ok(decision.hireConfidence >= 0 && decision.hireConfidence <= 1);
     assert.ok(
       ["strong_yes", "yes", "maybe", "no", "strong_no"].includes(

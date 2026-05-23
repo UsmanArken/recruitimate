@@ -2,23 +2,27 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { requireAuthContext } from "@/lib/auth/session";
 import { getCandidateById } from "@/lib/services/candidate.service";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LayerBadge } from "@/components/features/intelligence/layer-badge";
-import { ScoreBadge } from "@/components/features/intelligence/score-badge";
-import { SignalList } from "@/components/features/intelligence/signal-list";
-import { RecommendationBadge } from "@/components/features/intelligence/recommendation-badge";
-import { TrustBanner } from "@/components/features/intelligence/trust-banner";
+import { listJobs } from "@/lib/services/job.service";
+import { formatScore, scoreColor } from "@/lib/utils";
+import { PageBody } from "@/components/layout/page-header";
 import { StageBadge } from "@/components/features/candidates/stage-badge";
 import { Avatar } from "@/components/features/candidates/avatar";
-import { InterviewForm } from "@/components/features/candidates/interview-form";
-import { ReanalyzeButton } from "@/components/features/candidates/reanalyze-button";
-import { PageBody } from "@/components/layout/page-header";
-import type { Signal } from "@/lib/intelligence/types";
-import { ChevronLeft, Mail } from "lucide-react";
+import { ApplyToPosition } from "@/components/features/candidates/apply-to-position";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChevronLeft, Mail, Briefcase } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
-export default async function CandidateDetailPage({
+function decisionStatusLabel(
+  recommendation: string | null | undefined,
+  hireConfidence: number | null | undefined
+): string {
+  if (recommendation === "pending_interview") return "Awaiting interview";
+  if (hireConfidence != null) return `${Math.round(hireConfidence * 100)}% confidence`;
+  return "—";
+}
+
+export default async function CandidatePersonPage({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -26,26 +30,23 @@ export default async function CandidateDetailPage({
   const { id } = await params;
 
   let candidate: Awaited<ReturnType<typeof getCandidateById>> | null = null;
+  let openJobs: { id: string; title: string }[] = [];
 
   try {
     const ctx = await requireAuthContext();
-    candidate = await getCandidateById(ctx, id);
+    const [candidateRow, jobRows] = await Promise.all([
+      getCandidateById(ctx, id),
+      listJobs(ctx),
+    ]);
+    candidate = candidateRow;
+    openJobs = jobRows.map((j) => ({ id: j.id, title: j.title }));
   } catch {
     notFound();
   }
 
   if (!candidate) notFound();
 
-  const tp = candidate.talentProfile;
-  const dec = candidate.decision;
-  const latestInterview = candidate.interviews[0];
-  const ia = latestInterview?.analysis;
-
-  const hiddenSignals = (tp?.hiddenSignals ?? []) as Signal[];
-  const riskFactors = (dec?.riskFactors ?? []) as Signal[];
-  const cognitiveSignals = (ia?.cognitiveSignals ?? []) as Signal[];
-  const behavioralMetrics = (ia?.behavioralMetrics ?? []) as Signal[];
-  const interviewRisks = (ia?.riskFlags ?? []) as Signal[];
+  const appliedJobIds = candidate.applications.map((a) => a.jobId);
 
   return (
     <>
@@ -60,12 +61,6 @@ export default async function CandidateDetailPage({
         <div className="flex flex-wrap items-start gap-5">
           <Avatar name={candidate.name} size="lg" />
           <div className="min-w-0 flex-1">
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <StageBadge stage={candidate.stage} />
-              {candidate.job && (
-                <span className="text-sm text-muted">· {candidate.job.title}</span>
-              )}
-            </div>
             <h1 className="text-2xl font-bold tracking-tight">{candidate.name}</h1>
             {candidate.email && (
               <p className="mt-1 flex items-center gap-1.5 text-sm text-muted">
@@ -73,188 +68,83 @@ export default async function CandidateDetailPage({
                 {candidate.email}
               </p>
             )}
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
+              One resume, multiple hiring campaigns. Each open position has its own role fit,
+              interviews, and hire recommendation.
+            </p>
           </div>
         </div>
       </div>
 
       <PageBody>
         <section className="mb-8">
-          <div className="mb-3 flex items-center gap-2">
-            <LayerBadge layer="decision" />
-          </div>
-          <Card className="overflow-hidden border-decision/30">
-            <div className="bg-decision-bg px-6 py-3">
-              <p className="text-xs font-bold uppercase tracking-widest text-decision">
-                Hiring recommendation
-              </p>
-            </div>
-            <CardHeader className="border-b-0 pb-0">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Open position reviews</CardTitle>
               <CardDescription>
-                Advisory summary for your hiring committee — synthesized from talent and interview
-                intelligence.
+                Select a campaign to view talent screening, interviews, and decision intelligence
+                for that requisition.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <TrustBanner>
-                This recommendation assists your decision; it does not replace recruiter judgment
-                or compliance review.
-              </TrustBanner>
-              <div className="grid gap-4 sm:grid-cols-3">
-                <ScoreBadge label="Hire confidence" score={dec?.hireConfidence} />
-                <div className="rounded-lg border border-border-subtle bg-card p-4 shadow-sm">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                    Recommendation
-                  </p>
-                  <div className="mt-2">
-                    <RecommendationBadge value={dec?.recommendation} />
-                  </div>
-                </div>
-                <ScoreBadge label="Role fit" score={tp?.roleFitScore} />
-              </div>
-              {dec?.explanation && (
-                <div className="rounded-lg border border-border-subtle bg-background p-4">
-                  <p className="mb-1 text-xs font-semibold uppercase text-muted">Summary</p>
-                  <p className="text-sm leading-relaxed">{dec.explanation}</p>
-                </div>
-              )}
-              {riskFactors.length > 0 && (
-                <div>
-                  <p className="mb-2 text-sm font-semibold text-risk">Items to discuss</p>
-                  <SignalList signals={riskFactors} />
-                </div>
+            <CardContent className="p-0">
+              {candidate.applications.length === 0 ? (
+                <p className="px-6 py-8 text-sm text-muted">
+                  No positions linked yet. Apply this person to an open position below.
+                </p>
+              ) : (
+                <ul>
+                  {candidate.applications.map((app) => (
+                    <li
+                      key={app.id}
+                      className="border-t border-border-subtle first:border-t-0"
+                    >
+                      <Link
+                        href={`/candidates/${candidate.id}/applications/${app.id}`}
+                        className="flex flex-wrap items-center gap-4 px-6 py-4 transition hover:bg-teal-50/40"
+                      >
+                        <Briefcase className="h-5 w-5 text-brand" />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-foreground">{app.job.title}</p>
+                          <p className="text-sm text-muted">
+                            {decisionStatusLabel(
+                              app.decision?.recommendation,
+                              app.decision?.hireConfidence
+                            )}
+                          </p>
+                        </div>
+                        <StageBadge stage={app.stage} />
+                        <span
+                          className={`text-sm font-bold tabular-nums ${scoreColor(app.talentProfile?.roleFitScore)}`}
+                        >
+                          {formatScore(app.talentProfile?.roleFitScore)}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
               )}
             </CardContent>
           </Card>
         </section>
 
-        <div className="grid gap-8 lg:grid-cols-2">
-          <section>
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <LayerBadge layer="talent" />
-              <ReanalyzeButton candidateId={candidate.id} />
-            </div>
-            <Card>
-              <CardHeader>
-                <CardTitle>Talent profile</CardTitle>
-                <CardDescription>Pre-interview intelligence from resume and role match</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <ScoreBadge label="Role fit" score={tp?.roleFitScore} />
-                  <div className="rounded-lg border border-border-subtle bg-card p-4 shadow-sm">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                      Experience
-                    </p>
-                    <p className="mt-1 text-2xl font-bold">
-                      {tp?.experienceYears != null ? `${tp.experienceYears} years` : "—"}
-                    </p>
-                  </div>
-                </div>
-                {tp?.skills && (
-                  <div>
-                    <p className="mb-2 text-sm font-semibold">Matched skills</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {(tp.skills as string[]).map((s) => (
-                        <span
-                          key={s}
-                          className="rounded-md bg-talent-bg px-2.5 py-1 text-xs font-medium text-talent"
-                        >
-                          {s}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {((tp?.strengths as string[] | undefined) ?? []).length > 0 && (
-                  <div className="rounded-lg bg-success-bg/50 p-4">
-                    <p className="mb-2 text-sm font-semibold text-success">Strengths</p>
-                    <ul className="space-y-1 text-sm text-foreground/90">
-                      {((tp?.strengths as string[]) ?? []).map((s) => (
-                        <li key={s}>· {s}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {((tp?.gaps as string[] | undefined) ?? []).length > 0 && (
-                  <div className="rounded-lg bg-warning-bg/50 p-4">
-                    <p className="mb-2 text-sm font-semibold text-warning">Gaps to probe</p>
-                    <ul className="space-y-1 text-sm text-foreground/90">
-                      {((tp?.gaps as string[]) ?? []).map((g) => (
-                        <li key={g}>· {g}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {hiddenSignals.length > 0 && (
-                  <div>
-                    <p className="mb-2 text-sm font-semibold">Additional signals</p>
-                    <SignalList signals={hiddenSignals} />
-                  </div>
-                )}
-                {tp?.explanation && (
-                  <p className="text-xs italic text-muted">{tp.explanation}</p>
-                )}
-              </CardContent>
-            </Card>
-          </section>
-
-          <section>
-            <div className="mb-3">
-              <LayerBadge layer="interview" />
-            </div>
-            {ia ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle>{latestInterview?.title ?? "Interview"}</CardTitle>
-                  <CardDescription>Post-interview signal report</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                    <ScoreBadge label="Confidence" score={ia.confidenceScore} />
-                    <ScoreBadge label="Clarity" score={ia.clarityScore} />
-                    <ScoreBadge label="Hesitation" score={ia.hesitationScore} invertBar />
-                    <ScoreBadge label="Consistency" score={ia.consistencyScore} />
-                    <ScoreBadge label="Engagement" score={ia.engagementScore} />
-                  </div>
-                  {cognitiveSignals.length > 0 && (
-                    <div>
-                      <p className="mb-2 text-sm font-semibold">Cognitive signals</p>
-                      <SignalList signals={cognitiveSignals} />
-                    </div>
-                  )}
-                  {behavioralMetrics.length > 0 && (
-                    <div>
-                      <p className="mb-2 text-sm font-semibold">Behavioral observations</p>
-                      <SignalList signals={behavioralMetrics} />
-                    </div>
-                  )}
-                  {interviewRisks.length > 0 && (
-                    <div>
-                      <p className="mb-2 text-sm font-semibold text-warning">Follow-up suggested</p>
-                      <SignalList signals={interviewRisks} />
-                    </div>
-                  )}
-                  {ia.explanation && (
-                    <p className="text-xs italic text-muted">{ia.explanation}</p>
-                  )}
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Record interview</CardTitle>
-                  <CardDescription>
-                    Paste a transcript to generate your interview intelligence report. Audio upload
-                    coming in a later release.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <InterviewForm candidateId={candidate.id} />
-                </CardContent>
-              </Card>
-            )}
-          </section>
-        </div>
+        <section>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Apply to another position</CardTitle>
+              <CardDescription>
+                Reuse the same resume for a different hiring campaign — role fit and decisions
+                are computed per position.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ApplyToPosition
+                candidateId={candidate.id}
+                excludeJobIds={appliedJobIds}
+                initialJobs={openJobs}
+              />
+            </CardContent>
+          </Card>
+        </section>
       </PageBody>
     </>
   );

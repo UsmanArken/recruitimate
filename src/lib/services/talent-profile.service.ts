@@ -2,13 +2,13 @@ import { db } from "@/lib/db";
 import type { TalentIntelligenceResult } from "@/lib/intelligence/types";
 
 export async function upsertTalentProfile(
-  candidateId: string,
+  applicationId: string,
   talent: TalentIntelligenceResult
 ) {
   return db.talentProfile.upsert({
-    where: { candidateId },
+    where: { applicationId },
     create: {
-      candidateId,
+      applicationId,
       skills: talent.skills,
       experienceYears: talent.experienceYears,
       roleFitScore: talent.roleFitScore,

@@ -6,13 +6,17 @@ import * as interviewService from "@/lib/services/interview.service";
 
 export async function POST(
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ applicationId: string }> }
 ) {
   try {
     const ctx = await requireApiAuth();
-    const { id } = await params;
+    const { applicationId } = await params;
     const input = await parseJsonBody(req, createInterviewSchema);
-    const result = await interviewService.createInterviewAndAnalyze(ctx, id, input);
+    const result = await interviewService.createInterviewAndAnalyze(
+      ctx,
+      applicationId,
+      input
+    );
     return jsonCreated(result);
   } catch (error) {
     return handleRouteError(error);

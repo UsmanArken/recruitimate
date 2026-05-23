@@ -22,15 +22,16 @@ MVP-011,MVP,Decision Intelligence,Decision,Decision engine synthesis,Combine tal
 MVP-012,MVP,Decision Intelligence,Decision,Explainable recommendations,Human-readable explanation and signal breakdown,P0,Done,MVP-011,
 MVP-013,MVP,Decision Intelligence,Decision,Risk factors output,Merge talent gaps and interview flags into decision,P1,Done,MVP-011,
 MVP-014,MVP,Pipeline,—,Job / requisition CRUD,Create list and detail open roles with description requirements and team panel,P0,Done,,/jobs/[id]
-MVP-015,MVP,Pipeline,—,Candidate CRUD,Add list view candidate profiles linked to jobs,P0,Done,,
-MVP-016,MVP,Pipeline,—,Pipeline stages,NEW through HIRED/REJECTED stage tracking on candidates,P1,Done,MVP-015,
+MVP-015,MVP,Pipeline,—,Candidate CRUD,Person record + applications per open position; list one row per campaign,P0,Done,,
+MVP-015b,MVP,Pipeline,—,Multi-position applications,Same resume reviewed for multiple jobs via JobApplication unique candidate+job,P1,Done,MVP-015,/candidates/[id]/applications/[id]
+MVP-016,MVP,Pipeline,—,Pipeline stages,NEW through HIRED/REJECTED per JobApplication not per person,P1,Done,MVP-015,
 MVP-017,MVP,Pipeline,—,Stage badges UI,ATS-style pipeline stage labels in list and profile,P2,Done,MVP-016,
 MVP-018,MVP,UI,—,Hiring dashboard,Stats and recent pipeline activity,P0,Done,,
 MVP-019,MVP,UI,—,Three-layer candidate profile,Talent Interview Decision sections on single page,P0,Done,,
 MVP-020,MVP,UI,—,Trust and advisory messaging,Banners clarifying AI assists does not replace human judgment,P1,Done,,
 MVP-021,MVP,API,—,REST API routes,Jobs candidates talent re-run interviews auth invites admin endpoints,P0,Done,,
 MVP-022,MVP,Platform,—,Local development runbook,Docker Postgres db push db:seed npm run dev documented,P1,Done,,
-MVP-023,MVP,Talent Intelligence,Talent,Resume PDF upload,Upload PDF/DOCX and extract text automatically,P1,Not Started,,MVP gap
+MVP-023,MVP,Talent Intelligence,Talent,Resume PDF upload,Upload PDF/DOCX parse API and new-candidate upload UI,P1,Done,,
 MVP-024,MVP,Talent Intelligence,Talent,LinkedIn profile ingestion,Fetch or paste LinkedIn data into talent engine,P2,Not Started,,
 MVP-025,MVP,Talent Intelligence,Talent,GitHub / portfolio parsing,Extract signals from repos and portfolio URLs,P2,Not Started,,
 MVP-026,MVP,Pipeline,—,Candidate notes and tagging,Notes model exists — build UI to add view tags,P1,Not Started,MVP-015,

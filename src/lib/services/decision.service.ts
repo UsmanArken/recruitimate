@@ -2,21 +2,21 @@ import { db } from "@/lib/db";
 import type { DecisionIntelligenceResult } from "@/lib/intelligence/types";
 
 export async function upsertDecision(
-  candidateId: string,
+  applicationId: string,
   decision: DecisionIntelligenceResult
 ) {
   return db.decision.upsert({
-    where: { candidateId },
+    where: { applicationId },
     create: {
-      candidateId,
-      hireConfidence: decision.hireConfidence,
+      applicationId,
+      hireConfidence: decision.hireConfidence ?? null,
       recommendation: decision.recommendation,
       riskFactors: decision.riskFactors,
       explanation: decision.explanation,
       signalBreakdown: decision.signalBreakdown,
     },
     update: {
-      hireConfidence: decision.hireConfidence,
+      hireConfidence: decision.hireConfidence ?? null,
       recommendation: decision.recommendation,
       riskFactors: decision.riskFactors,
       explanation: decision.explanation,

@@ -3,62 +3,67 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
-export function InterviewForm({ candidateId }: { candidateId: string }) {
+export function InterviewForm({ applicationId }: { applicationId: string }) {
   const router = useRouter();
+  const [title, setTitle] = useState("Technical interview");
+  const [transcript, setTranscript] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const fd = new FormData(e.currentTarget);
 
-    const res = await fetch(`/api/candidates/${candidateId}/interviews`, {
+    const res = await fetch(`/api/applications/${applicationId}/interviews`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: fd.get("title"),
-        transcript: fd.get("transcript"),
-      }),
+      body: JSON.stringify({ title, transcript }),
     });
 
+    setLoading(false);
     if (!res.ok) {
-      setError("Analysis failed. Ensure transcript is at least 50 characters.");
-      setLoading(false);
+      const data = await res.json().catch(() => ({}));
+      setError(typeof data.error === "string" ? data.error : "Failed to analyze interview");
       return;
     }
-
     router.refresh();
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
-      <label className="block">
-        <span className="text-sm font-semibold">Interview round</span>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <label>
+        <span className="text-sm font-semibold">Interview title</span>
         <input
-          name="title"
-          required
-          placeholder="e.g. Hiring manager screen"
           className="input-hr mt-1.5"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          required
         />
       </label>
-      <label className="block">
+      <label>
         <span className="text-sm font-semibold">Transcript</span>
         <textarea
-          name="transcript"
+          className="input-hr mt-1.5 min-h-[160px]"
+          value={transcript}
+          onChange={(e) => setTranscript(e.target.value)}
+          placeholder="Paste interview transcript…"
           required
-          rows={10}
-          placeholder="Paste the full interview transcript…"
-          className="input-hr mt-1.5"
+          minLength={50}
         />
       </label>
-      {error && (
-        <p className="rounded-lg bg-risk-bg px-3 py-2 text-sm text-risk">{error}</p>
-      )}
-      <Button type="submit" disabled={loading}>
-        {loading ? "Generating report…" : "Analyze interview"}
+      {error && <p className="text-sm text-risk">{error}</p>}
+      <Button type="submit" disabled={loading || transcript.length < 50}>
+        {loading ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Analyzing…
+          </>
+        ) : (
+          "Analyze interview"
+        )}
       </Button>
     </form>
   );

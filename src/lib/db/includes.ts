@@ -1,29 +1,31 @@
 import type { Prisma } from "@prisma/client";
 
-export const candidateListInclude = {
-  job: true,
+export const applicationListInclude = {
+  candidate: { select: { id: true, name: true, email: true } },
+  job: { select: { id: true, title: true } },
   talentProfile: true,
   decision: true,
-} satisfies Prisma.CandidateInclude;
+} satisfies Prisma.JobApplicationInclude;
 
-export const candidateDetailInclude = {
+export const applicationDetailInclude = {
+  candidate: true,
   job: true,
   talentProfile: true,
   decision: true,
   interviews: { include: { analysis: true }, orderBy: { createdAt: "desc" as const } },
-  notes: { orderBy: { createdAt: "desc" as const } },
-} satisfies Prisma.CandidateInclude;
+} satisfies Prisma.JobApplicationInclude;
 
-export const candidateWithJobAndInterviewsInclude = {
-  job: true,
-  interviews: { include: { analysis: true }, orderBy: { createdAt: "desc" as const } },
-} satisfies Prisma.CandidateInclude;
-
-export const candidateWithTalentInclude = {
-  talentProfile: true,
-  job: true,
+export const candidatePersonInclude = {
+  applications: {
+    include: {
+      job: { select: { id: true, title: true } },
+      talentProfile: true,
+      decision: true,
+    },
+    orderBy: { updatedAt: "desc" as const },
+  },
 } satisfies Prisma.CandidateInclude;
 
 export const jobListInclude = {
-  _count: { select: { candidates: true } },
+  _count: { select: { applications: true } },
 } satisfies Prisma.JobInclude;

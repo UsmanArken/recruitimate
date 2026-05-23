@@ -68,7 +68,7 @@ export default async function JobsPage() {
                   <CardContent className="pt-0">
                     <div className="flex items-center gap-1.5 text-sm font-medium text-muted">
                       <Users className="h-4 w-4" />
-                      {job._count.candidates} candidate{job._count.candidates !== 1 ? "s" : ""}{" "}
+                      {job._count.applications} applicant{job._count.applications !== 1 ? "s" : ""}{" "}
                       in pipeline · Manage team →
                     </div>
                   </CardContent>

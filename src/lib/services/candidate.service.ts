@@ -1,31 +1,25 @@
 import { db } from "@/lib/db";
-import {
-  candidateDetailInclude,
-  candidateListInclude,
-  candidateWithJobAndInterviewsInclude,
-} from "@/lib/db/includes";
-import { badRequest, notFound } from "@/lib/api/errors";
+import { applicationDetailInclude, candidatePersonInclude } from "@/lib/db/includes";
+import { notFound } from "@/lib/api/errors";
 import { assertPermission } from "@/lib/auth/permission.service";
 import { organizationFilter } from "@/lib/auth/platform-admin";
 import {
   assertCandidateAccess,
   candidatesWhereClause,
 } from "@/lib/auth/scope.service";
-import { analyzeTalent } from "@/lib/intelligence/talent/engine";
-import { generateDecision } from "@/lib/intelligence/decision/engine";
-import { toInterviewIntelligenceResult } from "@/lib/intelligence/mappers";
 import type { AuthContext } from "@/lib/auth/types";
 import type { CreateCandidateInput } from "@/lib/validators/candidate";
 import { getJobById } from "@/lib/services/job.service";
-import { upsertTalentProfile } from "@/lib/services/talent-profile.service";
-import { upsertDecision } from "@/lib/services/decision.service";
-
+import {
+  computeTalentAndDecision,
+  talentForStorage,
+} from "@/lib/services/candidate-intelligence.service";
 export async function listCandidates(ctx: AuthContext) {
   await assertPermission(ctx, { resource: "candidates", action: "read" });
   const where = await candidatesWhereClause(ctx);
   return db.candidate.findMany({
     where,
-    include: candidateListInclude,
+    include: candidatePersonInclude,
     orderBy: { updatedAt: "desc" },
   });
 }
@@ -36,7 +30,7 @@ export async function getCandidateById(ctx: AuthContext, id: string) {
 
   const candidate = await db.candidate.findFirst({
     where: { id, ...organizationFilter(ctx) },
-    include: candidateDetailInclude,
+    include: candidatePersonInclude,
   });
   if (!candidate) throw notFound("Candidate");
   return candidate;
@@ -45,78 +39,49 @@ export async function getCandidateById(ctx: AuthContext, id: string) {
 export async function createCandidate(ctx: AuthContext, input: CreateCandidateInput) {
   await assertPermission(ctx, { resource: "candidates", action: "create" });
 
-  const job = input.jobId ? await getJobById(ctx, input.jobId) : null;
+  const job = await getJobById(ctx, input.jobId);
 
-  const talent = await analyzeTalent(
-    input.resumeText,
-    job?.title,
-    job?.requirements
-  );
-  const decision = await generateDecision(talent, null, input.name);
+  const { talent, decision } = await computeTalentAndDecision({
+    candidateName: input.name,
+    resumeText: input.resumeText,
+    job: {
+      id: job.id,
+      title: job.title,
+      requirements: job.requirements,
+    },
+    interviews: [],
+  });
 
-  return db.candidate.create({
+  const candidate = await db.candidate.create({
     data: {
       name: input.name,
       email: input.email || null,
       organizationId: ctx.organizationId,
-      jobId: job?.id ?? null,
       resumeText: input.resumeText,
       linkedInUrl: input.linkedInUrl || null,
       githubUrl: input.githubUrl || null,
-      stage: "TALENT_REVIEW",
-      talentProfile: {
+      applications: {
         create: {
-          skills: talent.skills,
-          experienceYears: talent.experienceYears,
-          roleFitScore: talent.roleFitScore,
-          strengths: talent.strengths,
-          gaps: talent.gaps,
-          hiddenSignals: talent.hiddenSignals,
-          explanation: talent.explanation,
-          rawAnalysis: talent,
-        },
-      },
-      decision: {
-        create: {
-          hireConfidence: decision.hireConfidence,
-          recommendation: decision.recommendation,
-          riskFactors: decision.riskFactors,
-          explanation: decision.explanation,
-          signalBreakdown: decision.signalBreakdown,
+          organizationId: ctx.organizationId,
+          jobId: job.id,
+          stage: "TALENT_REVIEW",
+          talentProfile: { create: talentForStorage(talent) },
+          decision: {
+            create: {
+              hireConfidence: decision.hireConfidence,
+              recommendation: decision.recommendation,
+              riskFactors: decision.riskFactors,
+              explanation: decision.explanation,
+              signalBreakdown: decision.signalBreakdown,
+            },
+          },
         },
       },
     },
-    include: candidateListInclude,
-  });
-}
-
-export async function rerunTalentAnalysis(ctx: AuthContext, candidateId: string) {
-  await assertPermission(ctx, { resource: "intelligence", action: "run" });
-  const { jobId } = await assertCandidateAccess(ctx, candidateId);
-
-  const candidate = await db.candidate.findFirst({
-    where: { id: candidateId, ...organizationFilter(ctx) },
-    include: candidateWithJobAndInterviewsInclude,
+    include: {
+      applications: { include: applicationDetailInclude, take: 1 },
+    },
   });
 
-  if (!candidate) throw notFound("Candidate");
-  if (!candidate.resumeText) throw badRequest("No resume text", "NO_RESUME");
-
-  const talent = await analyzeTalent(
-    candidate.resumeText,
-    candidate.job?.title,
-    candidate.job?.requirements
-  );
-
-  await upsertTalentProfile(candidateId, talent);
-
-  const latestWithAnalysis = candidate.interviews.find((i) => i.analysis);
-  const interviewResult = latestWithAnalysis?.analysis
-    ? toInterviewIntelligenceResult(latestWithAnalysis.analysis)
-    : null;
-
-  const decision = await generateDecision(talent, interviewResult, candidate.name);
-  await upsertDecision(candidateId, decision);
-
-  return { talent, decision, jobId };
+  return candidate;
 }

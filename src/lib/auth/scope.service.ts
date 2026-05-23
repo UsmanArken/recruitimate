@@ -54,6 +54,20 @@ export async function jobsWhereClause(
   return { ...base, id: { in: jobIds.length ? jobIds : ["__none__"] } };
 }
 
+export async function applicationsWhereClause(
+  ctx: AuthContext
+): Promise<Prisma.JobApplicationWhereInput> {
+  if (isPlatformSuperAdmin(ctx)) return {};
+  const base: Prisma.JobApplicationWhereInput = {
+    organizationId: ctx.organizationId,
+  };
+  if (await hasPermission(ctx, { resource: "candidates", action: "read_all" })) {
+    return base;
+  }
+  const jobIds = await getAssignedJobIds(ctx);
+  return { ...base, jobId: { in: jobIds.length ? jobIds : ["__none__"] } };
+}
+
 export async function candidatesWhereClause(
   ctx: AuthContext
 ): Promise<Prisma.CandidateWhereInput> {
@@ -65,34 +79,56 @@ export async function candidatesWhereClause(
   const jobIds = await getAssignedJobIds(ctx);
   return {
     ...base,
-    OR: [
-      { jobId: { in: jobIds.length ? jobIds : ["__none__"] } },
-      { jobId: null },
-    ],
+    applications: {
+      some: { jobId: { in: jobIds.length ? jobIds : ["__none__"] } },
+    },
   };
+}
+
+export async function assertApplicationAccess(
+  ctx: AuthContext,
+  applicationId: string
+): Promise<{ jobId: string; candidateId: string }> {
+  const application = await db.jobApplication.findFirst({
+    where: { id: applicationId, ...organizationFilter(ctx) },
+    select: { id: true, jobId: true, candidateId: true },
+  });
+  if (!application) throw notFound("Application");
+
+  if (await hasPermission(ctx, { resource: "candidates", action: "read_all" })) {
+    return { jobId: application.jobId, candidateId: application.candidateId };
+  }
+
+  if (await canAccessJob(ctx, application.jobId)) {
+    return { jobId: application.jobId, candidateId: application.candidateId };
+  }
+
+  throw forbidden("You do not have access to this application");
 }
 
 export async function assertCandidateAccess(
   ctx: AuthContext,
   candidateId: string
-): Promise<{ jobId: string | null }> {
+): Promise<void> {
   const candidate = await db.candidate.findFirst({
     where: { id: candidateId, ...organizationFilter(ctx) },
-    select: { id: true, jobId: true },
+    select: { id: true },
   });
   if (!candidate) throw notFound("Candidate");
 
   if (await hasPermission(ctx, { resource: "candidates", action: "read_all" })) {
-    return { jobId: candidate.jobId };
+    return;
   }
 
-  if (candidate.jobId && (await canAccessJob(ctx, candidate.jobId))) {
-    return { jobId: candidate.jobId };
-  }
+  const accessible = await db.jobApplication.findFirst({
+    where: {
+      candidateId,
+      ...(await applicationsWhereClause(ctx)),
+    },
+    select: { id: true },
+  });
 
-  if (!candidate.jobId && (await hasPermission(ctx, { resource: "candidates", action: "read" }))) {
-    return { jobId: null };
-  }
+  if (accessible) return;
 
   throw forbidden("You do not have access to this candidate");
 }

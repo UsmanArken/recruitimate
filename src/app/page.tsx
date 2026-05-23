@@ -13,15 +13,30 @@ import { ArrowRight, Users, Briefcase, Mic, TrendingUp, UserPlus } from "lucide-
 
 export const dynamic = "force-dynamic";
 
+function decisionStatusLabel(
+  recommendation: string | null | undefined,
+  hireConfidence: number | null | undefined
+): string {
+  if (recommendation === "pending_interview") return "Awaiting interview";
+  if (hireConfidence != null) return `${Math.round(hireConfidence * 100)}% confidence`;
+  return "—";
+}
+
 export default async function DashboardPage() {
-  let stats = { candidates: 0, jobs: 0, interviewed: 0, avgConfidence: null as number | null };
-  let recent: Awaited<ReturnType<typeof getDashboardData>>["recentCandidates"] = [];
+  let stats = {
+    candidates: 0,
+    applications: 0,
+    jobs: 0,
+    interviewed: 0,
+    avgConfidence: null as number | null,
+  };
+  let recent: Awaited<ReturnType<typeof getDashboardData>>["recentApplications"] = [];
 
   try {
     const ctx = await requireAuthContext();
     const data = await getDashboardData(ctx);
     stats = data.stats;
-    recent = data.recentCandidates;
+    recent = data.recentApplications;
   } catch {
     // DB not connected yet
   }
@@ -46,8 +61,14 @@ export default async function DashboardPage() {
         </div>
 
         <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard label="Active candidates" value={stats.candidates} icon={Users} tone="teal" />
-          <StatCard label="Open roles" value={stats.jobs} icon={Briefcase} tone="navy" />
+          <StatCard label="People in pipeline" value={stats.candidates} icon={Users} tone="teal" />
+          <StatCard
+            label="Position reviews"
+            value={stats.applications}
+            icon={Briefcase}
+            tone="navy"
+            hint="Same person may appear on multiple roles"
+          />
           <StatCard
             label="Interviews completed"
             value={stats.interviewed}
@@ -59,7 +80,7 @@ export default async function DashboardPage() {
             value={stats.avgConfidence != null ? formatScore(stats.avgConfidence) : "—"}
             icon={TrendingUp}
             tone="slate"
-            hint="Across evaluated candidates"
+            hint="Across completed evaluations"
           />
         </div>
 
@@ -67,7 +88,7 @@ export default async function DashboardPage() {
           <CardHeader>
             <CardTitle>Pipeline activity</CardTitle>
             <CardDescription>
-              Recent candidates across your hiring funnel — click to view full intelligence profile
+              Recent position reviews — click to open campaign intelligence
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
@@ -76,9 +97,9 @@ export default async function DashboardPage() {
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-brand/10">
                   <Users className="h-7 w-7 text-brand" />
                 </div>
-                <p className="font-medium text-foreground">No candidates in your pipeline yet</p>
+                <p className="font-medium text-foreground">No applications in your pipeline yet</p>
                 <p className="mt-1 text-sm text-muted">
-                  Add a candidate to start talent and decision intelligence.
+                  Add a candidate linked to an open position to start screening.
                 </p>
                 <ButtonLink href="/candidates/new" className="mt-5">
                   Add first candidate
@@ -86,25 +107,30 @@ export default async function DashboardPage() {
               </div>
             ) : (
               <ul>
-                {recent.map((c) => (
-                  <li key={c.id} className="border-t border-border-subtle first:border-t-0">
+                {recent.map((app) => (
+                  <li key={app.id} className="border-t border-border-subtle first:border-t-0">
                     <Link
-                      href={`/candidates/${c.id}`}
+                      href={`/candidates/${app.candidate.id}/applications/${app.id}`}
                       className="flex items-center gap-4 px-6 py-4 transition hover:bg-teal-50/40"
                     >
-                      <Avatar name={c.name} />
+                      <Avatar name={app.candidate.name} />
                       <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-foreground">{c.name}</p>
-                        <p className="text-sm text-muted">
-                          {c.job?.title ?? "Unassigned role"}
-                        </p>
+                        <p className="font-semibold text-foreground">{app.candidate.name}</p>
+                        <p className="text-sm text-muted">{app.job.title}</p>
                       </div>
-                      <StageBadge stage={c.stage} />
-                      {c.decision?.hireConfidence != null && (
+                      <StageBadge stage={app.stage} />
+                      {app.decision?.hireConfidence != null ? (
                         <span
-                          className={`text-sm font-bold tabular-nums ${scoreColor(c.decision.hireConfidence)}`}
+                          className={`text-sm font-bold tabular-nums ${scoreColor(app.decision.hireConfidence)}`}
                         >
-                          {formatScore(c.decision.hireConfidence)}
+                          {formatScore(app.decision.hireConfidence)}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted">
+                          {decisionStatusLabel(
+                            app.decision?.recommendation,
+                            app.decision?.hireConfidence
+                          )}
                         </span>
                       )}
                       <ArrowRight className="h-4 w-4 text-muted" />

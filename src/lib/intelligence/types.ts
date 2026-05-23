@@ -8,7 +8,8 @@ export type Signal = {
 export type TalentIntelligenceResult = {
   skills: string[];
   experienceYears: number | null;
-  roleFitScore: number;
+  /** Null when no open position / requirements are linked. */
+  roleFitScore: number | null;
   strengths: string[];
   gaps: string[];
   hiddenSignals: Signal[];
@@ -27,9 +28,18 @@ export type InterviewIntelligenceResult = {
   explanation: string;
 };
 
+export type HireRecommendation =
+  | "strong_yes"
+  | "yes"
+  | "maybe"
+  | "no"
+  | "strong_no"
+  | "pending_role"
+  | "pending_interview";
+
 export type DecisionIntelligenceResult = {
-  hireConfidence: number;
-  recommendation: "strong_yes" | "yes" | "maybe" | "no" | "strong_no";
+  hireConfidence: number | null;
+  recommendation: HireRecommendation;
   riskFactors: Signal[];
   explanation: string;
   signalBreakdown: {

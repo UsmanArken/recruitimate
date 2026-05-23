@@ -5,12 +5,15 @@ export function ScoreBadge({
   score,
   className,
   invertBar,
+  emptyLabel,
 }: {
   label: string;
   score: number | null | undefined;
   className?: string;
   /** For hesitation — lower is better */
   invertBar?: boolean;
+  /** Shown when score is null (e.g. missing hiring campaign). */
+  emptyLabel?: string;
 }) {
   const pct = score != null ? Math.round(score * 100) : 0;
   const barPct = invertBar && score != null ? 100 - pct : pct;
@@ -23,8 +26,14 @@ export function ScoreBadge({
       )}
     >
       <p className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>
-      <p className={cn("mt-1 text-2xl font-bold tabular-nums", scoreColor(score, invertBar))}>
-        {formatScore(score)}
+      <p
+        className={cn(
+          "mt-1 font-bold tabular-nums",
+          score != null ? "text-2xl" : "text-sm",
+          scoreColor(score, invertBar)
+        )}
+      >
+        {score != null ? formatScore(score) : (emptyLabel ?? "—")}
       </p>
       <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-border-subtle">
         <div

@@ -36,8 +36,8 @@ function heuristicAnalysis(
   const yearsMatch = resumeText.match(/(\d+)\+?\s*years?/i);
   const experienceYears = yearsMatch ? parseInt(yearsMatch[1], 10) : null;
 
-  let roleFitScore = 0.55;
-  if (jobRequirements) {
+  let roleFitScore: number | null = null;
+  if (jobRequirements?.trim()) {
     const reqLower = jobRequirements.toLowerCase();
     const matched = skillKeywords.filter(
       (s) => lower.includes(s) && reqLower.includes(s)
@@ -50,9 +50,9 @@ function heuristicAnalysis(
     experienceYears,
     roleFitScore,
     strengths: skills.slice(0, 3).map((s) => `Demonstrated ${s} experience`),
-    gaps: jobRequirements
+    gaps: jobRequirements?.trim()
       ? ["Verify depth on role-specific requirements in interview"]
-      : ["No job requirements provided for fit comparison"],
+      : ["Assign an open position to score fit against your hiring campaign"],
     hiddenSignals: [
       {
         label: "Career signal",

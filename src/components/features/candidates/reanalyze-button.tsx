@@ -2,28 +2,33 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, RefreshCw } from "lucide-react";
 
-export function ReanalyzeButton({ candidateId }: { candidateId: string }) {
+export function ReanalyzeButton({ applicationId }: { applicationId: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  async function reanalyze() {
+  async function handleClick() {
     setLoading(true);
-    await fetch(`/api/candidates/${candidateId}/talent`, { method: "POST" });
-    router.refresh();
+    await fetch(`/api/applications/${applicationId}/talent`, { method: "POST" });
     setLoading(false);
+    router.refresh();
   }
 
   return (
-    <button
+    <Button
       type="button"
-      onClick={reanalyze}
+      variant="secondary"
+      onClick={handleClick}
       disabled={loading}
-      className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary-hover disabled:opacity-50"
     >
-      <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
-      {loading ? "Refreshing…" : "Refresh talent profile"}
-    </button>
+      {loading ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <RefreshCw className="h-4 w-4" />
+      )}
+      Re-run screening
+    </Button>
   );
 }

@@ -70,8 +70,9 @@ model Organization {
   slug      String               @unique
   members   OrganizationMember[]
   invites   Invite[]
-  jobs      Job[]
-  candidates Candidate[]
+  jobs            Job[]
+  candidates      Candidate[]
+  jobApplications JobApplication[]
   createdAt DateTime             @default(now())
   updatedAt DateTime             @updatedAt
 }
@@ -194,45 +195,62 @@ model Job {
   hiringManagerId  String?
   organization     Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   hiringManager    User?           @relation("JobHiringManager", fields: [hiringManagerId], references: [id], onDelete: SetNull)
-  assignments      JobAssignment[]
-  candidates       Candidate[]
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  assignments   JobAssignment[]
+  applications  JobApplication[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 
   @@index([organizationId])
   @@index([hiringManagerId])
 }
 
 model Candidate {
-  id              String          @id @default(cuid())
-  organizationId  String
-  name            String
-  email           String?
-  linkedInUrl     String?
-  githubUrl       String?
-  portfolioUrl    String?
-  resumeText      String?         @db.Text
-  resumeFilePath  String?
-  stage           PipelineStage   @default(NEW)
-  jobId           String?
-  organization    Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  job             Job?            @relation(fields: [jobId], references: [id], onDelete: SetNull)
-  talentProfile   TalentProfile?
-  interviews      Interview[]
-  decision        Decision?
-  notes           Note[]
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  id             String           @id @default(cuid())
+  organizationId String
+  name           String
+  email          String?
+  linkedInUrl    String?
+  githubUrl      String?
+  portfolioUrl   String?
+  resumeText     String?          @db.Text
+  resumeFilePath String?
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  applications   JobApplication[]
+  notes          Note[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
   @@index([organizationId])
+  @@index([email])
+}
+
+/// One applicant's journey on a specific open position (hiring campaign).
+model JobApplication {
+  id             String          @id @default(cuid())
+  organizationId String
+  candidateId    String
+  jobId          String
+  stage          PipelineStage   @default(NEW)
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  candidate      Candidate       @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  job            Job             @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  talentProfile  TalentProfile?
+  interviews     Interview[]
+  decision       Decision?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@unique([candidateId, jobId])
+  @@index([organizationId])
   @@index([jobId])
+  @@index([candidateId])
   @@index([stage])
 }
 
 model TalentProfile {
-  id              String    @id @default(cuid())
-  candidateId     String    @unique
-  candidate       Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  id              String         @id @default(cuid())
+  applicationId   String         @unique
+  application     JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   skills          Json      @default("[]")
   experienceYears Float?
   roleFitScore    Float?
@@ -247,8 +265,8 @@ model TalentProfile {
 
 model Interview {
   id              String             @id @default(cuid())
-  candidateId     String
-  candidate       Candidate          @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  applicationId   String
+  application     JobApplication     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   title           String
   status          InterviewStatus    @default(SCHEDULED)
   scheduledAt     DateTime?
@@ -258,7 +276,7 @@ model Interview {
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
 
-  @@index([candidateId])
+  @@index([applicationId])
 }
 
 model InterviewAnalysis {
@@ -280,9 +298,9 @@ model InterviewAnalysis {
 }
 
 model Decision {
-  id                String    @id @default(cuid())
-  candidateId       String    @unique
-  candidate         Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  id                String         @id @default(cuid())
+  applicationId     String         @unique
+  application       JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   hireConfidence    Float?
   recommendation    String?
   riskFactors       Json      @default("[]")

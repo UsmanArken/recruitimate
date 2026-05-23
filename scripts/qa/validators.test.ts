@@ -22,9 +22,18 @@ describe("Validators", () => {
     const parsed = createCandidateSchema.safeParse({
       name: "Jane Doe",
       email: "jane@example.com",
+      jobId: "clxyz123",
       resumeText: "Twenty characters minimum for resume body text here.",
     });
     assert.equal(parsed.success, true);
+  });
+
+  it("requires open position on create", () => {
+    const parsed = createCandidateSchema.safeParse({
+      name: "Jane Doe",
+      resumeText: "Twenty characters minimum for resume body text here.",
+    });
+    assert.equal(parsed.success, false);
   });
 
   it("requires job title", () => {

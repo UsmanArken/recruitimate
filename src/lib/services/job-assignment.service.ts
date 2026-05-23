@@ -13,7 +13,7 @@ const jobDetailInclude = {
     },
     orderBy: { createdAt: "asc" as const },
   },
-  _count: { select: { candidates: true } },
+  _count: { select: { applications: true } },
 } as const;
 
 export async function getJobWithTeam(ctx: AuthContext, jobId: string) {

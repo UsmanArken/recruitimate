@@ -1,35 +1,41 @@
 import { db } from "@/lib/db";
-import { candidateListInclude } from "@/lib/db/includes";
+import { applicationListInclude } from "@/lib/db/includes";
 import { assertPermission } from "@/lib/auth/permission.service";
-import { jobsWhereClause, candidatesWhereClause } from "@/lib/auth/scope.service";
+import {
+  applicationsWhereClause,
+  candidatesWhereClause,
+  jobsWhereClause,
+} from "@/lib/auth/scope.service";
 import type { AuthContext } from "@/lib/auth/types";
 
 export async function getDashboardData(ctx: AuthContext) {
   await assertPermission(ctx, { resource: "candidates", action: "read" });
 
-  const [candidateWhere, jobWhere] = await Promise.all([
+  const [applicationWhere, candidateWhere, jobWhere] = await Promise.all([
+    applicationsWhereClause(ctx),
     candidatesWhereClause(ctx),
     jobsWhereClause(ctx),
   ]);
 
-  const [candidateCount, jobCount, interviewedCount, decisions, recentCandidates] =
+  const [candidateCount, applicationCount, jobCount, interviewedCount, decisions, recentApplications] =
     await Promise.all([
       db.candidate.count({ where: candidateWhere }),
+      db.jobApplication.count({ where: applicationWhere }),
       db.job.count({ where: jobWhere }),
-      db.candidate.count({
-        where: { ...candidateWhere, stage: "INTERVIEWED" },
+      db.jobApplication.count({
+        where: { ...applicationWhere, stage: "INTERVIEWED" },
       }),
       db.decision.findMany({
         where: {
-          candidate: candidateWhere,
+          application: applicationWhere,
           hireConfidence: { not: null },
         },
       }),
-      db.candidate.findMany({
-        where: candidateWhere,
+      db.jobApplication.findMany({
+        where: applicationWhere,
         take: 5,
         orderBy: { updatedAt: "desc" },
-        include: candidateListInclude,
+        include: applicationListInclude,
       }),
     ]);
 
@@ -41,10 +47,11 @@ export async function getDashboardData(ctx: AuthContext) {
   return {
     stats: {
       candidates: candidateCount,
+      applications: applicationCount,
       jobs: jobCount,
       interviewed: interviewedCount,
       avgConfidence,
     },
-    recentCandidates,
+    recentApplications,
   };
 }

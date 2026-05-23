@@ -73,7 +73,7 @@ See [docs/QA.md](./docs/QA.md) for the full checklist and CI suggestions.
 ### Typical flow
 
 1. **Create a job** → `/jobs/new` (enables role fit scoring)
-2. **Add candidate** → paste resume → Talent Intelligence runs automatically
+2. **Add candidate** → upload PDF/DOCX or paste resume → Talent Intelligence runs automatically
 3. **Add interview** → paste transcript on candidate page → Interview + Decision layers update
 
 ## Project structure

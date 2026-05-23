@@ -38,7 +38,8 @@ npm run db:seed
 | Automated | Manual (demo checklist) |
 |-----------|-------------------------|
 | Lint / types / build | Sign in as org owner |
-| Talent / interview / decision heuristics | Create job → add candidate → paste resume |
+| Talent / interview / decision heuristics | Create job → add candidate → upload PDF/DOCX or paste resume |
+| Resume extract helpers (normalize, file types) | Verify extracted text in textarea before submit |
 | Zod validators | Add interview transcript → verify 3 layers update |
 | DB roles, permissions, super admin | Invite teammate → accept invite |
 | Public/protected HTTP routes | Job team assign interviewer |

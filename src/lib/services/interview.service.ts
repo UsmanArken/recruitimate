@@ -1,44 +1,46 @@
 import { db } from "@/lib/db";
-import { candidateWithTalentInclude } from "@/lib/db/includes";
-import { notFound } from "@/lib/api/errors";
+import { applicationDetailInclude } from "@/lib/db/includes";
+import { badRequest, notFound } from "@/lib/api/errors";
 import { organizationFilter } from "@/lib/auth/platform-admin";
 import { assertPermission } from "@/lib/auth/permission.service";
-import { assertCandidateAccess } from "@/lib/auth/scope.service";
+import { assertApplicationAccess } from "@/lib/auth/scope.service";
 import type { AuthContext } from "@/lib/auth/types";
 import { analyzeInterview } from "@/lib/intelligence/interview/engine";
-import { generateDecision } from "@/lib/intelligence/decision/engine";
-import { toTalentIntelligenceResult } from "@/lib/intelligence/mappers";
+import { refreshApplicationIntelligence } from "@/lib/services/candidate-intelligence.service";
 import type { CreateInterviewInput } from "@/lib/validators/interview";
-import { upsertDecision } from "@/lib/services/decision.service";
 
 export async function createInterviewAndAnalyze(
   ctx: AuthContext,
-  candidateId: string,
+  applicationId: string,
   input: CreateInterviewInput
 ) {
   await assertPermission(ctx, { resource: "interviews", action: "create" });
-  const { jobId } = await assertCandidateAccess(ctx, candidateId);
+  const { jobId } = await assertApplicationAccess(ctx, applicationId);
 
-  if (jobId) {
-    await assertPermission(ctx, {
-      resource: "interviews",
-      action: "create",
-      jobId,
-    });
-  }
-
-  const candidate = await db.candidate.findFirst({
-    where: { id: candidateId, ...organizationFilter(ctx) },
-    include: candidateWithTalentInclude,
+  await assertPermission(ctx, {
+    resource: "interviews",
+    action: "create",
+    jobId,
   });
 
-  if (!candidate) throw notFound("Candidate");
+  const application = await db.jobApplication.findFirst({
+    where: { id: applicationId, ...organizationFilter(ctx) },
+    include: { candidate: true, job: true },
+  });
 
-  const analysis = await analyzeInterview(input.transcript, candidate.resumeText);
+  if (!application) throw notFound("Application");
+  if (!application.candidate.resumeText) {
+    throw badRequest("No resume text on file", "NO_RESUME");
+  }
+
+  const analysis = await analyzeInterview(
+    input.transcript,
+    application.candidate.resumeText
+  );
 
   const interview = await db.interview.create({
     data: {
-      candidateId,
+      applicationId,
       title: input.title,
       status: "ANALYZED",
       transcript: input.transcript,
@@ -60,14 +62,27 @@ export async function createInterviewAndAnalyze(
     include: { analysis: true },
   });
 
-  await db.candidate.update({
-    where: { id: candidateId },
+  await db.jobApplication.update({
+    where: { id: applicationId },
     data: { stage: "INTERVIEWED" },
   });
 
-  const talent = toTalentIntelligenceResult(candidate.talentProfile);
-  const decision = await generateDecision(talent, analysis, candidate.name);
-  await upsertDecision(candidateId, decision);
+  const full = await db.jobApplication.findFirst({
+    where: { id: applicationId },
+    include: applicationDetailInclude,
+  });
+
+  const { decision } = await refreshApplicationIntelligence({
+    applicationId,
+    candidateName: application.candidate.name,
+    resumeText: application.candidate.resumeText ?? "",
+    job: {
+      id: application.jobId,
+      title: full?.job.title ?? application.job.title,
+      requirements: full?.job.requirements ?? application.job.requirements,
+    },
+    interviews: full?.interviews ?? [interview],
+  });
 
   return { interview, decision };
 }

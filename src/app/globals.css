@@ -84,6 +84,15 @@ body {
   box-shadow: 0 0 0 3px rgba(14, 116, 144, 0.15);
 }
 
+select.input-hr {
+  cursor: pointer;
+  appearance: menulist;
+  -webkit-appearance: menulist;
+  padding-inline-end: 2rem;
+  position: relative;
+  z-index: 1;
+}
+
 /* Data tables — recruiter-first */
 .table-hr thead {
   background: #f8fafc;
