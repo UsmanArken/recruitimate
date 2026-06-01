@@ -56,6 +56,9 @@ npm run db:seed
 7. **Super admin** — Login lands on `/admin`; tenant list excludes `recruitimate-platform`; stats are customer-only; hiring workspace blocked until **Browse hiring pipeline**; POST hiring APIs return 403 `TENANT_CONTEXT_REQUIRED`.
 8. **Notes** — On candidate person profile add tagged note; appears in list; delete works.
 9. **Onboarding** — New workspace shows getting-started checklist; empty states guide post role vs add applicant.
+10. **LinkedIn** — Import profile on intake or person page; talent screening refreshes.
+11. **Interview workflow** — Schedule → download `.ics` → upload recording → Whisper transcribe → run interview intelligence.
+12. **API logs** — API calls emit JSON logs with `requestId` (see server console); responses include `X-Request-Id`.
 
 ## CI (when you add production)
 
@@ -76,9 +79,5 @@ Run `qa:api` against a preview deployment URL after deploy.
 
 | ID | Task | Priority | Status |
 |----|------|----------|--------|
-| MVP-033 | Error handling & logging (finish request logging) | P1 | In Progress |
 | MVP-035 | MVP deployment | P1 | Not Started |
-| MVP-024 | LinkedIn ingestion | P2 | Not Started |
 | MVP-025 | GitHub / portfolio parsing | P2 | Not Started |
-| MVP-027 | Interview scheduling stub | P2 | Not Started |
-| MVP-030–031 | Recording + Whisper | P1 | Not Started (defer OK) |

@@ -12,6 +12,7 @@ import {
 } from "@/lib/auth/scope.service";
 import type { AuthContext } from "@/lib/auth/types";
 import { getJobById } from "@/lib/services/job.service";
+import { buildCandidateIntelligenceText } from "@/lib/candidate/intelligence-text";
 import {
   computeTalentAndDecision,
   refreshApplicationIntelligence,
@@ -51,8 +52,9 @@ export async function createApplicationForCandidate(
     where: { id: candidateId, ...organizationFilter(ctx) },
   });
   if (!candidate) throw notFound("Candidate");
-  if (!candidate.resumeText) {
-    throw badRequest("Candidate has no resume on file", "NO_RESUME");
+  const intelligenceText = buildCandidateIntelligenceText(candidate);
+  if (intelligenceText.length < 20) {
+    throw badRequest("Candidate has no resume or LinkedIn profile on file", "NO_PROFILE_TEXT");
   }
 
   const job = await getJobById(ctx, jobId);
@@ -69,7 +71,7 @@ export async function createApplicationForCandidate(
 
   const { talent, decision } = await computeTalentAndDecision({
     candidateName: candidate.name,
-    resumeText: candidate.resumeText,
+    resumeText: intelligenceText,
     job: { id: job.id, title: job.title, requirements: job.requirements },
     interviews: [],
   });
@@ -103,14 +105,15 @@ export async function rerunApplicationIntelligence(
   await assertPermission(ctx, { resource: "intelligence", action: "run" });
   const application = await getApplicationById(ctx, applicationId);
 
-  if (!application.candidate.resumeText) {
-    throw badRequest("No resume text", "NO_RESUME");
+  const intelligenceText = buildCandidateIntelligenceText(application.candidate);
+  if (intelligenceText.length < 20) {
+    throw badRequest("No resume or LinkedIn profile text", "NO_PROFILE_TEXT");
   }
 
   return refreshApplicationIntelligence({
     applicationId,
     candidateName: application.candidate.name,
-    resumeText: application.candidate.resumeText,
+    resumeText: intelligenceText,
     job: {
       id: application.jobId,
       title: application.job.title,

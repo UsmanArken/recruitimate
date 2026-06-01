@@ -10,6 +10,7 @@ import {
 import type { AuthContext } from "@/lib/auth/types";
 import type { CreateCandidateInput } from "@/lib/validators/candidate";
 import { getJobById } from "@/lib/services/job.service";
+import { buildCandidateIntelligenceText } from "@/lib/candidate/intelligence-text";
 import {
   computeTalentAndDecision,
   talentForStorage,
@@ -43,9 +44,15 @@ export async function createCandidate(ctx: AuthContext, input: CreateCandidateIn
   const job = await getJobById(ctx, input.jobId);
   const organizationId = ctx.actingOrganizationId ?? ctx.organizationId;
 
+  const intelligenceText = buildCandidateIntelligenceText({
+    resumeText: input.resumeText,
+    linkedInText: input.linkedInText,
+    githubUrl: input.githubUrl,
+  });
+
   const { talent, decision } = await computeTalentAndDecision({
     candidateName: input.name,
-    resumeText: input.resumeText,
+    resumeText: intelligenceText,
     job: {
       id: job.id,
       title: job.title,
@@ -60,6 +67,7 @@ export async function createCandidate(ctx: AuthContext, input: CreateCandidateIn
       email: input.email || null,
       organizationId,
       resumeText: input.resumeText,
+      linkedInText: input.linkedInText?.trim() || null,
       linkedInUrl: input.linkedInUrl || null,
       githubUrl: input.githubUrl || null,
       applications: {

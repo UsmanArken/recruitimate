@@ -10,6 +10,7 @@ import { StageBadge } from "@/components/features/candidates/stage-badge";
 import { Avatar } from "@/components/features/candidates/avatar";
 import { ApplyToPosition } from "@/components/features/candidates/apply-to-position";
 import { CandidateNotesPanel } from "@/components/features/candidates/candidate-notes-panel";
+import { LinkedInEnrichPanel } from "@/components/features/candidates/linkedin-enrich-panel";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronLeft, Mail, Briefcase } from "lucide-react";
 
@@ -137,6 +138,15 @@ export default async function CandidatePersonPage({
             </CardContent>
           </Card>
         </section>
+
+        {!readOnly && (
+          <section className="mb-8">
+            <LinkedInEnrichPanel
+              candidateId={candidate.id}
+              linkedInUrl={candidate.linkedInUrl}
+            />
+          </section>
+        )}
 
         <section className="mb-8">
           <CandidateNotesPanel

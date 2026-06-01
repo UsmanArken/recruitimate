@@ -32,19 +32,19 @@ MVP-020,MVP,UI,—,Trust and advisory messaging,Banners clarifying AI assists do
 MVP-021,MVP,API,—,REST API routes,Jobs candidates applications talent interviews resume parse auth invites admin,P0,Done,MVP-015b,
 MVP-022,MVP,Platform,—,Local development runbook,Docker Postgres db push db:seed db:migrate-applications npm run dev documented,P1,Done,,
 MVP-023,MVP,Talent Intelligence,Talent,Resume PDF upload,Upload PDF/DOCX parse API and new-candidate upload UI,P1,Done,,pdf-parse mammoth
-MVP-024,MVP,Talent Intelligence,Talent,LinkedIn profile ingestion,Fetch or paste LinkedIn data into talent engine,P2,Not Started,,URL field on intake only
+MVP-024,MVP,Talent Intelligence,Talent,LinkedIn profile ingestion,Parse/paste or fetch profile URL; merge linkedInText into talent engine,P2,Done,MVP-015,/api/linkedin/parse /api/candidates/[id]/linkedin
 MVP-025,MVP,Talent Intelligence,Talent,GitHub / portfolio parsing,Extract signals from repos and portfolio URLs,P2,Not Started,,URL fields on intake only
 MVP-026,MVP,Pipeline,—,Candidate notes and tagging,Add view delete notes with tags on candidate person profile,P1,Done,MVP-015,/api/candidates/[id]/notes
-MVP-027,MVP,Pipeline,—,Basic interview scheduling,Schedule datetime field calendar invite stub,P2,Not Started,,
+MVP-027,MVP,Pipeline,—,Basic interview scheduling,Schedule datetime + meeting link; .ics calendar download,P2,Done,MVP-007,InterviewWorkflowPanel
 MVP-028,MVP,Platform,—,Authentication,Login signup invite NextAuth JWT sessions middleware,P0,Done,,
 MVP-029,MVP,Platform,—,Database ACL engine,Role Permission RolePermission org-scoped data organizationId on entities,P0,Done,MVP-028,
 MVP-029b,MVP,Platform,—,Job interviewer assignments,JobAssignment + JOB_INTERVIEWER role permissions job team UI,P1,Done,MVP-029,/jobs/[id] team panel
 MVP-029c,MVP,Platform,—,Platform super admin,PLATFORM_SUPER_ADMIN seed env bootstrap login sync cross-tenant /admin,P0,Done,MVP-029,db:seed db:bootstrap-admin SUPER_ADMIN_EMAIL
 MVP-029d,MVP,Platform,—,Platform operator workspace guard,Login→/admin; block hiring writes (TENANT_CONTEXT_REQUIRED); customer-only metrics; optional operatorBrowse read-only,P1,Done,MVP-029c,middleware cookie + read-only UI
-MVP-030,MVP,Interview Intelligence,Interview,Interview recording upload,Upload audio/video file store reference,P1,Not Started,,Can defer to Phase 2
-MVP-031,MVP,Interview Intelligence,Interview,Whisper transcription,Auto-generate transcript from recording,P1,Not Started,MVP-030,
+MVP-030,MVP,Interview Intelligence,Interview,Interview recording upload,Upload audio/video to local storage; status RECORDED,P1,Done,MVP-007,/interviews/[id]/recording
+MVP-031,MVP,Interview Intelligence,Interview,Whisper transcription,OpenAI Whisper transcript from recording; status TRANSCRIBED,P1,Done,MVP-030,/interviews/[id]/transcribe
 MVP-032,MVP,UI,—,Empty states and onboarding,Getting started checklist + EmptyState on dashboard jobs candidates,P2,Done,MVP-014,Dismissible localStorage banner
-MVP-033,MVP,Platform,—,Error handling and logging,AppError + handleRouteError on API routes; structured JSON errors,P1,In Progress,,Centralized request logging not implemented
+MVP-033,MVP,Platform,—,Error handling and logging,Structured JSON errors + requestId middleware + runApiRoute completion logs,P1,Done,,JSON logs phase start/complete
 MVP-034,MVP,Platform,—,MVP QA and test plan,Automated npm run qa scripts + manual demo checklist in docs/QA.md,P1,Done,,resume-extract validators intelligence
 MVP-035,MVP,Platform,—,MVP deployment,Deploy to staging Vercel/Railway + managed Postgres,P1,Not Started,MVP-029c,
 MVP-036,MVP,Decision Intelligence,Decision,Phased hiring intelligence,Role fit and hire confidence only with campaign + interview; honest pending states,P1,Done,MVP-015b,candidate-context IntelligencePhasePanel

@@ -7,6 +7,7 @@ export const createCandidateSchema = z.object({
   jobId: z.string().min(1, "Select an open position for this applicant"),
   resumeText: z.string().min(20),
   linkedInUrl: z.string().url().optional().or(z.literal("")),
+  linkedInText: z.string().optional(),
   githubUrl: z.string().url().optional().or(z.literal("")),
 });
 

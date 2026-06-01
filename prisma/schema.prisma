@@ -211,6 +211,7 @@ model Candidate {
   name           String
   email          String?
   linkedInUrl    String?
+  linkedInText   String?          @db.Text
   githubUrl      String?
   portfolioUrl   String?
   resumeText     String?          @db.Text
@@ -271,6 +272,8 @@ model Interview {
   title           String
   status          InterviewStatus    @default(SCHEDULED)
   scheduledAt     DateTime?
+  durationMinutes Int?               @default(60)
+  meetingUrl      String?
   recordingPath   String?
   transcript      String?            @db.Text
   analysis        InterviewAnalysis?

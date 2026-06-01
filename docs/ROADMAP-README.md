@@ -28,7 +28,7 @@ Project setup, docs, HR UI shell — **mostly complete**.
 **Goal:** Talent + post-interview analysis + decision dashboard + ATS-lite.
 
 - **Done:** Core engines, auth/ACL, multi-position applications (`JobApplication`), PDF resume upload, phased intelligence, applicant intake picker, QA scripts, platform admin, operator workspace guard (MVP-029d), notes (MVP-026), onboarding (MVP-032).
-- **Remaining for a shippable MVP:** Finish error logging (MVP-033), staging deploy (MVP-035). Optional: LinkedIn/GitHub ingestion (MVP-024/025), scheduling stub (MVP-027), recording (MVP-030/031).
+- **Remaining for a shippable MVP:** Staging deploy (MVP-035). Optional: GitHub/portfolio parsing (MVP-025).
 
 ### Phase 2 — core moat expansion
 **Goal:** Real-time interview assist, cross-signal validation, media pipeline, discovery, outreach, assessments, copilot.
@@ -49,9 +49,9 @@ Use `|` in **Depends On** when a task has multiple prerequisites (e.g. `MVP-014|
 
 | Status | Count | IDs |
 |--------|------:|-----|
-| **Done** | 35 | MVP-001–023, 026, 028–029, 029b, 029c, 032, 034, 036–039 |
-| **In Progress** | 1 | MVP-033 (API errors yes; request logging no) |
-| **Not Started** | 6 | MVP-024–025, 027, 030–031, 035 |
+| **Done** | 41 | MVP-001–024, 026–034, 036–039 |
+| **In Progress** | 0 | — |
+| **Not Started** | 2 | MVP-025, 035 |
 
 Foundation (F-001–F-009) and shipped Phase 3 items (P3-009, P3-010, CP-024) are **Done** as marked.
 
@@ -63,4 +63,5 @@ All tasks with ID `MVP-*` at **Done**, especially:
 - MVP-015b Multi-position applications · MVP-036 Phased intelligence  
 - MVP-023 Resume PDF upload · MVP-037 Applicant intake picker  
 - MVP-034 QA test plan  
-- MVP-033 Error handling · MVP-035 MVP deployment (still open)  
+- MVP-024 LinkedIn ingestion · MVP-027 Scheduling · MVP-030/031 Recording + Whisper · MVP-033 Request logging  
+- MVP-035 MVP deployment (still open)  

@@ -1,3 +1,10 @@
+import { db } from "@/lib/db";
+import { applicationDetailInclude } from "@/lib/db/includes";
+import { notFound } from "@/lib/api/errors";
+import { buildCandidateIntelligenceText } from "@/lib/candidate/intelligence-text";
+import { organizationFilter } from "@/lib/auth/platform-admin";
+import { assertCandidateAccess } from "@/lib/auth/scope.service";
+import type { AuthContext } from "@/lib/auth/types";
 import { applyTalentContext, hasRoleContext } from "@/lib/intelligence/candidate-context";
 import { analyzeTalent } from "@/lib/intelligence/talent/engine";
 import { generateDecision } from "@/lib/intelligence/decision/engine";
@@ -59,6 +66,42 @@ export async function refreshApplicationIntelligence(input: {
   await upsertTalentProfile(input.applicationId, result.talent);
   await upsertDecision(input.applicationId, result.decision);
   return result;
+}
+
+export async function refreshCandidateApplicationsIntelligence(
+  ctx: AuthContext,
+  candidateId: string
+) {
+  await assertCandidateAccess(ctx, candidateId);
+
+  const candidate = await db.candidate.findFirst({
+    where: { id: candidateId, ...organizationFilter(ctx) },
+    include: {
+      applications: { include: applicationDetailInclude },
+    },
+  });
+  if (!candidate) throw notFound("Candidate");
+
+  const intelligenceText = buildCandidateIntelligenceText(candidate);
+  if (intelligenceText.length < 20) return { refreshed: 0 };
+
+  const results = [];
+  for (const app of candidate.applications) {
+    const result = await refreshApplicationIntelligence({
+      applicationId: app.id,
+      candidateName: candidate.name,
+      resumeText: intelligenceText,
+      job: {
+        id: app.jobId,
+        title: app.job.title,
+        requirements: app.job.requirements,
+      },
+      interviews: app.interviews,
+    });
+    results.push({ applicationId: app.id, result });
+  }
+
+  return { refreshed: results.length, results };
 }
 
 export function talentForStorage(talent: TalentIntelligenceResult) {

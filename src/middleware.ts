@@ -1,5 +1,7 @@
+import { randomUUID } from "crypto";
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
+import { logApiRequest } from "@/lib/logging/request-log";
 
 const publicPaths = ["/login", "/signup", "/invite"];
 const OPERATOR_BROWSE_COOKIE = "recruitimate-operator-browse";
@@ -29,8 +31,31 @@ function isPublicPath(pathname: string): boolean {
   return false;
 }
 
+function attachRequestId(res: NextResponse, requestId: string): NextResponse {
+  res.headers.set("x-request-id", requestId);
+  return res;
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const isApi = pathname.startsWith("/api") && !pathname.startsWith("/api/auth");
+  const requestId = isApi ? req.headers.get("x-request-id") ?? randomUUID() : null;
+
+  if (isApi && requestId) {
+    logApiRequest({
+      level: "info",
+      requestId,
+      method: req.method,
+      path: pathname,
+      status: 0,
+      durationMs: 0,
+      phase: "start",
+    });
+  }
+
+  const requestHeaders = new Headers(req.headers);
+  if (requestId) requestHeaders.set("x-request-id", requestId);
+
   const token = await getToken({
     req,
     secret: process.env.AUTH_SECRET,
@@ -40,12 +65,16 @@ export async function middleware(req: NextRequest) {
   if (!isLoggedIn && !isPublicPath(pathname)) {
     const login = new URL("/login", req.nextUrl.origin);
     login.searchParams.set("callbackUrl", pathname);
-    return NextResponse.redirect(login);
+    return requestId
+      ? attachRequestId(NextResponse.redirect(login), requestId)
+      : NextResponse.redirect(login);
   }
 
   if (isLoggedIn && (pathname === "/login" || pathname === "/signup")) {
     const home = token?.isPlatformAdmin ? "/admin" : "/";
-    return NextResponse.redirect(new URL(home, req.nextUrl.origin));
+    return requestId
+      ? attachRequestId(NextResponse.redirect(new URL(home, req.nextUrl.origin)), requestId)
+      : NextResponse.redirect(new URL(home, req.nextUrl.origin));
   }
 
   if (
@@ -54,10 +83,12 @@ export async function middleware(req: NextRequest) {
     isHiringWorkspacePath(pathname) &&
     !operatorBrowseEnabled(req)
   ) {
-    return NextResponse.redirect(new URL("/admin", req.nextUrl.origin));
+    return requestId
+      ? attachRequestId(NextResponse.redirect(new URL("/admin", req.nextUrl.origin)), requestId)
+      : NextResponse.redirect(new URL("/admin", req.nextUrl.origin));
   }
 
-  const response = NextResponse.next();
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
 
   if (
     isLoggedIn &&
@@ -74,7 +105,7 @@ export async function middleware(req: NextRequest) {
     });
   }
 
-  return response;
+  return requestId ? attachRequestId(response, requestId) : response;
 }
 
 export const config = {

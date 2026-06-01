@@ -10,6 +10,7 @@ import { TrustBanner } from "@/components/features/intelligence/trust-banner";
 import { Briefcase } from "lucide-react";
 import type { JobOption } from "@/lib/api/jobs-client";
 import { JobPositionPicker } from "@/components/features/candidates/job-position-picker";
+import { LinkedInImportField } from "@/components/features/candidates/linkedin-import-field";
 
 export function NewCandidateForm({
   jobs,
@@ -20,6 +21,7 @@ export function NewCandidateForm({
 }) {
   const router = useRouter();
   const [resumeText, setResumeText] = useState("");
+  const [linkedInText, setLinkedInText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,6 +47,7 @@ export function NewCandidateForm({
         email: fd.get("email") || undefined,
         jobId,
         resumeText: resumeText.trim(),
+        linkedInText: linkedInText.trim() || undefined,
         linkedInUrl: fd.get("linkedInUrl") || undefined,
         githubUrl: fd.get("githubUrl") || undefined,
       }),
@@ -109,7 +112,8 @@ export function NewCandidateForm({
               </label>
               <Field label="Full name" name="name" required />
               <Field label="Email" name="email" type="email" />
-              <Field label="LinkedIn profile" name="linkedInUrl" />
+              <Field label="LinkedIn profile URL" name="linkedInUrl" />
+              <LinkedInImportField onProfileText={setLinkedInText} />
               <Field label="GitHub / portfolio" name="githubUrl" />
               <ResumeUploadField
                 resumeText={resumeText}
@@ -123,7 +127,12 @@ export function NewCandidateForm({
               {error && (
                 <p className="rounded-lg bg-risk-bg px-3 py-2 text-sm text-risk">{error}</p>
               )}
-              <Button type="submit" disabled={loading || resumeText.trim().length < 20}>
+              <Button
+                type="submit"
+                disabled={
+                  loading || resumeText.trim().length + linkedInText.trim().length < 20
+                }
+              >
                 {loading ? "Analyzing for this role…" : "Add & screen candidate"}
               </Button>
             </form>

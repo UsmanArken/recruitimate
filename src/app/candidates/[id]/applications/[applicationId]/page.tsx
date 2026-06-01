@@ -11,7 +11,7 @@ import { SignalList } from "@/components/features/intelligence/signal-list";
 import { IntelligencePhasePanel } from "@/components/features/candidates/intelligence-phase-panel";
 import { StageBadge } from "@/components/features/candidates/stage-badge";
 import { Avatar } from "@/components/features/candidates/avatar";
-import { InterviewForm } from "@/components/features/candidates/interview-form";
+import { InterviewWorkflowPanel } from "@/components/features/candidates/interview-workflow-panel";
 import { ReanalyzeButton } from "@/components/features/candidates/reanalyze-button";
 import { PageBody } from "@/components/layout/page-header";
 import type { Signal } from "@/lib/intelligence/types";
@@ -246,7 +246,18 @@ export default async function ApplicationDetailPage({
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <InterviewForm applicationId={application.id} />
+                  <InterviewWorkflowPanel
+                    applicationId={application.id}
+                    interviews={application.interviews.map((i) => ({
+                      id: i.id,
+                      title: i.title,
+                      status: i.status,
+                      scheduledAt: i.scheduledAt?.toISOString() ?? null,
+                      meetingUrl: i.meetingUrl,
+                      recordingPath: i.recordingPath,
+                      transcript: i.transcript,
+                    }))}
+                  />
                 </CardContent>
               </Card>
             )}
