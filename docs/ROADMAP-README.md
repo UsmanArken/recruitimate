@@ -27,7 +27,7 @@ Project setup, docs, HR UI shell — **mostly complete**.
 ### MVP (Phase 1) — ship to first recruiters
 **Goal:** Talent + post-interview analysis + decision dashboard + ATS-lite.
 
-- **Done:** Core engines, auth/ACL, multi-position applications (`JobApplication`), PDF resume upload, phased intelligence, applicant intake picker, QA scripts, platform admin, operator workspace guard (MVP-029d), notes (MVP-026), onboarding (MVP-032).
+- **Done:** Core engines, auth/ACL, multi-position applications (`JobApplication`), PDF resume upload, phased intelligence, applicant intake picker, QA scripts, platform admin, operator workspace guard (MVP-029d), notes (MVP-026), onboarding (MVP-032), multi-provider LLM (MVP-040).
 - **Remaining for a shippable MVP:** Staging deploy (MVP-035). Optional: GitHub/portfolio parsing (MVP-025).
 
 ### Phase 2 — core moat expansion
@@ -49,7 +49,7 @@ Use `|` in **Depends On** when a task has multiple prerequisites (e.g. `MVP-014|
 
 | Status | Count | IDs |
 |--------|------:|-----|
-| **Done** | 41 | MVP-001–024, 026–034, 036–039 |
+| **Done** | 42 | MVP-001–024, 026–034, 036–040 |
 | **In Progress** | 0 | — |
 | **Not Started** | 2 | MVP-025, 035 |
 
@@ -63,5 +63,5 @@ All tasks with ID `MVP-*` at **Done**, especially:
 - MVP-015b Multi-position applications · MVP-036 Phased intelligence  
 - MVP-023 Resume PDF upload · MVP-037 Applicant intake picker  
 - MVP-034 QA test plan  
-- MVP-024 LinkedIn ingestion · MVP-027 Scheduling · MVP-030/031 Recording + Whisper · MVP-033 Request logging  
+- MVP-024 LinkedIn ingestion · MVP-027 Scheduling · MVP-030/031 Recording + Whisper · MVP-033 Request logging · MVP-040 Multi-provider LLM  
 - MVP-035 MVP deployment (still open)  

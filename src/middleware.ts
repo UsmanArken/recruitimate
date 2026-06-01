@@ -1,4 +1,3 @@
-import { randomUUID } from "crypto";
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 import { logApiRequest } from "@/lib/logging/request-log";
@@ -39,7 +38,7 @@ function attachRequestId(res: NextResponse, requestId: string): NextResponse {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const isApi = pathname.startsWith("/api") && !pathname.startsWith("/api/auth");
-  const requestId = isApi ? req.headers.get("x-request-id") ?? randomUUID() : null;
+  const requestId = isApi ? req.headers.get("x-request-id") ?? crypto.randomUUID() : null;
 
   if (isApi && requestId) {
     logApiRequest({

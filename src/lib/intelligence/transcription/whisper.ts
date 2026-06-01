@@ -1,7 +1,7 @@
-import { readFile } from "fs/promises";
 import path from "path";
-import { badRequest } from "@/lib/api/errors";
-import { getOpenAIClient } from "@/lib/intelligence/ai";
+import { readFile } from "fs/promises";
+import { badRequest, isAppError } from "@/lib/api/errors";
+import { transcribeAudio } from "@/lib/llm";
 import { absoluteRecordingPath } from "@/lib/storage/interview-recordings";
 
 function mimeForPath(filePath: string): string {
@@ -19,30 +19,20 @@ function mimeForPath(filePath: string): string {
 }
 
 export async function transcribeRecordingFile(relativePath: string): Promise<string> {
-  const client = getOpenAIClient();
-  if (!client) {
-    throw badRequest(
-      "OpenAI API key is required for Whisper transcription",
-      "NO_OPENAI"
-    );
-  }
-
   const absolute = absoluteRecordingPath(relativePath);
   const buffer = await readFile(absolute);
   const fileName = path.basename(absolute);
   const mime = mimeForPath(absolute);
 
-  const file = new File([buffer], fileName, { type: mime });
+  let text: string;
+  try {
+    text = await transcribeAudio({ buffer, fileName, mimeType: mime });
+  } catch (error) {
+    if (isAppError(error)) throw error;
+    throw badRequest("Transcription failed", "TRANSCRIPTION_FAILED");
+  }
 
-  const result = await client.audio.transcriptions.create({
-    model: "whisper-1",
-    file,
-    response_format: "text",
-  });
-
-  const text = typeof result === "string" ? result : String(result);
   const trimmed = text.trim();
-
   if (trimmed.length < 20) {
     throw badRequest(
       "Transcription was too short. Upload a clearer recording or paste a transcript.",

@@ -1,4 +1,4 @@
-import { chatJson } from "../ai";
+import { chatJson, getActiveLlmProviderId, hasLlmProvider, llmSetupHint } from "../ai";
 import type { InterviewIntelligenceResult } from "../types";
 
 const SYSTEM_PROMPT = `You are Recruitimate's Interview Intelligence Engine (post-interview analysis).
@@ -55,7 +55,9 @@ function heuristicAnalysis(transcript: string): InterviewIntelligenceResult {
           ]
         : [],
     explanation:
-      "Heuristic post-interview analysis. Connect OPENAI_API_KEY for semantic depth and cross-answer consistency checks.",
+      hasLlmProvider()
+        ? `Heuristic post-interview analysis (${getActiveLlmProviderId()} call failed — check terminal for llm_error).`
+        : `Heuristic post-interview analysis (no LLM configured). ${llmSetupHint()}`,
   };
 }
 

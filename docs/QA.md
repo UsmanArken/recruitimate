@@ -59,6 +59,7 @@ npm run db:seed
 10. **LinkedIn** — Import profile on intake or person page; talent screening refreshes.
 11. **Interview workflow** — Schedule → download `.ics` → upload recording → Whisper transcribe → run interview intelligence.
 12. **API logs** — API calls emit JSON logs with `requestId` (see server console); responses include `X-Request-Id`.
+13. **LLM** — `GET /api/llm/status` shows `resolvedProvider` (e.g. `google`); talent screen uses Gemini/OpenAI/Anthropic per `.env`.
 
 ## CI (when you add production)
 

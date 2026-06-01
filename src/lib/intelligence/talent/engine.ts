@@ -1,4 +1,4 @@
-import { chatJson } from "../ai";
+import { chatJson, getActiveLlmProviderId, hasLlmProvider, llmSetupHint } from "../ai";
 import type { TalentIntelligenceResult } from "../types";
 
 const SYSTEM_PROMPT = `You are Recruitimate's Talent Intelligence Engine.
@@ -61,9 +61,16 @@ function heuristicAnalysis(
         confidence: yearsMatch ? "medium" : "low",
       },
     ],
-    explanation:
-      "Heuristic analysis (no API key). Connect OPENAI_API_KEY for AI-powered skill graph and trajectory modeling.",
+    explanation: heuristicExplanation(),
   };
+}
+
+function heuristicExplanation(): string {
+  if (!hasLlmProvider()) {
+    return `Heuristic analysis (no LLM configured). ${llmSetupHint()}`;
+  }
+  const provider = getActiveLlmProviderId() ?? "llm";
+  return `Heuristic analysis (${provider} call failed — verify API key, model name, billing, and dev server terminal for llm_error).`;
 }
 
 export async function analyzeTalent(

@@ -1,34 +1,22 @@
+/**
+ * Backward-compatible re-exports. Prefer `@/lib/llm` for new code.
+ */
+export {
+  chatJson,
+  transcribeAudio,
+  getActiveLlmProviderId,
+  getLlmConfig,
+  hasLlmProvider,
+  hasOpenAI,
+  llmSetupHint,
+} from "@/lib/llm";
+
 import OpenAI from "openai";
+import { getLlmConfig } from "@/lib/llm";
 
+/** @deprecated Use getChatProvider() from the LLM registry. */
 export function getOpenAIClient(): OpenAI | null {
-  const key = process.env.OPENAI_API_KEY;
-  if (!key || key === "sk-...") return null;
+  const key = getLlmConfig().openai.apiKey;
+  if (!key) return null;
   return new OpenAI({ apiKey: key });
-}
-
-export async function chatJson<T>(
-  system: string,
-  user: string,
-  fallback: T
-): Promise<T> {
-  const client = getOpenAIClient();
-  if (!client) return fallback;
-
-  try {
-    const response = await client.chat.completions.create({
-      model: "gpt-4o-mini",
-      temperature: 0.2,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-    });
-
-    const content = response.choices[0]?.message?.content;
-    if (!content) return fallback;
-    return JSON.parse(content) as T;
-  } catch {
-    return fallback;
-  }
 }

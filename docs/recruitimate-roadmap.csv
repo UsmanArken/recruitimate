@@ -1,7 +1,7 @@
 ID,Milestone,Category,Layer,Task,Description,Priority,Status,Depends On,Notes
 F-001,Foundation,Platform,—,Project scaffold,Next.js 15 + TypeScript + Prisma + PostgreSQL + Docker Compose,P0,Done,,
 F-002,Foundation,Platform,—,Git repository,Initialize repo connect remote CI-ready structure,P0,Done,,
-F-003,Foundation,Platform,—,Environment configuration,.env.example DATABASE_URL OPENAI_API_KEY AUTH_SECRET AUTH_URL SUPER_ADMIN_EMAIL/PASSWORD,P0,Done,,
+F-003,Foundation,Platform,—,Environment configuration,.env.example DATABASE_URL LLM_PROVIDER OPENAI/ANTHROPIC/GOOGLE keys AUTH_SECRET SUPER_ADMIN,P0,Done,,
 F-004,Foundation,Platform,—,Core data model,Candidate JobApplication Job TalentProfile Interview Decision Note per-campaign pipeline,P0,Done,,
 F-005,Foundation,Documentation,—,README and architecture docs,Developer onboarding STRUCTURE.md AUTH-ACL.md layer mapping,P1,Done,,
 F-006,Foundation,Documentation,—,Product and system design guide,HTML doc with Mermaid diagrams in docs/,P1,Done,,
@@ -12,7 +12,7 @@ MVP-001,MVP,Talent Intelligence,Talent,Resume text ingestion,Paste or upload res
 MVP-002,MVP,Talent Intelligence,Talent,Talent intelligence engine,Skill extraction fit score strengths gaps hidden signals with evidence,P0,Done,MVP-001,
 MVP-003,MVP,Talent Intelligence,Talent,Role-aware fit scoring,Match candidate skills against job requirements when role assigned,P0,Done,MVP-002,
 MVP-004,MVP,Talent Intelligence,Talent,Heuristic fallback analysis,Works without OpenAI API key for local dev,P1,Done,MVP-002,
-MVP-005,MVP,Talent Intelligence,Talent,OpenAI-powered analysis,Optional GPT-4o-mini JSON extraction for talent profile,P1,Done,MVP-002,
+MVP-005,MVP,Talent Intelligence,Talent,OpenAI-powered analysis,Legacy OpenAI path; superseded by multi-provider layer (MVP-040),P1,Done,MVP-002,See MVP-040
 MVP-006,MVP,Talent Intelligence,Talent,Re-run talent analysis,Refresh talent and decision per JobApplication from campaign profile,P2,Done,MVP-015b,/api/applications/[id]/talent
 MVP-007,MVP,Interview Intelligence,Interview,Transcript ingestion,Paste transcript on campaign profile; triggers analysis and stage INTERVIEWED,P0,Done,MVP-015b,
 MVP-008,MVP,Interview Intelligence,Interview,Post-interview signal analysis,Hesitation confidence clarity consistency engagement scores,P0,Done,MVP-007,
@@ -51,6 +51,7 @@ MVP-036,MVP,Decision Intelligence,Decision,Phased hiring intelligence,Role fit a
 MVP-037,MVP,UI,—,Applicant intake position picker,Server-loaded open roles; compact custom dropdown (scrollable menu),P1,Done,MVP-014|MVP-023,/candidates/new
 MVP-038,MVP,Platform,—,JobApplication DB migration,prisma/migrate-to-applications.ts for legacy Candidate.jobId upgrades,P2,Done,MVP-015b,npm run db:migrate-applications
 MVP-039,MVP,UI,—,Auth experience redesign,HR-themed login/signup with AuthLayout and AuthField components,P2,Done,MVP-028,/login /signup
+MVP-040,MVP,Platform,—,Multi-provider LLM layer,OpenAI Anthropic Google Gemini via LLM_PROVIDER; /api/llm/status; docs/LLM.md,P1,Done,MVP-005,Whisper still OpenAI-only
 P2-001,Phase 2,Interview Intelligence,Interview,Real-time interview assist,Live suggestions follow-up questions during interview,P0,Not Started,MVP-031,Core Phase 2 moat
 P2-002,Phase 2,Interview Intelligence,Interview,Real-time inconsistency flags,Flag contradictions as they occur in live transcript,P1,Not Started,P2-001,
 P2-003,Phase 2,Interview Intelligence,Interview,Cross-signal validation,Compare resume claims vs interview answers,P0,Not Started,MVP-008,

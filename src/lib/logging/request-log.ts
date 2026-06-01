@@ -1,5 +1,3 @@
-import { randomUUID } from "crypto";
-
 export type ApiLogEntry = {
   level: "info" | "warn" | "error";
   requestId: string;
@@ -13,8 +11,9 @@ export type ApiLogEntry = {
   error?: string;
 };
 
+/** Edge- and Node-safe (Web Crypto API). */
 export function createRequestId(): string {
-  return randomUUID();
+  return crypto.randomUUID();
 }
 
 export function logApiRequest(entry: ApiLogEntry): void {
