@@ -38,10 +38,12 @@ export async function parseResumeUpload(ctx: AuthContext, file: File) {
     );
   }
 
+  const fileName = file.name.split(/[/\\]/).pop() ?? file.name;
+
   return {
     text: extracted.text,
     format: extracted.format,
-    fileName: file.name,
+    fileName,
     characterCount: extracted.text.length,
   };
 }

@@ -7,6 +7,7 @@ import { hasPermission } from "@/lib/auth/permission.service";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader, PageBody } from "@/components/layout/page-header";
 import { JobAssignmentsPanel } from "@/components/features/jobs/job-assignments-panel";
+import { BulkResumeUploadPanel } from "@/components/features/jobs/bulk-resume-upload-panel";
 import { ChevronLeft, Users } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -62,6 +63,21 @@ export default async function JobDetailPage({
             </p>
           </div>
         </div>
+
+        {canManageTeam && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Bulk upload resumes</CardTitle>
+              <CardDescription>
+                Select a folder from your computer. We will import each resume as a candidate and
+                screen them against this role.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <BulkResumeUploadPanel jobId={job.id} />
+            </CardContent>
+          </Card>
+        )}
 
         {job.requirements && (
           <Card className="mb-8">

@@ -93,6 +93,25 @@ select.input-hr {
   z-index: 1;
 }
 
+/* Native date/time pickers — keep indicator visible and easy to hit */
+input[type="date"].input-hr,
+input[type="time"].input-hr,
+input[type="datetime-local"].input-hr {
+  cursor: pointer;
+  color-scheme: light;
+  min-height: 2.5rem;
+}
+
+input[type="date"].input-hr::-webkit-calendar-picker-indicator,
+input[type="time"].input-hr::-webkit-calendar-picker-indicator,
+input[type="datetime-local"].input-hr::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 1;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-inline-start: 0.25rem;
+}
+
 /* Data tables — recruiter-first */
 .table-hr thead {
   background: #f8fafc;

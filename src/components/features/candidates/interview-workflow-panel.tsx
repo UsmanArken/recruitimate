@@ -4,6 +4,12 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2, Calendar, Mic, FileAudio, Sparkles } from "lucide-react";
+import {
+  ScheduleDateTimeField,
+  defaultScheduleDateTime,
+  scheduleDateTimeToIso,
+  type ScheduleDateTimeValue,
+} from "@/components/features/candidates/schedule-datetime-field";
 
 export type InterviewRow = {
   id: string;
@@ -28,11 +34,12 @@ export function InterviewWorkflowPanel({
   const [error, setError] = useState<string | null>(null);
 
   const [scheduleTitle, setScheduleTitle] = useState("Technical interview");
-  const [scheduledAt, setScheduledAt] = useState("");
+  const [scheduleWhen, setScheduleWhen] = useState<ScheduleDateTimeValue>(defaultScheduleDateTime);
   const [meetingUrl, setMeetingUrl] = useState("");
   const [transcript, setTranscript] = useState("");
 
   async function scheduleInterview() {
+    const scheduledAt = scheduleDateTimeToIso(scheduleWhen);
     if (!scheduledAt) {
       setError("Pick a date and time for the interview.");
       return;
@@ -46,7 +53,7 @@ export function InterviewWorkflowPanel({
       body: JSON.stringify({
         action: "schedule",
         title: scheduleTitle,
-        scheduledAt: new Date(scheduledAt).toISOString(),
+        scheduledAt,
         meetingUrl: meetingUrl || undefined,
       }),
     });
@@ -142,16 +149,13 @@ export function InterviewWorkflowPanel({
               onChange={(e) => setScheduleTitle(e.target.value)}
             />
           </label>
-          <label className="block">
+          <div className="sm:col-span-2">
             <span className="text-xs font-semibold">Date & time</span>
-            <input
-              type="datetime-local"
-              className="input-hr mt-1"
-              value={scheduledAt}
-              onChange={(e) => setScheduledAt(e.target.value)}
-            />
-          </label>
-          <label className="block">
+            <div className="mt-1">
+              <ScheduleDateTimeField value={scheduleWhen} onChange={setScheduleWhen} />
+            </div>
+          </div>
+          <label className="block sm:col-span-2">
             <span className="text-xs font-semibold">Meeting link (optional)</span>
             <input
               className="input-hr mt-1"
