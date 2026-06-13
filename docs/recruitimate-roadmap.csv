@@ -52,7 +52,7 @@ MVP-037,MVP,UI,—,Applicant intake position picker,Server-loaded open roles; co
 MVP-038,MVP,Platform,—,JobApplication DB migration,prisma/migrate-to-applications.ts for legacy Candidate.jobId upgrades,P2,Done,MVP-015b,npm run db:migrate-applications
 MVP-039,MVP,UI,—,Auth experience redesign,HR-themed login/signup with AuthLayout and AuthField components,P2,Done,MVP-028,/login /signup
 MVP-040,MVP,Platform,—,Multi-provider LLM layer,OpenAI Anthropic Google Gemini via LLM_PROVIDER; /api/llm/status; docs/LLM.md,P1,Done,MVP-005,Whisper still OpenAI-only
-P2-001,Phase 2,Interview Intelligence,Interview,Real-time interview assist,Live suggestions follow-up questions during interview,P0,Not Started,MVP-031,Core Phase 2 moat
+P2-001,Phase 2,Interview Intelligence,Interview,Real-time interview assist,Live suggestions follow-up questions during interview,P0,Done,MVP-031,Core Phase 2 moat — live-assist engine + panel + API
 P2-002,Phase 2,Interview Intelligence,Interview,Real-time inconsistency flags,Flag contradictions as they occur in live transcript,P1,Not Started,P2-001,
 P2-003,Phase 2,Interview Intelligence,Interview,Cross-signal validation,Compare resume claims vs interview answers,P0,Not Started,MVP-008,
 P2-004,Phase 2,Interview Intelligence,Interview,Mismatch alerts UI,Surface resume vs interview gaps with evidence,P1,Not Started,P2-003,

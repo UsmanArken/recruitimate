@@ -10,6 +10,7 @@ import {
   scheduleDateTimeToIso,
   type ScheduleDateTimeValue,
 } from "@/components/features/candidates/schedule-datetime-field";
+import { LiveInterviewAssistPanel } from "@/components/features/candidates/live-interview-assist-panel";
 
 export type InterviewRow = {
   id: string;
@@ -135,6 +136,12 @@ export function InterviewWorkflowPanel({
 
   return (
     <div className="space-y-6">
+      <LiveInterviewAssistPanel
+        applicationId={applicationId}
+        interviewId={activeId || undefined}
+        onTranscriptReady={(text) => setTranscript(text)}
+      />
+
       <section className="rounded-lg border border-border-subtle p-4">
         <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
           <Calendar className="h-4 w-4 text-primary" />

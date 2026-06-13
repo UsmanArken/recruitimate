@@ -48,6 +48,7 @@ async function main() {
       "scripts/qa/resume-extract.test.ts",
       "scripts/qa/linkedin-parse.test.ts",
       "scripts/qa/llm-config.test.ts",
+      "scripts/qa/live-assist.test.ts",
     ])
   );
 

@@ -28,6 +28,24 @@ export type InterviewIntelligenceResult = {
   explanation: string;
 };
 
+export type LiveAssistCategory = "probe" | "clarify" | "deepen";
+
+export type LiveAssistPriority = "high" | "medium" | "low";
+
+export type LiveAssistSuggestion = {
+  id: string;
+  question: string;
+  rationale: string;
+  category: LiveAssistCategory;
+  priority: LiveAssistPriority;
+};
+
+export type LiveAssistResult = {
+  suggestions: LiveAssistSuggestion[];
+  momentSummary: string;
+  explanation: string;
+};
+
 export type HireRecommendation =
   | "strong_yes"
   | "yes"
