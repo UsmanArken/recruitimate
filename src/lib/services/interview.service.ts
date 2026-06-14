@@ -7,6 +7,7 @@ import { assertPermission } from "@/lib/auth/permission.service";
 import { assertApplicationAccess } from "@/lib/auth/scope.service";
 import type { AuthContext } from "@/lib/auth/types";
 import { analyzeInterview } from "@/lib/intelligence/interview/engine";
+import { analyzeInterviewerQuality } from "@/lib/intelligence/interview/interviewer-quality-engine";
 import { transcribeRecordingFile } from "@/lib/intelligence/transcription/whisper";
 import { refreshApplicationIntelligence } from "@/lib/services/candidate-intelligence.service";
 import {
@@ -106,7 +107,16 @@ export async function createInterviewAndAnalyze(
     throw badRequest("No resume or LinkedIn profile on file", "NO_PROFILE_TEXT");
   }
 
-  const analysis = await analyzeInterview(input.transcript, intelligenceText);
+  const [analysis, interviewerQuality] = await Promise.all([
+    analyzeInterview(input.transcript, intelligenceText),
+    analyzeInterviewerQuality({
+      transcript: input.transcript,
+      jobTitle: application.job.title,
+      jobRequirements: application.job.requirements,
+    }),
+  ]);
+
+  const payload = analysisPayload(analysis, interviewerQuality);
 
   const interview = input.interviewId
     ? await db.interview.update({
@@ -117,8 +127,8 @@ export async function createInterviewAndAnalyze(
           transcript: input.transcript,
           analysis: {
             upsert: {
-              create: analysisPayload(analysis),
-              update: analysisPayload(analysis),
+              create: payload,
+              update: payload,
             },
           },
         },
@@ -130,7 +140,7 @@ export async function createInterviewAndAnalyze(
           title: input.title,
           status: "ANALYZED",
           transcript: input.transcript,
-          analysis: { create: analysisPayload(analysis) },
+          analysis: { create: payload },
         },
         include: { analysis: true },
       });
@@ -160,7 +170,10 @@ export async function createInterviewAndAnalyze(
   return { interview, decision };
 }
 
-function analysisPayload(analysis: Awaited<ReturnType<typeof analyzeInterview>>) {
+function analysisPayload(
+  analysis: Awaited<ReturnType<typeof analyzeInterview>>,
+  interviewerQuality: Awaited<ReturnType<typeof analyzeInterviewerQuality>>
+) {
   return {
     hesitationScore: analysis.hesitationScore,
     confidenceScore: analysis.confidenceScore,
@@ -171,7 +184,8 @@ function analysisPayload(analysis: Awaited<ReturnType<typeof analyzeInterview>>)
     behavioralMetrics: analysis.behavioralMetrics,
     riskFlags: analysis.riskFlags,
     explanation: analysis.explanation,
-    rawAnalysis: analysis,
+    interviewerQuality,
+    rawAnalysis: { candidate: analysis, interviewer: interviewerQuality },
   };
 }
 

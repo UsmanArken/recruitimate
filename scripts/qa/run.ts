@@ -51,6 +51,7 @@ async function main() {
       "scripts/qa/live-assist.test.ts",
       "scripts/qa/cross-signal.test.ts",
       "scripts/qa/question-bank.test.ts",
+      "scripts/qa/interviewer-quality.test.ts",
     ])
   );
 

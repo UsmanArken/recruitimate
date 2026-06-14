@@ -12,6 +12,10 @@ import { IntelligencePhasePanel } from "@/components/features/candidates/intelli
 import { StageBadge } from "@/components/features/candidates/stage-badge";
 import { Avatar } from "@/components/features/candidates/avatar";
 import { InterviewWorkflowPanel } from "@/components/features/candidates/interview-workflow-panel";
+import {
+  InterviewerQualityPanel,
+  parseInterviewerQuality,
+} from "@/components/features/interview/interviewer-quality-panel";
 import { ReanalyzeButton } from "@/components/features/candidates/reanalyze-button";
 import { PageBody } from "@/components/layout/page-header";
 import type { Signal } from "@/lib/intelligence/types";
@@ -52,6 +56,7 @@ export default async function ApplicationDetailPage({
   const cognitiveSignals = (ia?.cognitiveSignals ?? []) as Signal[];
   const behavioralMetrics = (ia?.behavioralMetrics ?? []) as Signal[];
   const interviewRisks = (ia?.riskFlags ?? []) as Signal[];
+  const interviewerQuality = parseInterviewerQuality(ia?.interviewerQuality);
 
   return (
     <>
@@ -220,6 +225,9 @@ export default async function ApplicationDetailPage({
                       <p className="mb-2 text-sm font-semibold text-warning">Follow-up suggested</p>
                       <SignalList signals={interviewRisks} />
                     </div>
+                  )}
+                  {interviewerQuality && (
+                    <InterviewerQualityPanel quality={interviewerQuality} />
                   )}
                   {ia.explanation && (
                     <p className="text-xs italic text-muted">{ia.explanation}</p>

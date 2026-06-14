@@ -296,6 +296,8 @@ model InterviewAnalysis {
   behavioralMetrics Json      @default("[]")
   riskFlags         Json      @default("[]")
   explanation       String?   @db.Text
+  /// P2-006 interviewer quality: coverage, probing, bias advisory scores
+  interviewerQuality Json?
   rawAnalysis       Json?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt

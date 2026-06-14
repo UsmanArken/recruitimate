@@ -97,6 +97,17 @@ export type InterviewQuestionBankResult = {
   explanation: string;
 };
 
+export type InterviewerQualityResult = {
+  coverageScore: number;
+  probingScore: number;
+  /** Higher = more potential bias patterns detected (advisory). */
+  biasRiskScore: number;
+  coverageGaps: Signal[];
+  probingSignals: Signal[];
+  biasFlags: Signal[];
+  explanation: string;
+};
+
 export type HireRecommendation =
   | "strong_yes"
   | "yes"
