@@ -3,7 +3,8 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { FolderOpen, Files } from "lucide-react";
+import { FileDropZone } from "@/components/ui/file-drop-zone";
+import { FolderOpen, Files, ArrowRight } from "lucide-react";
 import { isAllowedResumeFile } from "@/lib/resume/extract-text";
 import {
   BulkImportResultCard,
@@ -14,22 +15,22 @@ type BulkResult =
   | BulkImportResultCardData
   | { status: "failed"; fileName: string; error: string; code?: string };
 
-function pickResumeFiles(fileList: FileList | null): File[] {
-  return Array.from(fileList ?? []).filter((f) => isAllowedResumeFile(f.name, f.type));
+function pickResumeFiles(files: File[]): File[] {
+  return files.filter((f) => isAllowedResumeFile(f.name, f.type));
 }
 
 export function BulkResumeUploadPanel({ jobId }: { jobId: string }) {
   const router = useRouter();
-  const inputRef = useRef<HTMLInputElement>(null);
+  const folderInputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [skippedCount, setSkippedCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<BulkResult[] | null>(null);
 
-  function onPick(e: React.ChangeEvent<HTMLInputElement>) {
-    const all = Array.from(e.target.files ?? []);
-    const resumes = pickResumeFiles(e.target.files);
+  function setPickedFiles(all: File[]) {
+    const resumes = pickResumeFiles(all);
     setFiles(resumes);
     setSkippedCount(Math.max(0, all.length - resumes.length));
     setResults(null);
@@ -38,11 +39,10 @@ export function BulkResumeUploadPanel({ jobId }: { jobId: string }) {
         ? "No PDF or DOCX files found. Only .pdf and .docx are supported."
         : null
     );
-    e.target.value = "";
   }
 
   function openFolderPicker() {
-    const el = inputRef.current;
+    const el = folderInputRef.current;
     if (!el) return;
     el.setAttribute("multiple", "");
     el.setAttribute("webkitdirectory", "");
@@ -51,30 +51,27 @@ export function BulkResumeUploadPanel({ jobId }: { jobId: string }) {
     el.click();
   }
 
-  function openFilePicker() {
-    const el = inputRef.current;
-    if (!el) return;
-    el.removeAttribute("webkitdirectory");
-    el.removeAttribute("directory");
-    el.setAttribute("multiple", "");
-    el.setAttribute(
-      "accept",
-      ".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    );
-    el.click();
+  function onFolderPick(e: React.ChangeEvent<HTMLInputElement>) {
+    setPickedFiles(Array.from(e.target.files ?? []));
+    e.target.value = "";
   }
 
   async function upload() {
     if (files.length === 0) {
-      setError("Choose a folder or select PDF/DOCX files first.");
+      setError("Add resumes using the drop zone or folder picker.");
       return;
     }
     setLoading(true);
+    setProgress(15);
     setError(null);
     setResults(null);
 
     const form = new FormData();
     for (const f of files) form.append("files", f);
+
+    const timer = window.setInterval(() => {
+      setProgress((p) => (p < 85 ? p + 5 : p));
+    }, 800);
 
     const res = await fetch(`/api/jobs/${jobId}/bulk-resumes`, {
       method: "POST",
@@ -82,16 +79,21 @@ export function BulkResumeUploadPanel({ jobId }: { jobId: string }) {
       credentials: "same-origin",
     });
 
+    window.clearInterval(timer);
+    setProgress(100);
+
     const data = await res.json().catch(() => ({}));
     setLoading(false);
 
     if (!res.ok) {
       setError(typeof data.error === "string" ? data.error : "Bulk upload failed.");
+      setProgress(0);
       return;
     }
 
     const rows = Array.isArray(data.results) ? (data.results as BulkResult[]) : [];
     setResults(rows);
+    setTimeout(() => setProgress(0), 600);
     router.refresh();
   }
 
@@ -106,21 +108,22 @@ export function BulkResumeUploadPanel({ jobId }: { jobId: string }) {
   const canImport = files.length > 0 && !loading;
 
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-muted">
-        Select a folder of resumes (PDF/DOCX) or pick multiple files. Each resume becomes a
-        candidate for this role with talent screening. Duplicates (same email, same resume, or
-        already on this role) are skipped.
-      </p>
-
+    <div className="space-y-5">
       <input
-        ref={inputRef}
+        ref={folderInputRef}
         type="file"
         className="sr-only"
-        tabIndex={-1}
-        aria-hidden
-        onChange={onPick}
+        onChange={onFolderPick}
         disabled={loading}
+      />
+
+      <FileDropZone
+        disabled={loading}
+        label="Drop resumes here"
+        sublabel="PDF or DOCX — we'll screen each file against this role and rank applicants below."
+        hint="Tip: use Choose folder for a full batch in Chrome or Edge"
+        onFiles={setPickedFiles}
+        accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
       />
 
       <div className="flex flex-wrap gap-2">
@@ -128,40 +131,78 @@ export function BulkResumeUploadPanel({ jobId }: { jobId: string }) {
           <FolderOpen className="h-4 w-4" />
           Choose folder
         </Button>
-        <Button type="button" variant="secondary" disabled={loading} onClick={openFilePicker}>
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={loading}
+          onClick={() =>
+            document.getElementById(`bulk-files-${jobId}`)?.click()
+          }
+        >
           <Files className="h-4 w-4" />
           Choose files
         </Button>
+        <input
+          id={`bulk-files-${jobId}`}
+          type="file"
+          className="sr-only"
+          multiple
+          disabled={loading}
+          accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          onChange={(e) => {
+            setPickedFiles(Array.from(e.target.files ?? []));
+            e.target.value = "";
+          }}
+        />
       </div>
 
       {files.length > 0 && (
         <p className="text-sm text-foreground">
           <span className="font-semibold">{files.length}</span> resume
-          {files.length !== 1 ? "s" : ""} ready to import
+          {files.length !== 1 ? "s" : ""} ready
           {skippedCount > 0 && (
-            <span className="text-muted"> · {skippedCount} other file(s) ignored</span>
+            <span className="text-muted"> · {skippedCount} other file(s) skipped</span>
           )}
         </p>
       )}
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" onClick={upload} disabled={!canImport}>
-          {loading
-            ? "Processing…"
-            : files.length > 0
-              ? `Import & screen ${files.length} resume${files.length !== 1 ? "s" : ""}`
-              : "Import & screen"}
-        </Button>
-      </div>
-
-      {files.length === 0 && !error && (
-        <p className="text-xs text-muted">
-          Use <span className="font-medium">Choose folder</span> (Chrome/Edge) or{" "}
-          <span className="font-medium">Choose files</span> if folder pick is unavailable.
-        </p>
+      {loading && progress > 0 && (
+        <div>
+          <div className="mb-1 flex justify-between text-xs text-muted">
+            <span>Screening resumes…</span>
+            <span>{progress}%</span>
+          </div>
+          <div className="progress-hr">
+            <div className="progress-hr__bar" style={{ width: `${progress}%` }} />
+          </div>
+        </div>
       )}
 
+      <Button type="button" onClick={upload} disabled={!canImport} className="shadow-sm">
+        {loading
+          ? "Screening…"
+          : files.length > 0
+            ? `Screen ${files.length} resume${files.length !== 1 ? "s" : ""}`
+            : "Screen resumes"}
+      </Button>
+
       {error && <p className="text-sm text-risk">{error}</p>}
+
+      {results && created.length > 0 && (
+        <div className="rounded-xl border border-success/25 bg-success-bg/40 px-4 py-3">
+          <p className="text-sm font-semibold text-success">
+            {created.length} applicant{created.length !== 1 ? "s" : ""} screened — see ranked
+            pipeline below
+          </p>
+          <a
+            href="#job-pipeline"
+            className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+          >
+            Jump to pipeline
+            <ArrowRight className="h-3 w-3" />
+          </a>
+        </div>
+      )}
 
       {results && (
         <div className="space-y-4">

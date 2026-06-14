@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2, Calendar, Mic, FileAudio, Sparkles } from "lucide-react";
+import { Loader2, Calendar, Mic, FileAudio, Sparkles, Upload, Download } from "lucide-react";
 import {
   ScheduleDateTimeField,
   defaultScheduleDateTime,
@@ -142,56 +142,74 @@ export function InterviewWorkflowPanel({
         onTranscriptReady={(text) => setTranscript(text)}
       />
 
-      <section className="rounded-lg border border-border-subtle p-4">
-        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
+      <section className="section-card">
+        <h3 className="section-card__title mb-4">
+          <span className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-xs font-bold text-primary">
+            1
+          </span>
           <Calendar className="h-4 w-4 text-primary" />
-          1. Schedule interview
+          Schedule interview
         </h3>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           <label className="block sm:col-span-2">
-            <span className="text-xs font-semibold">Title</span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted">Title</span>
             <input
-              className="input-hr mt-1"
+              className="input-hr mt-1.5"
               value={scheduleTitle}
               onChange={(e) => setScheduleTitle(e.target.value)}
             />
           </label>
           <div className="sm:col-span-2">
-            <span className="text-xs font-semibold">Date & time</span>
-            <div className="mt-1">
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted">
+              Date & time
+            </span>
+            <div className="mt-1.5">
               <ScheduleDateTimeField value={scheduleWhen} onChange={setScheduleWhen} />
             </div>
           </div>
           <label className="block sm:col-span-2">
-            <span className="text-xs font-semibold">Meeting link (optional)</span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted">
+              Meeting link
+              <span className="ml-1 font-normal normal-case text-muted-foreground">(optional)</span>
+            </span>
             <input
-              className="input-hr mt-1"
+              className="input-hr mt-1.5"
               value={meetingUrl}
               onChange={(e) => setMeetingUrl(e.target.value)}
               placeholder="https://meet.google.com/…"
             />
           </label>
         </div>
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-4 flex flex-wrap gap-2">
           <Button type="button" disabled={loading} onClick={scheduleInterview}>
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Schedule & send invite stub"}
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <>
+                <Calendar className="h-4 w-4" />
+                Schedule interview
+              </>
+            )}
           </Button>
           {active?.scheduledAt && (
             <a
               href={`/api/applications/${applicationId}/interviews/${active.id}/calendar`}
-              className="inline-flex items-center rounded-lg border border-border px-3 py-2 text-xs font-semibold hover:bg-card"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground transition hover:border-primary/30 hover:bg-card"
             >
-              Download calendar invite (.ics)
+              <Download className="h-3.5 w-3.5" />
+              Download .ics invite
             </a>
           )}
         </div>
       </section>
 
       {interviews.length > 0 && (
-        <label className="block text-sm">
-          <span className="font-semibold">Active interview</span>
+        <label className="block">
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Active interview
+          </span>
           <select
-            className="input-hr mt-1"
+            className="input-hr mt-1.5"
             value={activeId}
             onChange={(e) => setActiveId(e.target.value)}
           >
@@ -204,47 +222,61 @@ export function InterviewWorkflowPanel({
         </label>
       )}
 
-      <section className="rounded-lg border border-border-subtle p-4">
-        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
+      <section className="section-card">
+        <h3 className="section-card__title mb-4">
+          <span className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-xs font-bold text-primary">
+            2
+          </span>
           <FileAudio className="h-4 w-4 text-primary" />
-          2. Upload recording → Whisper transcript
+          Upload recording
         </h3>
-        <input
-          type="file"
-          accept="audio/*,video/*,.mp3,.wav,.m4a,.webm,.mp4"
-          className="text-sm"
-          disabled={loading || !activeId}
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) void uploadRecording(file);
-          }}
-        />
-        <div className="mt-3 flex flex-wrap gap-2">
+        <p className="mb-3 text-xs leading-relaxed text-muted">
+          Upload an audio or video file — we&apos;ll transcribe it with Whisper.
+        </p>
+        <label
+          className={`file-input-hr ${loading || !activeId ? "pointer-events-none opacity-60" : ""}`}
+        >
+          <Upload className="h-4 w-4 shrink-0 text-primary" />
+          <span className="text-sm font-medium">Choose recording file</span>
+          <input
+            type="file"
+            accept="audio/*,video/*,.mp3,.wav,.m4a,.webm,.mp4"
+            disabled={loading || !activeId}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void uploadRecording(file);
+            }}
+          />
+        </label>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
           <Button type="button" variant="secondary" disabled={loading || !activeId} onClick={transcribe}>
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Transcribe with Whisper"}
           </Button>
           {active?.transcript && (
-            <span className="text-xs text-muted self-center">
-              Transcript ready ({active.transcript.length} chars)
+            <span className="rounded-md bg-success-bg px-2.5 py-1 text-xs font-medium text-success">
+              Transcript ready · {active.transcript.length.toLocaleString()} chars
             </span>
           )}
         </div>
       </section>
 
-      <section className="rounded-lg border border-border-subtle p-4">
-        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
+      <section className="section-card">
+        <h3 className="section-card__title mb-4">
+          <span className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-xs font-bold text-primary">
+            3
+          </span>
           <Mic className="h-4 w-4 text-primary" />
-          3. Analyze interview signals
+          Analyze interview signals
         </h3>
         <textarea
-          className="input-hr min-h-[120px] text-sm"
+          className="input-hr min-h-[140px] text-sm leading-relaxed"
           value={transcript}
           onChange={(e) => setTranscript(e.target.value)}
           placeholder="Paste transcript or transcribe from recording above…"
         />
         <Button
           type="button"
-          className="mt-3"
+          className="mt-4"
           disabled={loading || transcript.trim().length < 50}
           onClick={() => analyze(transcript)}
         >

@@ -3,11 +3,13 @@ import { notFound } from "next/navigation";
 import { requireAuthContext } from "@/lib/auth/session";
 import { isPlatformReadOnlyWorkspace } from "@/lib/auth/platform-admin";
 import * as jobAssignmentService from "@/lib/services/job-assignment.service";
+import { listApplicationsForJob } from "@/lib/services/application.service";
 import { hasPermission } from "@/lib/auth/permission.service";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader, PageBody } from "@/components/layout/page-header";
 import { JobAssignmentsPanel } from "@/components/features/jobs/job-assignments-panel";
 import { BulkResumeUploadPanel } from "@/components/features/jobs/bulk-resume-upload-panel";
+import { JobPipelineTable } from "@/components/features/jobs/job-pipeline-table";
 import { ChevronLeft, Users } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +21,7 @@ export default async function JobDetailPage({
 }) {
   const { id } = await params;
   let job: Awaited<ReturnType<typeof jobAssignmentService.getJobWithTeam>> | null = null;
+  let pipeline: Awaited<ReturnType<typeof listApplicationsForJob>> = [];
   let canManageTeam = false;
 
   try {
@@ -27,6 +30,7 @@ export default async function JobDetailPage({
     const readOnly = isPlatformReadOnlyWorkspace(ctx);
     canManageTeam =
       !readOnly && (await hasPermission(ctx, { resource: "jobs", action: "update" }));
+    pipeline = await listApplicationsForJob(ctx, id);
   } catch {
     notFound();
   }
@@ -35,7 +39,7 @@ export default async function JobDetailPage({
 
   return (
     <>
-      <div className="border-b border-border bg-card px-8 py-4">
+      <div className="border-b border-border bg-card/90 px-8 py-4 backdrop-blur-sm">
         <Link
           href="/jobs"
           className="mb-3 inline-flex items-center gap-1 text-sm font-medium text-muted hover:text-primary"
@@ -52,25 +56,25 @@ export default async function JobDetailPage({
 
       <PageBody>
         <div className="mb-8 grid gap-4 sm:grid-cols-3">
-          <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-xs font-semibold uppercase text-muted">Candidates</p>
-            <p className="mt-1 text-2xl font-bold">{job._count.applications}</p>
+          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted">In pipeline</p>
+            <p className="mt-2 text-3xl font-bold tabular-nums tracking-tight">{job._count.applications}</p>
           </div>
-          <div className="rounded-xl border border-border bg-card p-4 sm:col-span-2">
-            <p className="text-xs font-semibold uppercase text-muted">Hiring manager</p>
-            <p className="mt-1 text-sm font-medium">
-              {job.hiringManager?.name ?? job.hiringManager?.email ?? "Not set"}
+          <div className="rounded-xl border border-border bg-card p-5 shadow-sm sm:col-span-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted">Hiring manager</p>
+            <p className="mt-2 text-sm font-semibold">
+              {job.hiringManager?.name ?? job.hiringManager?.email ?? "Not assigned"}
             </p>
           </div>
         </div>
 
         {canManageTeam && (
-          <Card className="mb-8">
+          <Card className="mb-8 border-primary/15 shadow-md shadow-primary/5">
             <CardHeader>
-              <CardTitle>Bulk upload resumes</CardTitle>
+              <CardTitle>Bulk screen resumes</CardTitle>
               <CardDescription>
-                Select a folder from your computer. We will import each resume as a candidate and
-                screen them against this role.
+                Drop a folder of PDF or DOCX resumes — each file becomes a screened applicant for
+                this role.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -79,13 +83,17 @@ export default async function JobDetailPage({
           </Card>
         )}
 
+        <section id="job-pipeline" className="mb-8 scroll-mt-8">
+          <JobPipelineTable applications={pipeline} />
+        </section>
+
         {job.requirements && (
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle>Requirements</CardTitle>
+              <CardTitle>Role requirements</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="whitespace-pre-wrap text-sm text-muted">{job.requirements}</p>
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted">{job.requirements}</p>
             </CardContent>
           </Card>
         )}
@@ -94,12 +102,12 @@ export default async function JobDetailPage({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5 text-primary" />
-              Job team
+              Hiring team
             </CardTitle>
             <CardDescription>
               {canManageTeam
-                ? "Assign interviewers and hiring managers. Permissions are enforced via database ACL."
-                : "View who is assigned to this requisition."}
+                ? "Assign interviewers and hiring managers for this requisition."
+                : "Who is assigned to this open role."}
             </CardDescription>
           </CardHeader>
           <CardContent>

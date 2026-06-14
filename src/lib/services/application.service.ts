@@ -29,6 +29,21 @@ export async function listApplications(ctx: AuthContext) {
   });
 }
 
+export async function listApplicationsForJob(ctx: AuthContext, jobId: string) {
+  await assertPermission(ctx, { resource: "candidates", action: "read" });
+  await getJobById(ctx, jobId);
+  const where = await applicationsWhereClause(ctx);
+  const applications = await db.jobApplication.findMany({
+    where: { ...where, jobId },
+    include: applicationListInclude,
+  });
+  return applications.sort((a, b) => {
+    const aScore = a.talentProfile?.roleFitScore ?? -1;
+    const bScore = b.talentProfile?.roleFitScore ?? -1;
+    return bScore - aScore;
+  });
+}
+
 export async function getApplicationById(ctx: AuthContext, applicationId: string) {
   await assertApplicationAccess(ctx, applicationId);
   const application = await db.jobApplication.findFirst({

@@ -20,7 +20,7 @@ export function BulkImportResultCard({ row }: { row: BulkImportResultCardData })
   return (
     <Link
       href={href}
-      className="flex items-center gap-3 rounded-lg border border-border-subtle bg-card p-3 transition hover:border-primary/30 hover:bg-background hover:shadow-sm"
+      className="flex items-center gap-3 rounded-xl border border-border-subtle bg-card p-3.5 shadow-sm transition hover:border-primary/35 hover:bg-background hover:shadow-md"
     >
       <Avatar name={row.candidateName} size="sm" />
       <div className="min-w-0 flex-1">

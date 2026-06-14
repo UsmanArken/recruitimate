@@ -165,17 +165,17 @@ export function LiveInterviewAssistPanel({
   }
 
   return (
-    <section className="rounded-lg border-2 border-interview/30 bg-interview-bg/20 p-4">
-      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+    <section className="section-card border-interview/25 bg-gradient-to-br from-interview-bg/50 to-card">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="flex items-center gap-2 text-sm font-semibold">
+          <h3 className="flex flex-wrap items-center gap-2 text-sm font-semibold tracking-tight">
             <Radio className="h-4 w-4 text-interview" />
             Live interview assist
-            <span className="rounded-full bg-interview/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-interview">
-              Phase 2
+            <span className="rounded-full bg-interview/12 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-interview">
+              Beta
             </span>
           </h3>
-          <p className="mt-1 text-xs text-muted">
+          <p className="mt-1.5 max-w-xl text-xs leading-relaxed text-muted">
             Real-time follow-up questions while the interview is in progress. Advisory only —
             you decide what to ask.
           </p>
@@ -227,10 +227,12 @@ export function LiveInterviewAssistPanel({
         </p>
       )}
 
-      <label className="block text-sm">
-        <span className="text-xs font-semibold">Live transcript</span>
+      <label className="block">
+        <span className="text-xs font-semibold uppercase tracking-wide text-muted">
+          Live transcript
+        </span>
         <textarea
-          className="input-hr mt-1 min-h-[100px] text-sm"
+          className="input-hr mt-1.5 min-h-[100px] text-sm leading-relaxed"
           value={transcript}
           onChange={(e) => {
             setTranscript(e.target.value);
