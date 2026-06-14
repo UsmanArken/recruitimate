@@ -168,7 +168,7 @@ export async function importResumesForJob(
       }
       batchHashes.add(hash);
 
-      let candidate =
+      const candidate =
         (email ? await findCandidateByEmail(ctx, email) : null) ??
         (await findCandidateByResumeHash(ctx, normalized, hash));
 
