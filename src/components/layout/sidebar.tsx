@@ -7,13 +7,13 @@ import {
   Briefcase,
   Users,
   UserPlus,
-  Sparkles,
   Shield,
   Eye,
 } from "lucide-react";
 import { AdminNavLink } from "@/components/layout/admin-nav-link";
 import { NavLink } from "@/components/layout/nav-link";
 import { UserMenu } from "@/components/layout/user-menu";
+import { RecruitimateLogo } from "@/components/brand/recruitimate-logo";
 
 const workspaceNav = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
@@ -28,17 +28,10 @@ export function Sidebar() {
   return (
     <aside className="flex w-64 shrink-0 flex-col bg-brand text-brand-foreground shadow-lg shadow-brand/20">
       <div className="border-b border-white/10 px-5 py-6">
-        <Link href={isOperator ? "/admin" : "/"} className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15">
-            <Sparkles className="h-5 w-5 text-teal-200" strokeWidth={2} />
-          </div>
-          <div>
-            <span className="text-base font-semibold tracking-tight">Recruitimate</span>
-            <p className="text-[11px] font-medium text-brand-foreground/60">
-              {isOperator ? "Platform operations" : "Hiring intelligence"}
-            </p>
-          </div>
-        </Link>
+        <RecruitimateLogo
+          href={isOperator ? "/admin" : "/"}
+          tagline={isOperator ? "Platform operations" : "Hiring intelligence"}
+        />
       </div>
 
       <div className="flex flex-1 flex-col px-3 py-4">

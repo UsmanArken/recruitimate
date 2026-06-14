@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 64" fill="none" role="img" aria-label="Recruitimate">
+  <!-- Icon mark -->
+  <g transform="translate(0,0)">
+    <rect x="4" y="8" width="24" height="32" rx="6" fill="#162F4A"/>
+    <rect x="8" y="14" width="16" height="20" rx="4" fill="#0B6B82"/>
+    <circle cx="16" cy="21" r="3.5" fill="#F0F7FC"/>
+    <path d="M11 30c1-3 2.5-4.5 5-4.5s4 1.5 5 4.5" stroke="#F0F7FC" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M28 30h5" stroke="#F0F7FC" stroke-width="1.6" stroke-linecap="round"/>
+    <circle cx="28" cy="30" r="1.8" fill="#F0F7FC"/>
+    <circle cx="33" cy="30" r="1.8" fill="#F0F7FC"/>
+    <rect x="36" y="34" width="4" height="8" rx="1.2" fill="#0B6B82"/>
+    <rect x="41.5" y="30" width="4" height="12" rx="1.2" fill="#0B6B82"/>
+    <path d="M47 24v12h4" stroke="#0B6B82" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M47 24l2.5 2.5L47 29" stroke="#0B6B82" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M30 16h6M31.5 13h4M33 10h2.5" stroke="#5548A0" stroke-width="1.4" stroke-linecap="round"/>
+  </g>
+  <!-- Wordmark -->
+  <text x="62" y="42" font-family="var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif" font-size="28" font-weight="700" letter-spacing="-0.03em">
+    <tspan fill="#162F4A">Recruit</tspan><tspan fill="#0B6B82">imate</tspan>
+  </text>
+  <!-- Signal dot on i -->
+  <rect x="187" y="16" width="2" height="5" rx="0.8" fill="#5548A0"/>
+  <rect x="190" y="14" width="2" height="7" rx="0.8" fill="#5548A0"/>
+  <rect x="193" y="12" width="2" height="9" rx="0.8" fill="#5548A0"/>
+</svg>

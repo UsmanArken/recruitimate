@@ -1,5 +1,5 @@
-import Link from "next/link";
-import { Sparkles, Brain, Mic2, Scale } from "lucide-react";
+import { Brain, Mic2, Scale } from "lucide-react";
+import { RecruitimateLogo } from "@/components/brand/recruitimate-logo";
 
 const highlights = [
   {
@@ -45,17 +45,11 @@ export function AuthLayout({
           }}
         />
         <div className="relative">
-          <Link href="/" className="inline-flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/12 shadow-lg shadow-black/10 ring-1 ring-white/10">
-              <Sparkles className="h-6 w-6 text-teal-200" strokeWidth={2} />
-            </div>
-            <div>
-              <span className="text-lg font-semibold tracking-tight">Recruitimate</span>
-              <p className="text-xs font-medium text-brand-foreground/55">
-                Hiring intelligence for HR teams
-              </p>
-            </div>
-          </Link>
+          <RecruitimateLogo
+            href="/"
+            size="lg"
+            tagline="Hiring intelligence for HR teams"
+          />
         </div>
 
         <div className="relative space-y-8">
@@ -93,11 +87,8 @@ export function AuthLayout({
       </aside>
 
       <main className="app-canvas flex flex-1 flex-col items-center justify-center px-6 py-12 sm:px-10">
-        <div className="mb-8 flex items-center gap-3 lg:hidden">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand text-brand-foreground">
-            <Sparkles className="h-5 w-5 text-teal-200" />
-          </div>
-          <span className="text-lg font-semibold text-foreground">Recruitimate</span>
+        <div className="mb-8 lg:hidden">
+          <RecruitimateLogo href="/" variant="light" tagline="Hiring intelligence" />
         </div>
 
         <div className="w-full max-w-[420px]">
