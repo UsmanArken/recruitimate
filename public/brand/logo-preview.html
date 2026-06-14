@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recruitimate — Logo preview</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      background: #eef2f6;
+      color: #152535;
+      padding: 2rem;
+      line-height: 1.5;
+    }
+    h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+    .lead { color: #52657a; margin-bottom: 2rem; max-width: 52rem; }
+    section { margin-bottom: 2.5rem; }
+    h2 { font-size: 1rem; margin-bottom: 1rem; color: #162f4a; }
+    .grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    .card {
+      background: #fff;
+      border: 1px solid #d4dee8;
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+    .card h3 { font-size: 0.9rem; margin-bottom: 0.35rem; }
+    .card p { font-size: 0.75rem; color: #52657a; margin-bottom: 1rem; min-height: 2.5rem; }
+    .sizes { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 1.25rem; }
+    .size { text-align: center; }
+    .size span {
+      display: block;
+      font-size: 10px;
+      color: #6b7f94;
+      margin-top: 0.35rem;
+    }
+    .on-dark {
+      background: #162f4a;
+      border-radius: 12px;
+      padding: 1rem;
+      margin-top: 0.75rem;
+    }
+    .wordmark {
+      margin-top: 1rem;
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+    .wordmark .a { color: #162f4a; }
+    .wordmark .b { color: #0b6b82; }
+    .on-dark .wordmark .a { color: #fff; }
+    .on-dark .wordmark .b { color: #5eead4; }
+    .badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      margin-bottom: 0.5rem;
+    }
+    .badge-current { background: #fdf2f2; color: #b44040; }
+    .badge-new { background: #e8f5ec; color: #256349; }
+  </style>
+</head>
+<body>
+  <h1>Recruitimate logo preview</h1>
+  <p class="lead">
+    Same icons at the sizes browsers actually use — favicon (16px), tab (32px), sidebar (36px).
+    The current design has too many elements for small sizes.
+  </p>
+
+  <section>
+    <h2>Current design (in production)</h2>
+    <div class="grid">
+      <div class="card">
+        <span class="badge badge-current">Current</span>
+        <h3>Person + bridge + 3 bars + arrow + signal lines</h3>
+        <p>11 shapes. Reads as noise at 16–32px.</p>
+        <div class="sizes" id="current-sizes"></div>
+        <div class="on-dark">
+          <div class="sizes" id="current-dark"></div>
+          <p class="wordmark"><span class="a">Recruit</span><span class="b">imate</span></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Simpler alternatives (proposed)</h2>
+    <div class="grid" id="alternatives"></div>
+  </section>
+
+  <script>
+    const current = `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+      <rect width="48" height="48" rx="11" fill="#FFFFFF"/>
+      <rect x="5" y="10" width="15" height="20" rx="4" fill="#162F4A"/>
+      <circle cx="12.5" cy="16.5" r="3.2" fill="#F0F7FC"/>
+      <path d="M8 27c1.2-2.8 2.8-4 4.5-4s3.3 1.2 4.5 4" stroke="#F0F7FC" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+      <circle cx="22.5" cy="24" r="1.6" fill="#0B6B82"/>
+      <path d="M21 24h3.5" stroke="#0B6B82" stroke-width="1.6" stroke-linecap="round"/>
+      <circle cx="25.5" cy="24" r="1.6" fill="#0B6B82"/>
+      <rect x="28" y="28" width="4" height="8" rx="1.2" fill="#0B6B82"/>
+      <rect x="33.5" y="24" width="4" height="12" rx="1.2" fill="#0B6B82"/>
+      <rect x="39" y="18" width="4" height="18" rx="1.2" fill="#14B8D4"/>
+      <path d="M41 14v4M41 14l-1.8 1.8M41 14l1.8 1.8" stroke="#14B8D4" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <path d="M22 12h5M23 9h4M24 6.5h2.5" stroke="#5548A0" stroke-width="1.4" stroke-linecap="round"/>
+    </svg>`;
+
+    const alternatives = [
+      {
+        id: "a",
+        badge: "Recommended",
+        title: "R monogram",
+        desc: "Bold R on teal tile. 2 shapes. Clear at any size.",
+        svg: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+          <rect width="48" height="48" rx="12" fill="#0B6B82"/>
+          <path d="M14 34V14h9.5c4.2 0 7 2.5 7 6.2 0 2.6-1.3 4.6-3.4 5.5L31 34h-5.2l-3.6-7.4H19.2V34H14zm5.2-11.8h3.8c1.8 0 2.9-1 2.9-2.5s-1.1-2.4-2.9-2.4h-3.8v4.9z" fill="#FFFFFF"/>
+        </svg>`,
+      },
+      {
+        id: "b",
+        badge: "Option B",
+        title: "Person + rise",
+        desc: "Head circle + shoulder arc + one upward chevron. 3 elements.",
+        svg: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+          <rect width="48" height="48" rx="12" fill="#162F4A"/>
+          <circle cx="20" cy="18" r="6" fill="#0B6B82"/>
+          <path d="M10 34c2.5-6 6-9 10-9s7.5 3 10 9" stroke="#5EEAD4" stroke-width="3" stroke-linecap="round" fill="none"/>
+          <path d="M32 30l6-8 6 8" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>`,
+      },
+      {
+        id: "c",
+        badge: "Option C",
+        title: "Three layers",
+        desc: "Three ascending dots = talent, interview, decision. Ultra minimal.",
+        svg: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+          <rect width="48" height="48" rx="12" fill="#0B6B82"/>
+          <circle cx="14" cy="30" r="5" fill="#5548A0"/>
+          <circle cx="24" cy="22" r="5" fill="#FFFFFF" opacity="0.9"/>
+          <circle cx="34" cy="14" r="5" fill="#5EEAD4"/>
+        </svg>`,
+      },
+    ];
+
+    function renderSizes(container, svg, sizes) {
+      sizes.forEach((px) => {
+        const wrap = document.createElement("div");
+        wrap.className = "size";
+        wrap.innerHTML = svg.replace("<svg ", `<svg width="${px}" height="${px}" `) +
+          `<span>${px}px</span>`;
+        container.appendChild(wrap);
+      });
+    }
+
+    const sizes = [16, 32, 36, 48];
+    renderSizes(document.getElementById("current-sizes"), current, sizes);
+    renderSizes(document.getElementById("current-dark"), current, sizes);
+
+    const altGrid = document.getElementById("alternatives");
+    alternatives.forEach((alt) => {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <span class="badge badge-new">${alt.badge}</span>
+        <h3>${alt.title}</h3>
+        <p>${alt.desc}</p>
+        <div class="sizes" id="alt-${alt.id}"></div>
+        <div class="on-dark">
+          <div class="sizes" id="alt-${alt.id}-dark"></div>
+          <p class="wordmark"><span class="a">Recruit</span><span class="b">imate</span></p>
+        </div>
+      `;
+      altGrid.appendChild(card);
+      renderSizes(document.getElementById(`alt-${alt.id}`), alt.svg, sizes);
+      renderSizes(document.getElementById(`alt-${alt.id}-dark`), alt.svg, sizes);
+    });
+  </script>
+</body>
+</html>
