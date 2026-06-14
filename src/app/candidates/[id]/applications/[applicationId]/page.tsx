@@ -248,6 +248,8 @@ export default async function ApplicationDetailPage({
                 <CardContent>
                   <InterviewWorkflowPanel
                     applicationId={application.id}
+                    jobId={application.jobId}
+                    jobTitle={application.job.title}
                     interviews={application.interviews.map((i) => ({
                       id: i.id,
                       title: i.title,

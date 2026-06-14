@@ -56,7 +56,7 @@ P2-001,Phase 2,Interview Intelligence,Interview,Real-time interview assist,Live 
 P2-002,Phase 2,Interview Intelligence,Interview,Real-time inconsistency flags,Flag contradictions as they occur in live transcript,P1,Done,P2-001,inconsistency-engine + live panel flags
 P2-003,Phase 2,Interview Intelligence,Interview,Cross-signal validation,Compare resume claims vs interview answers,P0,Done,MVP-008,cross-signal-engine vs resume + talent profile
 P2-004,Phase 2,Interview Intelligence,Interview,Mismatch alerts UI,Surface resume vs interview gaps with evidence,P1,Done,P2-003,MismatchAlertsList in live assist panel
-P2-005,Phase 2,Interview Intelligence,Interview,AI-generated interview questions,Role-specific question bank generation,P1,Not Started,MVP-014,
+P2-005,Phase 2,Interview Intelligence,Interview,AI-generated interview questions,Role-specific question bank generation,P1,Done,MVP-014,question-bank-engine + job/campaign UI + API
 P2-006,Phase 2,Interview Intelligence,Interview,Interview quality analysis,Score interviewer question coverage probing bias,P1,Not Started,MVP-008,
 P2-007,Phase 2,Interview Intelligence,Interview,Audio signal extraction,Pauses tone shifts from audio stream,P2,Not Started,MVP-031,
 P2-008,Phase 2,Interview Intelligence,Interview,Video behavioral metrics,Engagement facial cues opt-in ethical guardrails,P2,Not Started,MVP-030,

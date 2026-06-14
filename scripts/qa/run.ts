@@ -50,6 +50,7 @@ async function main() {
       "scripts/qa/llm-config.test.ts",
       "scripts/qa/live-assist.test.ts",
       "scripts/qa/cross-signal.test.ts",
+      "scripts/qa/question-bank.test.ts",
     ])
   );
 

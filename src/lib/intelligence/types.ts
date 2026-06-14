@@ -73,6 +73,30 @@ export type InconsistencyFlag = Signal & {
   severity: LiveAssistPriority;
 };
 
+export type InterviewQuestionCategory =
+  | "technical"
+  | "behavioral"
+  | "situational"
+  | "role_fit"
+  | "culture";
+
+export type InterviewQuestionDifficulty = "easy" | "medium" | "hard";
+
+export type InterviewQuestion = {
+  id: string;
+  question: string;
+  rationale: string;
+  category: InterviewQuestionCategory;
+  difficulty: InterviewQuestionDifficulty;
+  probesFor: string;
+};
+
+export type InterviewQuestionBankResult = {
+  questions: InterviewQuestion[];
+  roleSummary: string;
+  explanation: string;
+};
+
 export type HireRecommendation =
   | "strong_yes"
   | "yes"

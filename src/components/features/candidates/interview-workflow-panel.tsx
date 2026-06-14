@@ -11,6 +11,7 @@ import {
   type ScheduleDateTimeValue,
 } from "@/components/features/candidates/schedule-datetime-field";
 import { LiveInterviewAssistPanel } from "@/components/features/candidates/live-interview-assist-panel";
+import { InterviewQuestionBankPanel } from "@/components/features/jobs/interview-question-bank-panel";
 
 export type InterviewRow = {
   id: string;
@@ -24,9 +25,13 @@ export type InterviewRow = {
 
 export function InterviewWorkflowPanel({
   applicationId,
+  jobId,
+  jobTitle,
   interviews,
 }: {
   applicationId: string;
+  jobId: string;
+  jobTitle: string;
   interviews: InterviewRow[];
 }) {
   const router = useRouter();
@@ -136,6 +141,8 @@ export function InterviewWorkflowPanel({
 
   return (
     <div className="space-y-6">
+      <InterviewQuestionBankPanel jobId={jobId} jobTitle={jobTitle} compact />
+
       <LiveInterviewAssistPanel
         applicationId={applicationId}
         interviewId={activeId || undefined}
