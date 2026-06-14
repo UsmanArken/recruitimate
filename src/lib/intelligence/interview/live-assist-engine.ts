@@ -1,4 +1,6 @@
 import { chatJson, getActiveLlmProviderId, hasLlmProvider, llmSetupHint } from "../ai";
+import { validateCrossSignals } from "./cross-signal-engine";
+import { detectLiveInconsistencies } from "./inconsistency-engine";
 import type { LiveAssistResult, LiveAssistSuggestion } from "../types";
 
 export type LiveAssistContext = {
@@ -6,6 +8,9 @@ export type LiveAssistContext = {
   candidateName: string;
   jobTitle: string;
   jobRequirements?: string | null;
+  resumeText?: string;
+  skills?: string[];
+  experienceYears?: number | null;
   talentGaps?: string[];
   talentStrengths?: string[];
 };
@@ -126,6 +131,9 @@ function heuristicLiveAssist(context: LiveAssistContext): LiveAssistResult {
     explanation: hasLlmProvider()
       ? `Heuristic live assist (${getActiveLlmProviderId()} call failed — check terminal for llm_error).`
       : `Heuristic live assist (no LLM configured). ${llmSetupHint()}`,
+    mismatchAlerts: [],
+    inconsistencyFlags: [],
+    crossSignalSummary: "",
   };
 }
 
@@ -146,9 +154,26 @@ Resume strengths: ${strengths}
 Partial live transcript (${context.transcript.length} chars):
 ${context.transcript.slice(-8000)}`;
 
-  const result = await chatJson<LiveAssistResult>(SYSTEM_PROMPT, userPrompt, fallback);
+  const [suggestResult, crossSignal, inconsistencies] = await Promise.all([
+    chatJson<Pick<LiveAssistResult, "suggestions" | "momentSummary" | "explanation">>(
+      SYSTEM_PROMPT,
+      userPrompt,
+      fallback
+    ),
+    validateCrossSignals({
+      transcript: context.transcript,
+      resumeText: context.resumeText ?? "",
+      candidateName: context.candidateName,
+      jobTitle: context.jobTitle,
+      skills: context.skills,
+      talentGaps: context.talentGaps,
+      talentStrengths: context.talentStrengths,
+      experienceYears: context.experienceYears,
+    }),
+    detectLiveInconsistencies({ transcript: context.transcript }),
+  ]);
 
-  const suggestions = (result.suggestions ?? [])
+  const suggestions = (suggestResult.suggestions ?? [])
     .filter((s) => s.question?.trim())
     .slice(0, 5)
     .map((s, i) => ({
@@ -159,9 +184,18 @@ ${context.transcript.slice(-8000)}`;
       priority: s.priority ?? "medium",
     }));
 
+  const explanations = [
+    suggestResult.explanation?.trim() || fallback.explanation,
+    crossSignal.explanation,
+    inconsistencies.explanation,
+  ].filter(Boolean);
+
   return {
     suggestions,
-    momentSummary: result.momentSummary?.trim() || fallback.momentSummary,
-    explanation: result.explanation?.trim() || fallback.explanation,
+    momentSummary: suggestResult.momentSummary?.trim() || fallback.momentSummary,
+    explanation: explanations.join(" "),
+    mismatchAlerts: crossSignal.alerts,
+    inconsistencyFlags: inconsistencies.flags,
+    crossSignalSummary: crossSignal.summary,
   };
 }

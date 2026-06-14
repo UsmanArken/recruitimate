@@ -5,6 +5,7 @@ import { assertPermission } from "@/lib/auth/permission.service";
 import { assertApplicationAccess } from "@/lib/auth/scope.service";
 import type { AuthContext } from "@/lib/auth/types";
 import { generateLiveAssistSuggestions } from "@/lib/intelligence/interview/live-assist-engine";
+import { buildCandidateIntelligenceText } from "@/lib/candidate/intelligence-text";
 import type { LiveAssistInput } from "@/lib/validators/live-assist";
 
 export async function generateApplicationLiveAssist(
@@ -29,12 +30,17 @@ export async function generateApplicationLiveAssist(
 
   const talentGaps = (application.talentProfile?.gaps as string[] | undefined) ?? [];
   const talentStrengths = (application.talentProfile?.strengths as string[] | undefined) ?? [];
+  const skills = (application.talentProfile?.skills as string[] | undefined) ?? [];
+  const resumeText = buildCandidateIntelligenceText(application.candidate);
 
   const result = await generateLiveAssistSuggestions({
     transcript: input.transcript,
     candidateName: application.candidate.name,
     jobTitle: application.job.title,
     jobRequirements: application.job.requirements,
+    resumeText,
+    skills,
+    experienceYears: application.talentProfile?.experienceYears ?? null,
     talentGaps,
     talentStrengths,
   });

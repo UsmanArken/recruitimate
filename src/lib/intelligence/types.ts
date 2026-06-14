@@ -44,6 +44,33 @@ export type LiveAssistResult = {
   suggestions: LiveAssistSuggestion[];
   momentSummary: string;
   explanation: string;
+  /** P2-003 / P2-004 — resume vs live interview cross-signal mismatches */
+  mismatchAlerts: MismatchAlert[];
+  /** P2-002 — contradictions detected within the live transcript */
+  inconsistencyFlags: InconsistencyFlag[];
+  crossSignalSummary: string;
+};
+
+export type MismatchType =
+  | "contradiction"
+  | "unsupported_claim"
+  | "experience_gap"
+  | "skill_gap"
+  | "timeline";
+
+export type MismatchAlert = {
+  id: string;
+  label: string;
+  resumeClaim: string;
+  interviewStatement: string;
+  evidence: string;
+  confidence: Signal["confidence"];
+  severity: LiveAssistPriority;
+  type: MismatchType;
+};
+
+export type InconsistencyFlag = Signal & {
+  severity: LiveAssistPriority;
 };
 
 export type HireRecommendation =
