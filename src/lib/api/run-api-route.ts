@@ -18,6 +18,7 @@ export async function runApiRoute(
     const token = await getToken({
       req,
       secret: process.env.AUTH_SECRET,
+      secureCookie: process.env.NODE_ENV === "production",
     });
     userId = token?.sub;
   } catch {
