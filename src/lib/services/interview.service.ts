@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import type { Prisma } from "@prisma/client";
 import { applicationDetailInclude } from "@/lib/db/includes";
 import { badRequest, notFound } from "@/lib/api/errors";
 import { buildCandidateIntelligenceText } from "@/lib/candidate/intelligence-text";
@@ -8,6 +9,7 @@ import { assertApplicationAccess } from "@/lib/auth/scope.service";
 import type { AuthContext } from "@/lib/auth/types";
 import { analyzeInterview } from "@/lib/intelligence/interview/engine";
 import { analyzeInterviewerQuality } from "@/lib/intelligence/interview/interviewer-quality-engine";
+import { extractAudioSignals } from "@/lib/intelligence/audio/audio-signal-engine";
 import { transcribeRecordingFile } from "@/lib/intelligence/transcription/whisper";
 import { refreshApplicationIntelligence } from "@/lib/services/candidate-intelligence.service";
 import {
@@ -118,6 +120,36 @@ export async function createInterviewAndAnalyze(
 
   const payload = analysisPayload(analysis, interviewerQuality);
 
+  const existingAudio =
+    input.interviewId
+      ? (
+          await db.interview.findFirst({
+            where: { id: input.interviewId },
+            select: { audioSignals: true, recordingPath: true },
+          })
+        )?.audioSignals
+      : null;
+
+  let audioSignals: Prisma.InputJsonValue | undefined = existingAudio as
+    | Prisma.InputJsonValue
+    | undefined;
+  if (!audioSignals && input.interviewId) {
+    const rec = await db.interview.findFirst({
+      where: { id: input.interviewId },
+      select: { recordingPath: true },
+    });
+    if (rec?.recordingPath) {
+      try {
+        audioSignals = (await extractAudioSignals(
+          rec.recordingPath,
+          input.transcript
+        )) as Prisma.InputJsonValue;
+      } catch {
+        // optional enrichment
+      }
+    }
+  }
+
   const interview = input.interviewId
     ? await db.interview.update({
         where: { id: input.interviewId },
@@ -125,6 +157,7 @@ export async function createInterviewAndAnalyze(
           title: input.title,
           status: "ANALYZED",
           transcript: input.transcript,
+          audioSignals: audioSignals ?? undefined,
           analysis: {
             upsert: {
               create: payload,
@@ -248,9 +281,47 @@ export async function transcribeInterviewRecording(
 
   const transcript = await transcribeRecordingFile(interview.recordingPath);
 
+  let audioSignals: Prisma.InputJsonValue | undefined;
+  try {
+    audioSignals = (await extractAudioSignals(
+      interview.recordingPath,
+      transcript
+    )) as Prisma.InputJsonValue;
+  } catch {
+    // Non-fatal — transcript still succeeds
+  }
+
   return db.interview.update({
     where: { id: interviewId },
-    data: { transcript, status: "TRANSCRIBED" },
+    data: { transcript, status: "TRANSCRIBED", audioSignals },
+  });
+}
+
+export async function extractInterviewAudioSignals(
+  ctx: AuthContext,
+  applicationId: string,
+  interviewId: string
+) {
+  assertTenantWorkspaceWrite(ctx);
+  await assertPermission(ctx, { resource: "interviews", action: "create" });
+  await assertApplicationAccess(ctx, applicationId);
+
+  const interview = await db.interview.findFirst({
+    where: { id: interviewId, applicationId },
+  });
+  if (!interview) throw notFound("Interview");
+  if (!interview.recordingPath) {
+    throw badRequest("Upload a recording first", "NO_RECORDING");
+  }
+
+  const audioSignals = await extractAudioSignals(
+    interview.recordingPath,
+    interview.transcript
+  );
+
+  return db.interview.update({
+    where: { id: interviewId },
+    data: { audioSignals: audioSignals as Prisma.InputJsonValue },
   });
 }
 

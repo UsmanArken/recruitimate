@@ -12,6 +12,11 @@ import {
 } from "@/components/features/candidates/schedule-datetime-field";
 import { LiveInterviewAssistPanel } from "@/components/features/candidates/live-interview-assist-panel";
 import { InterviewQuestionBankPanel } from "@/components/features/jobs/interview-question-bank-panel";
+import {
+  AudioSignalsPanel,
+  parseAudioSignals,
+} from "@/components/features/interview/audio-signals-panel";
+import type { AudioSignalResult } from "@/lib/intelligence/types";
 
 export type InterviewRow = {
   id: string;
@@ -21,6 +26,7 @@ export type InterviewRow = {
   meetingUrl: string | null;
   recordingPath: string | null;
   transcript: string | null;
+  audioSignals?: AudioSignalResult | null;
 };
 
 export function InterviewWorkflowPanel({
@@ -43,6 +49,9 @@ export function InterviewWorkflowPanel({
   const [scheduleWhen, setScheduleWhen] = useState<ScheduleDateTimeValue>(defaultScheduleDateTime);
   const [meetingUrl, setMeetingUrl] = useState("");
   const [transcript, setTranscript] = useState("");
+  const [audioSignals, setAudioSignals] = useState<AudioSignalResult | null>(
+    interviews[0]?.audioSignals ?? null
+  );
 
   async function scheduleInterview() {
     const scheduledAt = scheduleDateTimeToIso(scheduleWhen);
@@ -111,6 +120,25 @@ export function InterviewWorkflowPanel({
       return;
     }
     if (data.transcript) setTranscript(data.transcript);
+    if (data.audioSignals) setAudioSignals(parseAudioSignals(data.audioSignals));
+    router.refresh();
+  }
+
+  async function extractAudio() {
+    if (!activeId) return;
+    setLoading(true);
+    setError(null);
+    const res = await fetch(
+      `/api/applications/${applicationId}/interviews/${activeId}/audio-signals`,
+      { method: "POST", credentials: "same-origin" }
+    );
+    setLoading(false);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setError(typeof data.error === "string" ? data.error : "Audio extraction failed");
+      return;
+    }
+    if (data.audioSignals) setAudioSignals(parseAudioSignals(data.audioSignals));
     router.refresh();
   }
 
@@ -138,6 +166,7 @@ export function InterviewWorkflowPanel({
   }
 
   const active = interviews.find((i) => i.id === activeId);
+  const activeAudio = audioSignals ?? parseAudioSignals(active?.audioSignals);
 
   return (
     <div className="space-y-6">
@@ -230,12 +259,25 @@ export function InterviewWorkflowPanel({
           <Button type="button" variant="secondary" disabled={loading || !activeId} onClick={transcribe}>
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Transcribe with Whisper"}
           </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={loading || !active?.recordingPath}
+            onClick={extractAudio}
+          >
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Extract audio signals"}
+          </Button>
           {active?.transcript && (
             <span className="text-xs text-muted self-center">
               Transcript ready ({active.transcript.length} chars)
             </span>
           )}
         </div>
+        {activeAudio && (
+          <div className="mt-4">
+            <AudioSignalsPanel audio={activeAudio} />
+          </div>
+        )}
       </section>
 
       <section className="rounded-lg border border-border-subtle p-4">

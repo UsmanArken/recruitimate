@@ -16,6 +16,10 @@ import {
   InterviewerQualityPanel,
   parseInterviewerQuality,
 } from "@/components/features/interview/interviewer-quality-panel";
+import {
+  AudioSignalsPanel,
+  parseAudioSignals,
+} from "@/components/features/interview/audio-signals-panel";
 import { ReanalyzeButton } from "@/components/features/candidates/reanalyze-button";
 import { PageBody } from "@/components/layout/page-header";
 import type { Signal } from "@/lib/intelligence/types";
@@ -57,6 +61,7 @@ export default async function ApplicationDetailPage({
   const behavioralMetrics = (ia?.behavioralMetrics ?? []) as Signal[];
   const interviewRisks = (ia?.riskFlags ?? []) as Signal[];
   const interviewerQuality = parseInterviewerQuality(ia?.interviewerQuality);
+  const audioSignals = parseAudioSignals(latestInterview?.audioSignals);
 
   return (
     <>
@@ -229,6 +234,7 @@ export default async function ApplicationDetailPage({
                   {interviewerQuality && (
                     <InterviewerQualityPanel quality={interviewerQuality} />
                   )}
+                  {audioSignals && <AudioSignalsPanel audio={audioSignals} />}
                   {ia.explanation && (
                     <p className="text-xs italic text-muted">{ia.explanation}</p>
                   )}
@@ -266,6 +272,7 @@ export default async function ApplicationDetailPage({
                       meetingUrl: i.meetingUrl,
                       recordingPath: i.recordingPath,
                       transcript: i.transcript,
+                      audioSignals: parseAudioSignals(i.audioSignals),
                     }))}
                   />
                 </CardContent>

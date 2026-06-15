@@ -108,6 +108,38 @@ export type InterviewerQualityResult = {
   explanation: string;
 };
 
+export type AudioPauseSignal = {
+  startSec: number;
+  endSec: number;
+  durationSec: number;
+  label: string;
+};
+
+export type AudioToneShift = {
+  atSec: number;
+  fromLevel: "low" | "medium" | "high";
+  toLevel: "low" | "medium" | "high";
+  evidence: string;
+};
+
+export type AudioSignalSource = "wav_pcm" | "transcript_fallback";
+
+export type AudioSignalResult = {
+  source: AudioSignalSource;
+  durationSec: number | null;
+  pauseCount: number;
+  avgPauseSec: number;
+  longestPauseSec: number;
+  pauses: AudioPauseSignal[];
+  toneShifts: AudioToneShift[];
+  /** 0–1 — higher = more frequent/longer pauses */
+  pauseDensityScore: number;
+  /** 0–1 — higher = more energy / tone variability */
+  energyVariabilityScore: number;
+  signals: Signal[];
+  explanation: string;
+};
+
 export type HireRecommendation =
   | "strong_yes"
   | "yes"
