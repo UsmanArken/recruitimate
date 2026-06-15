@@ -20,6 +20,10 @@ import {
   AudioSignalsPanel,
   parseAudioSignals,
 } from "@/components/features/interview/audio-signals-panel";
+import {
+  VideoBehavioralPanel,
+  parseVideoBehavioralMetrics,
+} from "@/components/features/interview/video-behavioral-panel";
 import { ReanalyzeButton } from "@/components/features/candidates/reanalyze-button";
 import { PageBody } from "@/components/layout/page-header";
 import type { Signal } from "@/lib/intelligence/types";
@@ -62,6 +66,7 @@ export default async function ApplicationDetailPage({
   const interviewRisks = (ia?.riskFlags ?? []) as Signal[];
   const interviewerQuality = parseInterviewerQuality(ia?.interviewerQuality);
   const audioSignals = parseAudioSignals(latestInterview?.audioSignals);
+  const videoBehavioral = parseVideoBehavioralMetrics(latestInterview?.videoBehavioralMetrics);
 
   return (
     <>
@@ -235,6 +240,7 @@ export default async function ApplicationDetailPage({
                     <InterviewerQualityPanel quality={interviewerQuality} />
                   )}
                   {audioSignals && <AudioSignalsPanel audio={audioSignals} />}
+                  {videoBehavioral && <VideoBehavioralPanel metrics={videoBehavioral} />}
                   {ia.explanation && (
                     <p className="text-xs italic text-muted">{ia.explanation}</p>
                   )}
@@ -273,6 +279,7 @@ export default async function ApplicationDetailPage({
                       recordingPath: i.recordingPath,
                       transcript: i.transcript,
                       audioSignals: parseAudioSignals(i.audioSignals),
+                      videoBehavioralMetrics: parseVideoBehavioralMetrics(i.videoBehavioralMetrics),
                     }))}
                   />
                 </CardContent>

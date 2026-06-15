@@ -16,7 +16,8 @@ import {
   AudioSignalsPanel,
   parseAudioSignals,
 } from "@/components/features/interview/audio-signals-panel";
-import type { AudioSignalResult } from "@/lib/intelligence/types";
+import type { AudioSignalResult, VideoBehavioralResult } from "@/lib/intelligence/types";
+import { VideoBehavioralCapturePanel } from "@/components/features/candidates/video-behavioral-capture-panel";
 
 export type InterviewRow = {
   id: string;
@@ -27,6 +28,7 @@ export type InterviewRow = {
   recordingPath: string | null;
   transcript: string | null;
   audioSignals?: AudioSignalResult | null;
+  videoBehavioralMetrics?: VideoBehavioralResult | null;
 };
 
 export function InterviewWorkflowPanel({
@@ -278,6 +280,14 @@ export function InterviewWorkflowPanel({
             <AudioSignalsPanel audio={activeAudio} />
           </div>
         )}
+        <div className="mt-4">
+          <VideoBehavioralCapturePanel
+            applicationId={applicationId}
+            interviewId={activeId || undefined}
+            recordingPath={active?.recordingPath}
+            initialMetrics={active?.videoBehavioralMetrics ?? null}
+          />
+        </div>
       </section>
 
       <section className="rounded-lg border border-border-subtle p-4">

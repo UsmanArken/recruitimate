@@ -140,6 +140,32 @@ export type AudioSignalResult = {
   explanation: string;
 };
 
+export type VideoBehavioralSample = {
+  atSec: number;
+  faceDetected: boolean;
+  engagement: number;
+  attention: number;
+};
+
+export type VideoBehavioralSource = "webcam_live" | "recording_playback" | "motion_fallback";
+
+export type VideoBehavioralResult = {
+  consentGiven: boolean;
+  consentAt: string;
+  candidateInformed: boolean;
+  source: VideoBehavioralSource;
+  durationSec: number;
+  faceVisiblePercent: number;
+  engagementScore: number;
+  attentionScore: number;
+  movementScore: number;
+  sampleCount: number;
+  samples: VideoBehavioralSample[];
+  ethicalNotice: string;
+  signals: Signal[];
+  explanation: string;
+};
+
 export type HireRecommendation =
   | "strong_yes"
   | "yes"
