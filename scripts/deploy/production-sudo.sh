@@ -3,7 +3,7 @@ set -euo pipefail
 
 APP_DIR="$HOME/recruitimate"
 SUDO_PASS="${SUDO_PASS:?SUDO_PASS required}"
-APP_URL="${APP_URL:-http://172.105.19.153}"
+APP_URL="${APP_URL:-https://recruitimate.app}"
 
 sudo_cmd() { echo "$SUDO_PASS" | sudo -S "$@"; }
 

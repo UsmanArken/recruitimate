@@ -30,7 +30,7 @@ Project setup, docs, HR UI shell — **complete**.
 - **Done:** Core engines, auth/ACL, multi-position applications, PDF resume upload, phased intelligence, applicant intake picker, QA scripts, platform admin, operator workspace guard, notes, onboarding, multi-provider LLM, **production deploy** (MVP-035), **bulk resume screening** (MVP-041), demo UI polish (MVP-042), branding (MVP-043).
 - **Remaining:** GitHub/portfolio parsing (MVP-025) optional.
 
-**Production:** https://recruitimate.io
+**Production:** https://recruitimate.app (recruitimate.io redirects)
 
 ### Phase 2 — core moat expansion
 **Goal:** Real-time interview assist, cross-signal validation, media pipeline, discovery, outreach, assessments, copilot.
