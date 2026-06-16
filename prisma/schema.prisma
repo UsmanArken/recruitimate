@@ -276,6 +276,12 @@ model Interview {
   meetingUrl      String?
   recordingPath   String?
   transcript      String?            @db.Text
+  /// P2-007 pause / tone-shift signals from recording
+  audioSignals    Json?
+  /// P2-008 explicit opt-in timestamp for video behavioral analysis
+  videoMetricsConsentAt DateTime?
+  /// P2-008 engagement / attention metrics (aggregated — no raw frames)
+  videoBehavioralMetrics Json?
   analysis        InterviewAnalysis?
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
@@ -296,6 +302,8 @@ model InterviewAnalysis {
   behavioralMetrics Json      @default("[]")
   riskFlags         Json      @default("[]")
   explanation       String?   @db.Text
+  /// P2-006 interviewer quality: coverage, probing, bias advisory scores
+  interviewerQuality Json?
   rawAnalysis       Json?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt

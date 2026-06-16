@@ -13,6 +13,18 @@ import { ApplicationDetailTabs } from "@/components/features/candidates/applicat
 import { StageBadge } from "@/components/features/candidates/stage-badge";
 import { Avatar } from "@/components/features/candidates/avatar";
 import { InterviewWorkflowPanel } from "@/components/features/candidates/interview-workflow-panel";
+import {
+  InterviewerQualityPanel,
+  parseInterviewerQuality,
+} from "@/components/features/interview/interviewer-quality-panel";
+import {
+  AudioSignalsPanel,
+  parseAudioSignals,
+} from "@/components/features/interview/audio-signals-panel";
+import {
+  VideoBehavioralPanel,
+  parseVideoBehavioralMetrics,
+} from "@/components/features/interview/video-behavioral-panel";
 import { ReanalyzeButton } from "@/components/features/candidates/reanalyze-button";
 import { PageBody } from "@/components/layout/page-header";
 import type { Signal } from "@/lib/intelligence/types";
@@ -53,6 +65,9 @@ export default async function ApplicationDetailPage({
   const cognitiveSignals = (ia?.cognitiveSignals ?? []) as Signal[];
   const behavioralMetrics = (ia?.behavioralMetrics ?? []) as Signal[];
   const interviewRisks = (ia?.riskFlags ?? []) as Signal[];
+  const interviewerQuality = parseInterviewerQuality(ia?.interviewerQuality);
+  const audioSignals = parseAudioSignals(latestInterview?.audioSignals);
+  const videoBehavioral = parseVideoBehavioralMetrics(latestInterview?.videoBehavioralMetrics);
 
   const talentCard = (
     <section>
@@ -162,6 +177,9 @@ export default async function ApplicationDetailPage({
               <SignalList signals={interviewRisks} />
             </div>
           )}
+          {interviewerQuality && <InterviewerQualityPanel quality={interviewerQuality} />}
+          {audioSignals && <AudioSignalsPanel audio={audioSignals} />}
+          {videoBehavioral && <VideoBehavioralPanel metrics={videoBehavioral} />}
           {ia.explanation && (
             <p className="text-sm italic leading-relaxed text-muted">{ia.explanation}</p>
           )}
@@ -190,6 +208,8 @@ export default async function ApplicationDetailPage({
       <CardContent>
         <InterviewWorkflowPanel
           applicationId={application.id}
+          jobId={application.jobId}
+          jobTitle={application.job.title}
           interviews={application.interviews.map((i) => ({
             id: i.id,
             title: i.title,
@@ -198,6 +218,8 @@ export default async function ApplicationDetailPage({
             meetingUrl: i.meetingUrl,
             recordingPath: i.recordingPath,
             transcript: i.transcript,
+            audioSignals: parseAudioSignals(i.audioSignals),
+            videoBehavioralMetrics: parseVideoBehavioralMetrics(i.videoBehavioralMetrics),
           }))}
         />
       </CardContent>

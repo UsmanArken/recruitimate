@@ -1,6 +1,9 @@
-import type { ZodSchema } from "zod";
+import type { ZodType, output } from "zod";
 
-export async function parseJsonBody<T>(req: Request, schema: ZodSchema<T>): Promise<T> {
-  const body = await req.json();
+export async function parseJsonBody<S extends ZodType>(
+  req: Request,
+  schema: S
+): Promise<output<S>> {
+  const body = await req.json().catch(() => ({}));
   return schema.parse(body);
 }

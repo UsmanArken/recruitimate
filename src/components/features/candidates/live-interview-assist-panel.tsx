@@ -12,6 +12,11 @@ import {
   AlertCircle,
 } from "lucide-react";
 import type { LiveAssistResult, LiveAssistSuggestion } from "@/lib/intelligence/types";
+import {
+  CrossSignalSummaryBanner,
+  InconsistencyFlagsList,
+  MismatchAlertsList,
+} from "@/components/features/candidates/mismatch-alerts-list";
 
 type SpeechRecognitionCtor = new () => SpeechRecognition;
 
@@ -176,8 +181,8 @@ export function LiveInterviewAssistPanel({
             </span>
           </h3>
           <p className="mt-1.5 max-w-xl text-xs leading-relaxed text-muted">
-            Real-time follow-up questions while the interview is in progress. Advisory only —
-            you decide what to ask.
+            Real-time follow-up questions, resume cross-checks, and inconsistency flags while
+            the interview is in progress. Advisory only — you decide what to ask.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -223,7 +228,7 @@ export function LiveInterviewAssistPanel({
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-interview opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-interview" />
           </span>
-          Listening — suggestions refresh as the conversation grows.
+          Listening — suggestions and cross-signal alerts refresh as the conversation grows.
         </p>
       )}
 
@@ -243,13 +248,36 @@ export function LiveInterviewAssistPanel({
       </label>
 
       {assist && (
-        <div className="mt-4 space-y-3">
+        <div className="mt-4 space-y-4">
           <p className="rounded-lg border border-border-subtle bg-card px-3 py-2 text-sm text-foreground/90">
             <span className="font-semibold">Right now: </span>
             {assist.momentSummary}
           </p>
 
-          <ul className="space-y-2">
+          <CrossSignalSummaryBanner summary={assist.crossSignalSummary} />
+
+          {(assist.mismatchAlerts.length > 0 || assist.inconsistencyFlags.length > 0) && (
+            <div className="space-y-4 rounded-lg border border-warning/25 bg-card/50 p-3">
+              <div>
+                <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-warning">
+                  Resume vs interview mismatches
+                </h4>
+                <MismatchAlertsList alerts={assist.mismatchAlerts} />
+              </div>
+              <div>
+                <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-risk">
+                  Live inconsistency flags
+                </h4>
+                <InconsistencyFlagsList flags={assist.inconsistencyFlags} />
+              </div>
+            </div>
+          )}
+
+          <div>
+            <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-interview">
+              Suggested follow-up questions
+            </h4>
+            <ul className="space-y-2">
             {assist.suggestions.map((s) => (
               <li
                 key={s.id}
@@ -280,7 +308,8 @@ export function LiveInterviewAssistPanel({
                 <p className="mt-1 text-xs text-muted">{s.rationale}</p>
               </li>
             ))}
-          </ul>
+            </ul>
+          </div>
 
           {assist.explanation && (
             <p className="text-xs italic text-muted">{assist.explanation}</p>

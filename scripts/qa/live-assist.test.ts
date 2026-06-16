@@ -15,6 +15,8 @@ describe("Live interview assist (heuristic)", () => {
       candidateName: "Jane Doe",
       jobTitle: "Backend Engineer",
       jobRequirements: "typescript postgres distributed systems",
+      resumeText: "5 years backend engineering with TypeScript.",
+      skills: ["typescript"],
       talentGaps: ["Kubernetes production experience"],
       talentStrengths: ["TypeScript"],
     });
@@ -36,6 +38,7 @@ describe("Live interview assist (heuristic)", () => {
         "I led the API redesign and reduced p99 latency from 800ms to 120ms over six months.",
       candidateName: "Alex",
       jobTitle: "Staff Engineer",
+      resumeText: "Staff engineer with system design experience.",
       talentGaps: [],
       talentStrengths: ["System design"],
     });
