@@ -46,20 +46,23 @@ MVP-031,MVP,Interview Intelligence,Interview,Whisper transcription,OpenAI Whispe
 MVP-032,MVP,UI,—,Empty states and onboarding,Getting started checklist + EmptyState on dashboard jobs candidates,P2,Done,MVP-014,Dismissible localStorage banner
 MVP-033,MVP,Platform,—,Error handling and logging,Structured JSON errors + requestId middleware + runApiRoute completion logs,P1,Done,,JSON logs phase start/complete
 MVP-034,MVP,Platform,—,MVP QA and test plan,Automated npm run qa scripts + manual demo checklist in docs/QA.md,P1,Done,,resume-extract validators intelligence
-MVP-035,MVP,Platform,—,MVP deployment,Deploy to staging Vercel/Railway + managed Postgres,P1,Not Started,MVP-029c,
+MVP-035,MVP,Platform,—,MVP deployment,Production deploy on Linode PM2 nginx Docker Postgres HTTPS recruitimate.io,P1,Done,MVP-029c,scripts/deploy setup-https.sh Let's Encrypt
+MVP-041,MVP,Talent Intelligence,Talent,Bulk resume screening,Folder/file upload on job page dedup ranked pipeline per role,P1,Done,MVP-023|MVP-014,/api/jobs/[id]/bulk-resumes job pipeline table
+MVP-042,MVP,UI,—,Demo UI polish,Application tabs job pipeline drop zone typography section cards,P2,Done,MVP-019|MVP-014,ApplicationDetailTabs FileDropZone globals.css
+MVP-043,MVP,Platform,—,Brand identity,Recruitimate logo favicon sidebar and auth branding,P3,Done,F-007,Option B person+rise mark icon.svg
 MVP-036,MVP,Decision Intelligence,Decision,Phased hiring intelligence,Role fit and hire confidence only with campaign + interview; honest pending states,P1,Done,MVP-015b,candidate-context IntelligencePhasePanel
 MVP-037,MVP,UI,—,Applicant intake position picker,Server-loaded open roles; compact custom dropdown (scrollable menu),P1,Done,MVP-014|MVP-023,/candidates/new
 MVP-038,MVP,Platform,—,JobApplication DB migration,prisma/migrate-to-applications.ts for legacy Candidate.jobId upgrades,P2,Done,MVP-015b,npm run db:migrate-applications
 MVP-039,MVP,UI,—,Auth experience redesign,HR-themed login/signup with AuthLayout and AuthField components,P2,Done,MVP-028,/login /signup
 MVP-040,MVP,Platform,—,Multi-provider LLM layer,OpenAI Anthropic Google Gemini via LLM_PROVIDER; /api/llm/status; docs/LLM.md,P1,Done,MVP-005,Whisper still OpenAI-only
-P2-001,Phase 2,Interview Intelligence,Interview,Real-time interview assist,Live suggestions follow-up questions during interview,P0,Done,MVP-031,Core Phase 2 moat — live-assist engine + panel + API
-P2-002,Phase 2,Interview Intelligence,Interview,Real-time inconsistency flags,Flag contradictions as they occur in live transcript,P1,Done,P2-001,inconsistency-engine + live panel flags
-P2-003,Phase 2,Interview Intelligence,Interview,Cross-signal validation,Compare resume claims vs interview answers,P0,Done,MVP-008,cross-signal-engine vs resume + talent profile
-P2-004,Phase 2,Interview Intelligence,Interview,Mismatch alerts UI,Surface resume vs interview gaps with evidence,P1,Done,P2-003,MismatchAlertsList in live assist panel
-P2-005,Phase 2,Interview Intelligence,Interview,AI-generated interview questions,Role-specific question bank generation,P1,Done,MVP-014,question-bank-engine + job/campaign UI + API
-P2-006,Phase 2,Interview Intelligence,Interview,Interview quality analysis,Score interviewer question coverage probing bias,P1,Done,MVP-008,interviewer-quality-engine + panel on analyzed interviews
-P2-007,Phase 2,Interview Intelligence,Interview,Audio signal extraction,Pauses tone shifts from audio stream,P2,Done,MVP-031,audio-signal-engine WAV PCM + transcript fallback
-P2-008,Phase 2,Interview Intelligence,Interview,Video behavioral metrics,Engagement facial cues opt-in ethical guardrails,P2,Done,MVP-030,opt-in capture panel + FaceDetector/motion + aggregated metrics API
+P2-001,Phase 2,Interview Intelligence,Interview,Real-time interview assist,Live suggestions follow-up questions during interview,P0,Done,MVP-031,merged main e0cd2c3 live-assist engine + panel + API
+P2-002,Phase 2,Interview Intelligence,Interview,Real-time inconsistency flags,Flag contradictions as they occur in live transcript,P1,Done,P2-001,merged main inconsistency-engine + live panel flags
+P2-003,Phase 2,Interview Intelligence,Interview,Cross-signal validation,Compare resume claims vs interview answers,P0,Done,MVP-008,merged main cross-signal-engine vs resume + talent profile
+P2-004,Phase 2,Interview Intelligence,Interview,Mismatch alerts UI,Surface resume vs interview gaps with evidence,P1,Done,P2-003,merged main MismatchAlertsList in live assist panel
+P2-005,Phase 2,Interview Intelligence,Interview,AI-generated interview questions,Role-specific question bank generation,P1,Done,MVP-014,merged main question-bank-engine + job/campaign UI + API
+P2-006,Phase 2,Interview Intelligence,Interview,Interview quality analysis,Score interviewer question coverage probing bias,P1,Done,MVP-008,merged main interviewer-quality-engine + panel on analyzed interviews
+P2-007,Phase 2,Interview Intelligence,Interview,Audio signal extraction,Pauses tone shifts from audio stream,P2,Done,MVP-031,merged main audio-signal-engine WAV PCM + transcript fallback
+P2-008,Phase 2,Interview Intelligence,Interview,Video behavioral metrics,Engagement facial cues opt-in ethical guardrails,P2,Done,MVP-030,merged main opt-in capture panel + FaceDetector/motion + aggregated metrics API
 P2-009,Phase 2,Talent Intelligence,Talent,Talent Discovery Engine,AI search across talent pools multi-source ingestion,P1,Not Started,,
 P2-010,Phase 2,Talent Intelligence,Talent,Ranked candidate search,"""Find backend engineers with distributed systems""",P1,Not Started,P2-009,
 P2-011,Phase 2,Talent Intelligence,Talent,Suggested candidates,Recommend from internal database,P2,Not Started,P2-009,

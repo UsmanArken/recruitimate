@@ -22,16 +22,21 @@
 ## Milestones (summary)
 
 ### Foundation
-Project setup, docs, HR UI shell — **mostly complete**.
+Project setup, docs, HR UI shell — **complete**.
 
 ### MVP (Phase 1) — ship to first recruiters
 **Goal:** Talent + post-interview analysis + decision dashboard + ATS-lite.
 
-- **Done:** Core engines, auth/ACL, multi-position applications (`JobApplication`), PDF resume upload, phased intelligence, applicant intake picker, QA scripts, platform admin, operator workspace guard (MVP-029d), notes (MVP-026), onboarding (MVP-032), multi-provider LLM (MVP-040).
-- **Remaining for a shippable MVP:** Staging deploy (MVP-035). Optional: GitHub/portfolio parsing (MVP-025).
+- **Done:** Core engines, auth/ACL, multi-position applications, PDF resume upload, phased intelligence, applicant intake picker, QA scripts, platform admin, operator workspace guard, notes, onboarding, multi-provider LLM, **production deploy** (MVP-035), **bulk resume screening** (MVP-041), demo UI polish (MVP-042), branding (MVP-043).
+- **Remaining:** GitHub/portfolio parsing (MVP-025) optional.
+
+**Production:** https://recruitimate.io
 
 ### Phase 2 — core moat expansion
 **Goal:** Real-time interview assist, cross-signal validation, media pipeline, discovery, outreach, assessments, copilot.
+
+- **Done (interview layer):** P2-001 through P2-008 merged to `main` (live assist, cross-signal, question bank, interviewer quality, audio/video signals).
+- **Not started:** Discovery (P2-009–011), outreach (P2-012–014), assessments (P2-015–017), copilot (P2-018–020), media pipeline (P2-021–022), Kanban (P2-023).
 
 ### Phase 3 — learning & scale
 **Goal:** Outcome learning, predictive success, org analytics, multi-tenant.
@@ -47,21 +52,29 @@ Use `|` in **Depends On** when a task has multiple prerequisites (e.g. `MVP-014|
 
 ### MVP status snapshot (verified against codebase)
 
-| Status | Count | IDs |
-|--------|------:|-----|
-| **Done** | 42 | MVP-001–024, 026–034, 036–040 |
-| **In Progress** | 0 | — |
-| **Not Started** | 2 | MVP-025, 035 |
+| Status | Count | Notes |
+|--------|------:|-------|
+| **Done** | 46 | All MVP-* except MVP-025 |
+| **Not Started** | 1 | MVP-025 GitHub/portfolio parsing |
 
 Foundation (F-001–F-009) and shipped Phase 3 items (P3-009, P3-010, CP-024) are **Done** as marked.
 
+### Phase 2 interview snapshot
+
+| Status | Count | IDs |
+|--------|------:|-----|
+| **Done** | 8 | P2-001–P2-008 |
+| **Not Started** | 17 | P2-009–P2-025 |
+
 ## Suggested MVP exit criteria
 
-All tasks with ID `MVP-*` at **Done**, especially:
+All tasks with ID `MVP-*` at **Done** — **met** except optional MVP-025.
+
+Key shipped items:
 
 - MVP-028 Authentication · MVP-029c Platform super admin · MVP-029d Operator workspace guard  
 - MVP-015b Multi-position applications · MVP-036 Phased intelligence  
-- MVP-023 Resume PDF upload · MVP-037 Applicant intake picker  
-- MVP-034 QA test plan  
-- MVP-024 LinkedIn ingestion · MVP-027 Scheduling · MVP-030/031 Recording + Whisper · MVP-033 Request logging · MVP-040 Multi-provider LLM  
-- MVP-035 MVP deployment (still open)  
+- MVP-023 Resume PDF upload · MVP-037 Applicant intake picker · MVP-041 Bulk screening  
+- MVP-034 QA test plan · MVP-035 Production deployment  
+- MVP-024 LinkedIn ingestion · MVP-027 Scheduling · MVP-030/031 Recording + Whisper  
+- MVP-033 Request logging · MVP-040 Multi-provider LLM · MVP-042/043 UI polish + branding  
