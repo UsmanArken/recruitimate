@@ -18,14 +18,18 @@ export default function TeamSettingsPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [email, setEmail] = useState("");
-  const [roleCode, setRoleCode] = useState("RECRUITER");
+  const [roleId, setRoleId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     apiFetch<Role[]>("/api/roles")
-      .then((data) => setRoles(data.filter((r) => r.code !== "ORG_OWNER")))
+      .then((data) => {
+        const filtered = data.filter((r) => r.code !== "ORG_OWNER");
+        setRoles(filtered);
+        if (filtered.length > 0) setRoleId(filtered[0].id);
+      })
       .catch(() => {});
     loadInvites();
   }, []);
@@ -45,7 +49,7 @@ export default function TeamSettingsPage() {
     try {
       const data = await apiFetch<{ token: string }>("/api/invites", {
         method: "POST",
-        body: JSON.stringify({ email, roleCode }),
+        body: JSON.stringify({ email, roleId }),
       });
       const link = `${window.location.origin}/invite/${data.token}`;
       setInviteLink(link);
@@ -88,12 +92,12 @@ export default function TeamSettingsPage() {
               <label className="block">
                 <span className="text-sm font-semibold">Role</span>
                 <select
-                  value={roleCode}
-                  onChange={(e) => setRoleCode(e.target.value)}
+                  value={roleId}
+                  onChange={(e) => setRoleId(e.target.value)}
                   className="input-hr mt-1.5"
                 >
                   {roles.map((r) => (
-                    <option key={r.code} value={r.code}>
+                    <option key={r.id} value={r.id}>
                       {r.name}
                     </option>
                   ))}

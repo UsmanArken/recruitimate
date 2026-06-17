@@ -187,7 +187,7 @@ class JobAssignment(Base):
     id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
     jobId: Mapped[str] = mapped_column(String, ForeignKey("Job.id"), nullable=False)
     userId: Mapped[str] = mapped_column(String, ForeignKey("User.id"), nullable=False)
-    assignmentRole: Mapped[AssignmentRole] = mapped_column(Enum(AssignmentRole), nullable=False)
+    assignmentRole: Mapped[AssignmentRole] = mapped_column(Enum(AssignmentRole, name="JobAssignmentRole"), nullable=False)
     createdAt: Mapped[datetime] = mapped_column(DateTime, default=_now)
 
     job: Mapped["Job"] = relationship(back_populates="assignments")

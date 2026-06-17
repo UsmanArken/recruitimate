@@ -1,10 +1,13 @@
 import uuid
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy import select
 
 from app.core.config import get_settings
+from app.core.database import get_session_factory
 from app.features.admin.router import router as admin_router
 from app.features.applications.router import router as applications_router
 from app.features.auth.router import router as auth_router
@@ -16,6 +19,30 @@ from app.features.linkedin.router import router as linkedin_router
 from app.features.llm.router import router as llm_router
 from app.features.resume.router import router as resume_router
 from app.features.roles.router import router as roles_router
+from app.shared.models import Role, RoleScope
+
+SEED_ROLES = [
+    {"code": "ORG_ADMIN",       "name": "Admin",           "scope": RoleScope.ORGANIZATION},
+    {"code": "RECRUITER",       "name": "Recruiter",       "scope": RoleScope.ORGANIZATION},
+    {"code": "HIRING_MANAGER",  "name": "Hiring Manager",  "scope": RoleScope.ORGANIZATION},
+    {"code": "INTERVIEWER",     "name": "Interviewer",     "scope": RoleScope.JOB},
+]
+
+
+async def _seed_roles() -> None:
+    async with get_session_factory()() as db:
+        for r in SEED_ROLES:
+            exists = await db.execute(select(Role).where(Role.code == r["code"]))
+            if not exists.scalar_one_or_none():
+                db.add(Role(code=r["code"], name=r["name"], scope=r["scope"]))
+        await db.commit()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await _seed_roles()
+    yield
+
 
 app = FastAPI(
     title="Recruitimate API",
@@ -23,6 +50,7 @@ app = FastAPI(
     docs_url="/api/docs",
     redoc_url="/api/redoc",
     openapi_url="/api/openapi.json",
+    lifespan=lifespan,
 )
 
 settings = get_settings()
