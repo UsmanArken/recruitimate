@@ -2,7 +2,8 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 const TOKEN_KEY = "recruitimate_token";
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+// Server-side: always needs an absolute URL — use FASTAPI_URL (server-only env var)
+const API_BASE = process.env.FASTAPI_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export async function serverFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const cookieStore = await cookies();
