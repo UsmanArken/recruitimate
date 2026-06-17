@@ -9,5 +9,12 @@ router = APIRouter(prefix="/api/resume", tags=["resume"])
 @router.post("/parse")
 async def parse_resume(file: UploadFile, auth: CurrentUser):
     data = await file.read()
-    text = extract_text(data, file.filename or "resume")
-    return {"text": text, "filename": file.filename}
+    filename = file.filename or "resume"
+    text = extract_text(data, filename)
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else "txt"
+    return {
+        "text": text,
+        "fileName": filename,
+        "format": ext,
+        "characterCount": len(text),
+    }
