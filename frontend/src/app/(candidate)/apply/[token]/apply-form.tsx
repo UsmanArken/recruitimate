@@ -110,7 +110,7 @@ export function ApplyForm({ token }: Props) {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-foreground">Resume *</label>
+        <label className="text-sm font-medium text-foreground">Resume (recommended)</label>
         <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-border bg-muted/30 px-4 py-3 transition hover:bg-muted/50">
           {parsingResume ? (
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />

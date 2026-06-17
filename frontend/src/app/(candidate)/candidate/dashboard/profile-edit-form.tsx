@@ -20,6 +20,7 @@ export function ProfileEditForm({ initialName, initialEmail, initialLinkedInUrl,
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [reanalysing, setReanalysing] = useState(false);
+  const [reanalysingTimer, setReanalysingTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
 
   async function onSave(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -56,7 +57,11 @@ export function ProfileEditForm({ initialName, initialEmail, initialLinkedInUrl,
       const fd = new FormData();
       fd.append("file", file);
       await candidateFetch("/api/candidate/me/resume", { method: "POST", body: fd });
+      if (reanalysingTimer) clearTimeout(reanalysingTimer);
       setReanalysing(true);
+      // Auto-clear the "re-analysing" banner after 60s — Celery task completes in the background
+      const t = setTimeout(() => setReanalysing(false), 60_000);
+      setReanalysingTimer(t);
       router.refresh();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to upload resume.");

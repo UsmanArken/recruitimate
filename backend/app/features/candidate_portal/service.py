@@ -197,12 +197,13 @@ async def update_candidate_me(candidate_id: str, body: UpdateCandidateMeRequest,
     if body.linkedInUrl is not None:
         candidate.linkedInUrl = body.linkedInUrl
     candidate.updatedAt = datetime.utcnow()
+    await db.commit()
 
     return {"id": candidate.id, "name": candidate.name, "email": candidate.email}
 
 
 async def reupload_resume(candidate_id: str, file: UploadFile, db: AsyncSession) -> dict:
-    from app.features.resume.service import extract_text
+    from app.features.intelligence.document_parser import extract_text
     content = await file.read()
     filename = file.filename or "resume"
     text = extract_text(content, filename)
@@ -222,7 +223,7 @@ async def reupload_resume(candidate_id: str, file: UploadFile, db: AsyncSession)
     candidate.resumeText = text
     candidate.resumeFilePath = str(dest)
     candidate.updatedAt = datetime.utcnow()
-    await db.flush()
+    await db.commit()
 
     from app.workers.tasks import score_candidate
     score_candidate.delay(candidate_id)

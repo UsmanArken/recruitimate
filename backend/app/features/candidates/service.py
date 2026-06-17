@@ -244,4 +244,5 @@ async def update_candidate_status(candidate_id: str, org_id: str, new_status: st
     if application:
         application.stage = stage_map[new_status]
 
+    await db.commit()
     return {"id": candidate.id, "status": candidate.status}

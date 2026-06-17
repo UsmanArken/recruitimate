@@ -9,6 +9,19 @@ from app.features.candidate_portal.schemas import (
 
 router = APIRouter(tags=["candidate_portal"])
 
+_COOKIE_MAX_AGE = 30 * 24 * 60 * 60  # 30 days
+
+
+def _set_candidate_cookie(response: Response, token: str) -> None:
+    response.set_cookie(
+        key="candidate_token",
+        value=token,
+        max_age=_COOKIE_MAX_AGE,
+        path="/",
+        httponly=True,
+        samesite="lax",
+    )
+
 
 # ---------------------------------------------------------------------------
 # Public — no auth
@@ -20,18 +33,22 @@ async def get_apply_info(token: str, db: DB):
 
 
 @router.post("/api/apply/{token}/signup", status_code=201)
-async def candidate_signup(token: str, body: CandidateSignupRequest, db: DB):
-    return await service.candidate_signup(token, body, db)
+async def candidate_signup(token: str, body: CandidateSignupRequest, response: Response, db: DB):
+    data = await service.candidate_signup(token, body, db)
+    _set_candidate_cookie(response, data["access_token"])
+    return data
 
 
 @router.post("/api/candidate/auth/login")
-async def candidate_login(body: CandidateLoginRequest, db: DB):
-    return await service.candidate_login(body.email, body.password, db)
+async def candidate_login(body: CandidateLoginRequest, response: Response, db: DB):
+    data = await service.candidate_login(body.email, body.password, db)
+    _set_candidate_cookie(response, data["access_token"])
+    return data
 
 
 @router.post("/api/candidate/auth/logout")
 async def candidate_logout(response: Response):
-    response.delete_cookie("candidate_token")
+    response.delete_cookie("candidate_token", path="/")
     return {"ok": True}
 
 

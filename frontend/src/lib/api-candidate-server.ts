@@ -40,13 +40,21 @@ export interface CandidateMe {
   email: string;
   jobId: string | null;
   status: string;
+  applicationStage: string | null;
   linkedInUrl: string | null;
   githubUrl: string | null;
+  resumeFilePath: string | null;
   talentProfile: {
     skills: string[];
     experienceYears: number | null;
   } | null;
-  interviews: Array<{ id: string; title: string; scheduledAt: string | null; status: string }>;
+  interviews: Array<{
+    id: string;
+    title: string;
+    scheduledAt: string | null;
+    status: string;
+    meetingUrl: string | null;
+  }>;
 }
 
 export async function getCandidateMe(): Promise<CandidateMe> {

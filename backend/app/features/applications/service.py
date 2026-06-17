@@ -1,5 +1,3 @@
-import dataclasses
-
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -33,7 +31,7 @@ def _serialize_application(app: JobApplication) -> dict:
 
 
 def _serialize_talent(tp: TalentProfile) -> dict:
-    return dataclasses.asdict(tp) if dataclasses.is_dataclass(tp) else {
+    return {
         "id": tp.id,
         "roleFitScore": tp.roleFitScore,
         "skills": tp.skills,
