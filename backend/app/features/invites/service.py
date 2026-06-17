@@ -29,7 +29,9 @@ async def list_invites(org_id: str, db: AsyncSession) -> list:
     ]
 
 
-async def create_invite(org_id: str, inviter_id: str, email: str, role_id: str, db: AsyncSession) -> dict:
+async def create_invite(org_id: str | None, inviter_id: str, email: str, role_id: str, db: AsyncSession) -> dict:
+    if not org_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Platform admins cannot send invites — log in as an organization member")
     role_result = await db.execute(select(Role).where(Role.id == role_id))
     if not role_result.scalar_one_or_none():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
