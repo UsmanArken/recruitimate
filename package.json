@@ -12,6 +12,7 @@
     "db:studio": "prisma studio",
     "db:migrate": "prisma migrate dev",
     "db:seed": "npx tsx prisma/seed.ts",
+    "db:seed-demo": "npx tsx prisma/seed-demo.ts",
     "db:migrate-applications": "npx tsx prisma/migrate-to-applications.ts",
     "db:bootstrap-admin": "npx tsx prisma/bootstrap-admin.ts",
     "typecheck": "tsc --noEmit",

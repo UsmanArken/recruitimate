@@ -10,6 +10,8 @@ import {
   ensurePlatformAdminUser,
   syncPlatformAdminOnLogin,
 } from "@/lib/auth/platform-admin";
+import { demoPassword, isReservedDemoEmail } from "@/lib/demo/constants";
+import { syncDemoUserPassword } from "@/lib/demo/sync-demo-password";
 
 const credentialsSchema = z.object({
   email: z.string().email(),
@@ -43,6 +45,10 @@ export const authConfig: NextAuthConfig = {
             password: envPassword,
             name: "Platform Super Admin",
           });
+        }
+
+        if (isReservedDemoEmail(email)) {
+          await syncDemoUserPassword(demoPassword());
         }
 
         const user = await db.user.findUnique({

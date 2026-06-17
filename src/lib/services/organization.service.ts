@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { badRequest } from "@/lib/api/errors";
 import { isReservedSuperAdminEmail } from "@/lib/auth/platform-admin";
+import { isReservedDemoEmail } from "@/lib/demo/constants";
 
 function slugify(name: string): string {
   const base = name
@@ -32,6 +33,12 @@ export async function signupWithOrganization(input: {
   if (isReservedSuperAdminEmail(email)) {
     throw badRequest(
       "This email is reserved for platform administration. Sign in after running db:seed or contact your operator.",
+      "RESERVED_EMAIL"
+    );
+  }
+  if (isReservedDemoEmail(email)) {
+    throw badRequest(
+      "This email is reserved for the public demo workspace. Use “Go to Demo” on the login page.",
       "RESERVED_EMAIL"
     );
   }

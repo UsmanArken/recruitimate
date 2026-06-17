@@ -4,7 +4,7 @@ import { Suspense, useState } from "react";
 import { getSession, signIn } from "next-auth/react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2, Lock, Mail, AlertCircle } from "lucide-react";
+import { Loader2, Lock, Mail, AlertCircle, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AuthLayout } from "@/components/features/auth/auth-layout";
 import { AuthField } from "@/components/features/auth/auth-field";
@@ -15,6 +15,7 @@ function LoginForm() {
   const callbackUrl = searchParams.get("callbackUrl") ?? "/";
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -43,6 +44,12 @@ function LoginForm() {
 
     router.push(destination);
     router.refresh();
+  }
+
+  function goToDemo() {
+    setDemoLoading(true);
+    setError(null);
+    window.location.href = "/api/auth/demo";
   }
 
   return (
@@ -91,7 +98,7 @@ function LoginForm() {
           </div>
         )}
 
-        <Button type="submit" disabled={loading} className="mt-2 h-11 w-full text-base">
+        <Button type="submit" disabled={loading || demoLoading} className="mt-2 h-11 w-full text-base">
           {loading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -101,6 +108,39 @@ function LoginForm() {
             "Sign in"
           )}
         </Button>
+
+        <div className="relative py-2">
+          <div className="absolute inset-0 flex items-center" aria-hidden>
+            <span className="w-full border-t border-border-subtle" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase tracking-wide text-muted">
+            <span className="bg-card px-3">or</span>
+          </div>
+        </div>
+
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={loading || demoLoading}
+          onClick={goToDemo}
+          className="h-11 w-full text-base"
+        >
+          {demoLoading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Opening demo…
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-4 w-4" />
+              Go to Demo
+            </>
+          )}
+        </Button>
+        <p className="text-center text-xs text-muted">
+          Explore Acme Robotics with sample jobs, resumes, and interview intelligence — no signup
+          required.
+        </p>
       </form>
 
       <p className="mt-6 border-t border-border-subtle pt-6 text-center text-xs leading-relaxed text-muted">
