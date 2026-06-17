@@ -24,8 +24,6 @@ export async function serverFetch<T>(path: string, options: RequestInit = {}): P
   });
 
   if (res.status === 401) {
-    // Clear the stale cookie so middleware doesn't redirect back to this page
-    cookieStore.delete(TOKEN_KEY);
     redirect("/login");
   }
 
@@ -50,9 +48,7 @@ export async function getAuthUser() {
   } catch (err) {
     // Re-throw Next.js redirect errors — swallowing them would break the redirect
     if (isRedirectError(err)) throw err;
-    // For network errors (backend down), clear cookie and redirect to login
-    const cookieStore = await cookies();
-    cookieStore.delete(TOKEN_KEY);
+    // For network errors (backend down), redirect to login
     redirect("/login");
   }
 }
