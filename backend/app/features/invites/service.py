@@ -102,6 +102,7 @@ async def accept_invite(token: str, name: str, password: str, db: AsyncSession) 
 
     invite.acceptedAt = datetime.utcnow()
     await db.flush()
+    await db.commit()
 
     role_result = await db.execute(select(Role).where(Role.id == invite.roleId))
     role = role_result.scalar_one_or_none()

@@ -23,11 +23,11 @@ export function middleware(request: NextRequest) {
       (p) => pathname === p || pathname.startsWith(`${p}/`)
     );
 
-    if (!isCandidatePublic) {
-      const rawToken = request.cookies.get(CANDIDATE_TOKEN_KEY)?.value;
-      const token = rawToken && !isTokenExpired(rawToken) ? rawToken : null;
+    const rawCandidateToken = request.cookies.get(CANDIDATE_TOKEN_KEY)?.value;
+    const candidateToken = rawCandidateToken && !isTokenExpired(rawCandidateToken) ? rawCandidateToken : null;
 
-      if (rawToken && !token) {
+    if (!isCandidatePublic) {
+      if (rawCandidateToken && !candidateToken) {
         const loginUrl = request.nextUrl.clone();
         loginUrl.pathname = "/candidate/login";
         loginUrl.searchParams.set("callbackUrl", pathname);
@@ -36,12 +36,20 @@ export function middleware(request: NextRequest) {
         return response;
       }
 
-      if (!token) {
+      if (!candidateToken) {
         const loginUrl = request.nextUrl.clone();
         loginUrl.pathname = "/candidate/login";
         loginUrl.searchParams.set("callbackUrl", pathname);
         return NextResponse.redirect(loginUrl);
       }
+    }
+
+    // Redirect already-authenticated candidates away from login
+    if (candidateToken && pathname === "/candidate/login") {
+      const dashUrl = request.nextUrl.clone();
+      dashUrl.pathname = "/candidate/dashboard";
+      dashUrl.search = "";
+      return NextResponse.redirect(dashUrl);
     }
 
     return NextResponse.next();

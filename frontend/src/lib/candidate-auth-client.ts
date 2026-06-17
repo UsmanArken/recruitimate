@@ -29,12 +29,12 @@ export function getStoredCandidateUser(): CandidateUser | null {
 export function setCandidateAuth(token: string, user: CandidateUser): void {
   localStorage.setItem(TOKEN_KEY, token);
   localStorage.setItem(USER_KEY, JSON.stringify(user));
-  const maxAge = 30 * 24 * 60 * 60; // 30 days
-  document.cookie = `${TOKEN_KEY}=${token}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  // The httponly cookie is set by the backend on the signup/login response.
+  // Do NOT set it here — that would strip the httponly flag.
 }
 
 export function clearCandidateAuth(): void {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
-  document.cookie = `${TOKEN_KEY}=; path=/; max-age=0; SameSite=Lax`;
+  // The server-side httponly cookie is deleted by POST /api/candidate/auth/logout
 }

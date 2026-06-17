@@ -116,6 +116,8 @@ async def candidate_signup(token: str, body: CandidateSignupRequest, db: AsyncSe
     db.add(application)
     await db.flush()
 
+    await db.commit()
+
     if body.resumeText:
         from app.workers.tasks import score_candidate
         score_candidate.delay(candidate.id)
