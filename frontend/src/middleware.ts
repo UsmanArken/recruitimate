@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/signup", "/invite"];
+const RECRUITER_PUBLIC_PATHS = ["/login", "/signup", "/invite"];
+const CANDIDATE_PUBLIC_PATHS = ["/apply", "/candidate/login"];
 const TOKEN_KEY = "recruitimate_token";
+const CANDIDATE_TOKEN_KEY = "candidate_token";
 
 function isTokenExpired(token: string): boolean {
   try {
@@ -15,13 +17,44 @@ function isTokenExpired(token: string): boolean {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const isPublic =
-    PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  // --- Candidate portal routes ---
+  if (pathname.startsWith("/candidate/") || pathname.startsWith("/apply/")) {
+    const isCandidatePublic = CANDIDATE_PUBLIC_PATHS.some(
+      (p) => pathname === p || pathname.startsWith(`${p}/`)
+    );
+
+    if (!isCandidatePublic) {
+      const rawToken = request.cookies.get(CANDIDATE_TOKEN_KEY)?.value;
+      const token = rawToken && !isTokenExpired(rawToken) ? rawToken : null;
+
+      if (rawToken && !token) {
+        const loginUrl = request.nextUrl.clone();
+        loginUrl.pathname = "/candidate/login";
+        loginUrl.searchParams.set("callbackUrl", pathname);
+        const response = NextResponse.redirect(loginUrl);
+        response.cookies.delete(CANDIDATE_TOKEN_KEY);
+        return response;
+      }
+
+      if (!token) {
+        const loginUrl = request.nextUrl.clone();
+        loginUrl.pathname = "/candidate/login";
+        loginUrl.searchParams.set("callbackUrl", pathname);
+        return NextResponse.redirect(loginUrl);
+      }
+    }
+
+    return NextResponse.next();
+  }
+
+  // --- Recruiter routes ---
+  const isPublic = RECRUITER_PUBLIC_PATHS.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`)
+  );
 
   const rawToken = request.cookies.get(TOKEN_KEY)?.value;
   const token = rawToken && !isTokenExpired(rawToken) ? rawToken : null;
 
-  // If token exists but is expired, clear it in the response
   if (rawToken && !token) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";

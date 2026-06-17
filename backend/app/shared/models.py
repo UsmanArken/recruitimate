@@ -56,8 +56,6 @@ class PipelineStage(str, enum.Enum):
 
 class InterviewStatus(str, enum.Enum):
     SCHEDULED = "SCHEDULED"
-    RECORDED = "RECORDED"
-    TRANSCRIBED = "TRANSCRIBED"
     ANALYZED = "ANALYZED"
 
 
@@ -208,6 +206,9 @@ class Job(Base):
     description: Mapped[str | None] = mapped_column(Text)
     requirements: Mapped[str | None] = mapped_column(Text)
     hiringManagerId: Mapped[str | None] = mapped_column(String, ForeignKey("User.id"))
+    signupToken: Mapped[str] = mapped_column(String, unique=True, default=_uuid)
+    interviewMode: Mapped[str] = mapped_column(String, default="live")
+    autoInterviewThreshold: Mapped[int] = mapped_column(Integer, default=60)
     createdAt: Mapped[datetime] = mapped_column(DateTime, default=_now)
     updatedAt: Mapped[datetime] = mapped_column(DateTime, default=_now, onupdate=_now)
 
@@ -230,10 +231,15 @@ class Candidate(Base):
     portfolioUrl: Mapped[str | None] = mapped_column(String)
     resumeText: Mapped[str | None] = mapped_column(Text)
     resumeFilePath: Mapped[str | None] = mapped_column(String)
+    passwordHash: Mapped[str | None] = mapped_column(String)
+    jobId: Mapped[str | None] = mapped_column(String, ForeignKey("Job.id"))
+    status: Mapped[str] = mapped_column(String, default="applied")
+    portalCreatedAt: Mapped[datetime | None] = mapped_column(DateTime)
     createdAt: Mapped[datetime] = mapped_column(DateTime, default=_now)
     updatedAt: Mapped[datetime] = mapped_column(DateTime, default=_now, onupdate=_now)
 
     organization: Mapped["Organization"] = relationship(back_populates="candidates")
+    applied_job: Mapped["Job | None"] = relationship(foreign_keys=[jobId])
     applications: Mapped[list["JobApplication"]] = relationship(back_populates="candidate")
     notes: Mapped[list["Note"]] = relationship(back_populates="candidate")
 
@@ -291,11 +297,7 @@ class Interview(Base):
     scheduledAt: Mapped[datetime | None] = mapped_column(DateTime)
     durationMinutes: Mapped[int] = mapped_column(Integer, default=60)
     meetingUrl: Mapped[str | None] = mapped_column(String)
-    recordingPath: Mapped[str | None] = mapped_column(String)
     transcript: Mapped[str | None] = mapped_column(Text)
-    audioSignals: Mapped[dict | None] = mapped_column(JSON)
-    videoMetricsConsentAt: Mapped[datetime | None] = mapped_column(DateTime)
-    videoBehavioralMetrics: Mapped[dict | None] = mapped_column(JSON)
     createdAt: Mapped[datetime] = mapped_column(DateTime, default=_now)
     updatedAt: Mapped[datetime] = mapped_column(DateTime, default=_now, onupdate=_now)
 

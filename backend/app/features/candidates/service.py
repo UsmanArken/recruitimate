@@ -17,6 +17,8 @@ def _serialize_candidate(c: Candidate) -> dict:
         "githubUrl": c.githubUrl,
         "portfolioUrl": c.portfolioUrl,
         "resumeText": c.resumeText,
+        "status": c.status,
+        "source": "portal" if c.passwordHash else "manual",
         "createdAt": c.createdAt,
         "updatedAt": c.updatedAt,
     }
@@ -214,3 +216,32 @@ async def delete_note(note_id: str, candidate_id: str, org_id: str, db: AsyncSes
     if not note:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")
     db.delete(note)
+
+
+async def update_candidate_status(candidate_id: str, org_id: str, new_status: str, db: AsyncSession) -> dict:
+    if new_status not in ("shortlisted", "rejected"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Status must be 'shortlisted' or 'rejected'")
+
+    result = await db.execute(
+        select(Candidate).where(Candidate.id == candidate_id, Candidate.organizationId == org_id)
+    )
+    candidate = result.scalar_one_or_none()
+    if not candidate:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Candidate not found")
+
+    candidate.status = new_status
+
+    stage_map = {
+        "shortlisted": PipelineStage.SHORTLISTED,
+        "rejected": PipelineStage.REJECTED,
+    }
+    app_result = await db.execute(
+        select(JobApplication)
+        .where(JobApplication.candidateId == candidate_id)
+        .order_by(JobApplication.createdAt.desc())
+    )
+    application = app_result.scalars().first()
+    if application:
+        application.stage = stage_map[new_status]
+
+    return {"id": candidate.id, "status": candidate.status}

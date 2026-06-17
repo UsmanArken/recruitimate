@@ -10,11 +10,6 @@ class LLMProvider(str, Enum):
     auto = "auto"
 
 
-class TranscriptionProvider(str, Enum):
-    openai = "openai"
-    none = "none"
-
-
 class AppEnv(str, Enum):
     development = "development"
     production = "production"
@@ -40,11 +35,11 @@ class Settings(BaseSettings):
     GOOGLE_API_KEY: str = ""
     GOOGLE_CHAT_MODEL: str = "gemini-1.5-flash"
 
-    # Transcription
-    TRANSCRIPTION_PROVIDER: TranscriptionProvider = TranscriptionProvider.none
-
     # Storage
     UPLOAD_DIR: str = "./uploads"
+
+    # Celery / Redis
+    REDIS_URL: str = "redis://localhost:6379/0"
 
     # Platform admin
     SUPER_ADMIN_EMAIL: str = "admin@recruitimate.local"

@@ -38,3 +38,7 @@ class CreateApplicationRequest(BaseModel):
 class LinkedInRequest(BaseModel):
     profileText: str | None = None
     linkedInUrl: str | None = None
+
+
+class UpdateStatusRequest(BaseModel):
+    status: str

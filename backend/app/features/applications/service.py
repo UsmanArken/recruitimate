@@ -20,6 +20,8 @@ def _serialize_application(app: JobApplication) -> dict:
             "id": app.candidate.id,
             "name": app.candidate.name,
             "email": app.candidate.email,
+            "status": app.candidate.status,
+            "source": "portal" if app.candidate.passwordHash else "manual",
         } if app.candidate else None,
         "job": {"id": app.job.id, "title": app.job.title} if app.job else None,
         "talentProfile": _serialize_talent(app.talent_profile) if app.talent_profile else None,

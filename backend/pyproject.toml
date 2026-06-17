@@ -29,6 +29,9 @@ pypdf = "^4.0"
 python-docx = "^1.1"
 httpx = "^0.27"
 icalendar = "^5.0"
+celery = {extras = ["redis"], version = "^5.3"}
+redis = "^5.0"
+psycopg2-binary = "^2.9"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0"

@@ -4,6 +4,7 @@ import { formatScore, scoreColor } from "@/lib/utils";
 import { PageHeader, PageBody } from "@/components/layout/page-header";
 import { StageBadge } from "@/components/features/candidates/stage-badge";
 import { Avatar } from "@/components/features/candidates/avatar";
+import { CandidateActionsCell } from "@/components/features/candidates/candidate-actions-cell";
 import { ButtonLink } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -26,7 +27,7 @@ export default async function CandidatesPage() {
     serverFetch<Array<{
       id: string;
       stage: string;
-      candidate: { id: string; name: string };
+      candidate: { id: string; name: string; source: "portal" | "manual"; status: string };
       job: { id: string; title: string };
       talentProfile: { roleFitScore: number | null } | null;
       decision: { hireConfidence: number | null; recommendation: string | null } | null;
@@ -83,6 +84,7 @@ export default async function CandidatesPage() {
                   <th className="px-5 py-3.5">Pipeline stage</th>
                   <th className="px-5 py-3.5">Role fit</th>
                   <th className="px-5 py-3.5">Decision status</th>
+                  <th className="px-5 py-3.5">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -118,6 +120,13 @@ export default async function CandidatesPage() {
                         app.decision?.recommendation,
                         app.decision?.hireConfidence
                       )}
+                    </td>
+                    <td className="px-5 py-4">
+                      <CandidateActionsCell
+                        candidateId={app.candidate.id}
+                        currentStatus={app.candidate.status}
+                        source={app.candidate.source}
+                      />
                     </td>
                   </tr>
                 ))}

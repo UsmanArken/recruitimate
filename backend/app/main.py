@@ -9,6 +9,7 @@ from sqlalchemy import select
 from app.core.config import get_settings
 from app.core.database import get_session_factory
 from app.features.admin.router import router as admin_router
+from app.features.candidate_portal.router import router as candidate_portal_router
 from app.features.applications.router import router as applications_router
 from app.features.auth.router import router as auth_router
 from app.features.candidates.router import router as candidates_router
@@ -88,6 +89,7 @@ app.include_router(linkedin_router)
 app.include_router(llm_router)
 app.include_router(admin_router)
 app.include_router(roles_router)
+app.include_router(candidate_portal_router)
 
 
 @app.get("/api/health")

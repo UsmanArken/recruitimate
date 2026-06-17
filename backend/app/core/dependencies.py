@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Cookie, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.core.security import decode_access_token
@@ -65,8 +65,36 @@ def make_permission_dep(resource: str, action: str, job_id_param: str | None = N
     return _dep
 
 
+# ---------------------------------------------------------------------------
+# Candidate auth (cookie-based, separate namespace)
+# ---------------------------------------------------------------------------
+
+
+class CandidateAuthContext:
+    def __init__(self, payload: dict):
+        self.candidate_id: str = payload["sub"]
+        self.job_id: str | None = payload.get("jobId")
+
+
+async def get_current_candidate(
+    candidate_token: Annotated[str | None, Cookie(alias="candidate_token")] = None,
+) -> CandidateAuthContext:
+    if not candidate_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+    try:
+        payload = decode_access_token(candidate_token)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+    if payload.get("type") != "candidate":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type")
+    if "sub" not in payload:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload")
+    return CandidateAuthContext(payload)
+
+
 # Common typed dependencies
 CurrentUser = Annotated[AuthContext, Depends(get_current_user)]
 OptionalUser = Annotated[AuthContext | None, Depends(get_current_user_optional)]
 PlatformAdmin = Annotated[AuthContext, Depends(require_platform_admin)]
 DB = Annotated[AsyncSession, Depends(get_db)]
+CurrentCandidate = Annotated[CandidateAuthContext, Depends(get_current_candidate)]
