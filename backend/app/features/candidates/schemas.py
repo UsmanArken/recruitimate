@@ -4,7 +4,9 @@ from pydantic import BaseModel
 class CreateCandidateRequest(BaseModel):
     name: str
     email: str | None = None
+    jobId: str | None = None
     linkedInUrl: str | None = None
+    linkedInText: str | None = None
     githubUrl: str | None = None
     portfolioUrl: str | None = None
     resumeText: str | None = None

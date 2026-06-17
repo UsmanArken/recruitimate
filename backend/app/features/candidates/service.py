@@ -62,10 +62,25 @@ async def list_candidates(org_id: str, db: AsyncSession) -> list:
 
 
 async def create_candidate(org_id: str, data: dict, db: AsyncSession) -> dict:
+    job_id = data.pop("jobId", None)
     candidate = Candidate(organizationId=org_id, **data)
     db.add(candidate)
     await db.flush()
-    return _serialize_candidate(candidate)
+    out = _serialize_candidate(candidate)
+    if job_id:
+        job = await db.get(Job, job_id)
+        if job and job.organizationId == org_id:
+            app = JobApplication(
+                organizationId=org_id,
+                candidateId=candidate.id,
+                jobId=job_id,
+                stage=PipelineStage.NEW,
+            )
+            db.add(app)
+            await db.flush()
+            out["applicationId"] = app.id
+            out["applications"] = [{"id": app.id, "jobId": job_id}]
+    return out
 
 
 async def get_candidate(candidate_id: str, org_id: str, db: AsyncSession) -> dict:
@@ -198,4 +213,4 @@ async def delete_note(note_id: str, candidate_id: str, org_id: str, db: AsyncSes
     note = result.scalar_one_or_none()
     if not note:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")
-    await db.delete(note)
+    db.delete(note)

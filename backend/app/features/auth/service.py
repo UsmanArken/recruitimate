@@ -88,7 +88,10 @@ async def signup(email: str, password: str, name: str, org_name: str, db: AsyncS
     role_result = await db.execute(select(Role).where(Role.code == ORG_ADMIN_ROLE_CODE))
     role = role_result.scalar_one_or_none()
     if not role:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="ORG_ADMIN role not seeded")
+        from app.shared.models import RoleScope
+        role = Role(code=ORG_ADMIN_ROLE_CODE, name="Admin", scope=RoleScope.ORGANIZATION)
+        db.add(role)
+        await db.flush()
 
     member = OrganizationMember(organizationId=org.id, userId=user.id, roleId=role.id)
     db.add(member)

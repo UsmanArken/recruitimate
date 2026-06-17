@@ -75,7 +75,7 @@ async def delete_job(job_id: str, org_id: str, db: AsyncSession) -> None:
     job = result.scalar_one_or_none()
     if not job:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
-    await db.delete(job)
+    db.delete(job)
 
 
 async def list_assignments(job_id: str, org_id: str, db: AsyncSession) -> list:
