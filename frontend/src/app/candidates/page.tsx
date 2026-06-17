@@ -27,7 +27,7 @@ export default async function CandidatesPage() {
     serverFetch<Array<{
       id: string;
       stage: string;
-      candidate: { id: string; name: string; source: "portal" | "manual"; status: string };
+      candidate: { id: string; name: string; email: string | null; source: "portal" | "manual"; status: string };
       job: { id: string; title: string };
       talentProfile: { roleFitScore: number | null } | null;
       decision: { hireConfidence: number | null; recommendation: string | null } | null;

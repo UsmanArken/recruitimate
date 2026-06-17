@@ -36,6 +36,7 @@ def _serialize_me(candidate: Candidate, application: JobApplication | None, inte
         "id": candidate.id,
         "name": candidate.name,
         "email": candidate.email,
+        "jobId": candidate.jobId,
         "linkedInUrl": candidate.linkedInUrl,
         "githubUrl": candidate.githubUrl,
         "resumeFilePath": candidate.resumeFilePath,
