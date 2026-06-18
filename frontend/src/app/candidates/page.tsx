@@ -27,7 +27,7 @@ export default async function CandidatesPage() {
     serverFetch<Array<{
       id: string;
       stage: string;
-      candidate: { id: string; name: string; email: string | null; source: "portal" | "manual"; status: string };
+      candidate: { id: string; name: string; email: string | null; source: "portal" | "manual" };
       job: { id: string; title: string };
       talentProfile: { roleFitScore: number | null } | null;
       decision: { hireConfidence: number | null; recommendation: string | null } | null;
@@ -123,8 +123,8 @@ export default async function CandidatesPage() {
                     </td>
                     <td className="px-5 py-4">
                       <CandidateActionsCell
-                        candidateId={app.candidate.id}
-                        currentStatus={app.candidate.status}
+                        applicationId={app.id}
+                        currentStage={app.stage}
                         source={app.candidate.source}
                       />
                     </td>

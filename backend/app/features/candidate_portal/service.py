@@ -25,27 +25,17 @@ from app.features.candidate_portal.schemas import (
 def _make_candidate_token(candidate: Candidate) -> str:
     return create_access_token({
         "sub": candidate.id,
-        "jobId": candidate.jobId,
         "type": "candidate",
     })
 
 
-def _serialize_me(candidate: Candidate, application: JobApplication | None, interviews: list[Interview]) -> dict:
-    talent = application.talent_profile if application else None
+def _serialize_application_for_me(app: JobApplication) -> dict:
+    talent = app.talent_profile
     return {
-        "id": candidate.id,
-        "name": candidate.name,
-        "email": candidate.email,
-        "jobId": candidate.jobId,
-        "linkedInUrl": candidate.linkedInUrl,
-        "githubUrl": candidate.githubUrl,
-        "resumeFilePath": candidate.resumeFilePath,
-        "status": candidate.status,
-        "applicationStage": application.stage if application else None,
-        "talentProfile": {
-            "skills": talent.skills,
-            "experienceYears": talent.experienceYears,
-        } if talent else None,
+        "id": app.id,
+        "jobTitle": app.job.title if app.job else None,
+        "stage": app.stage,
+        "roleFitScore": talent.roleFitScore if talent else None,
         "interviews": [
             {
                 "id": i.id,
@@ -54,8 +44,29 @@ def _serialize_me(candidate: Candidate, application: JobApplication | None, inte
                 "scheduledAt": i.scheduledAt,
                 "meetingUrl": i.meetingUrl,
             }
-            for i in interviews
+            for i in (app.interviews or [])
         ],
+    }
+
+
+def _serialize_me(candidate: Candidate, applications: list[JobApplication]) -> dict:
+    # Aggregate skills/experienceYears from the most recent talent profile
+    latest_talent = None
+    for app in sorted(applications, key=lambda a: a.createdAt, reverse=True):
+        if app.talent_profile:
+            latest_talent = app.talent_profile
+            break
+
+    return {
+        "id": candidate.id,
+        "name": candidate.name,
+        "email": candidate.email,
+        "linkedInUrl": candidate.linkedInUrl,
+        "githubUrl": candidate.githubUrl,
+        "resumeFilePath": candidate.resumeFilePath,
+        "skills": latest_talent.skills if latest_talent else None,
+        "experienceYears": latest_talent.experienceYears if latest_talent else None,
+        "applications": [_serialize_application_for_me(a) for a in applications],
     }
 
 
@@ -83,44 +94,74 @@ async def candidate_signup(token: str, body: CandidateSignupRequest, db: AsyncSe
     if not job:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invalid signup link")
 
-    existing = await db.execute(
+    email = body.email.lower()
+
+    # Check for existing candidate with this email in this org
+    existing_result = await db.execute(
         select(Candidate).where(
-            Candidate.email == body.email.lower(),
-            Candidate.passwordHash.isnot(None),
+            Candidate.organizationId == job.organizationId,
+            Candidate.email == email,
         )
     )
-    if existing.scalar_one_or_none():
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
+    existing = existing_result.scalar_one_or_none()
 
-    candidate = Candidate(
-        organizationId=job.organizationId,
-        name=body.name,
-        email=body.email.lower(),
-        passwordHash=hash_password(body.password),
-        jobId=job.id,
-        linkedInUrl=body.linkedInUrl,
-        githubUrl=body.githubUrl,
-        resumeText=body.resumeText,
-        status="applied",
-        portalCreatedAt=datetime.utcnow(),
-    )
-    db.add(candidate)
-    await db.flush()
+    if existing is not None:
+        if existing.passwordHash is not None:
+            # Already has a portal account — can't create another
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="An account with this email already exists — please log in.",
+            )
+        # Recruiter-added candidate: claim the account
+        existing.passwordHash = hash_password(body.password)
+        existing.portalCreatedAt = datetime.utcnow()
+        if body.linkedInUrl:
+            existing.linkedInUrl = body.linkedInUrl
+        if body.githubUrl:
+            existing.githubUrl = body.githubUrl
+        if body.resumeText:
+            existing.resumeText = body.resumeText
+        candidate = existing
+    else:
+        # New candidate
+        candidate = Candidate(
+            organizationId=job.organizationId,
+            name=body.name,
+            email=email,
+            passwordHash=hash_password(body.password),
+            linkedInUrl=body.linkedInUrl,
+            githubUrl=body.githubUrl,
+            resumeText=body.resumeText,
+            portalCreatedAt=datetime.utcnow(),
+        )
+        db.add(candidate)
+        await db.flush()
 
-    application = JobApplication(
-        organizationId=job.organizationId,
-        candidateId=candidate.id,
-        jobId=job.id,
-        stage=PipelineStage.NEW,
+    # Create application for this job if not already applied
+    dup_result = await db.execute(
+        select(JobApplication).where(
+            JobApplication.candidateId == candidate.id,
+            JobApplication.jobId == job.id,
+        )
     )
-    db.add(application)
-    await db.flush()
+    existing_app = dup_result.scalar_one_or_none()
+    if existing_app is None:
+        application = JobApplication(
+            organizationId=job.organizationId,
+            candidateId=candidate.id,
+            jobId=job.id,
+            stage=PipelineStage.NEW,
+        )
+        db.add(application)
+        await db.flush()
+    else:
+        application = existing_app
 
     await db.commit()
 
-    if body.resumeText:
-        from app.workers.tasks import score_candidate
-        score_candidate.delay(candidate.id)
+    if candidate.resumeText:
+        from app.workers.tasks import score_application
+        score_application.delay(application.id)
 
     token_str = _make_candidate_token(candidate)
     return {
@@ -129,7 +170,6 @@ async def candidate_signup(token: str, body: CandidateSignupRequest, db: AsyncSe
             "id": candidate.id,
             "name": candidate.name,
             "email": candidate.email,
-            "jobId": candidate.jobId,
         },
     }
 
@@ -152,7 +192,6 @@ async def candidate_login(email: str, password: str, db: AsyncSession) -> dict:
             "id": candidate.id,
             "name": candidate.name,
             "email": candidate.email,
-            "jobId": candidate.jobId,
         },
     }
 
@@ -165,24 +204,19 @@ async def get_candidate_me(candidate_id: str, db: AsyncSession) -> dict:
     if not candidate:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
 
-    app_result = await db.execute(
+    apps_result = await db.execute(
         select(JobApplication)
         .where(JobApplication.candidateId == candidate_id)
-        .options(selectinload(JobApplication.talent_profile))
+        .options(
+            selectinload(JobApplication.job),
+            selectinload(JobApplication.talent_profile),
+            selectinload(JobApplication.interviews),
+        )
         .order_by(JobApplication.createdAt.desc())
     )
-    application = app_result.scalars().first()
+    applications = list(apps_result.scalars().all())
 
-    interviews: list[Interview] = []
-    if application:
-        iv_result = await db.execute(
-            select(Interview)
-            .where(Interview.applicationId == application.id)
-            .order_by(Interview.scheduledAt)
-        )
-        interviews = list(iv_result.scalars().all())
-
-    return _serialize_me(candidate, application, interviews)
+    return _serialize_me(candidate, applications)
 
 
 async def update_candidate_me(candidate_id: str, body: UpdateCandidateMeRequest, db: AsyncSession) -> dict:
@@ -226,9 +260,19 @@ async def reupload_resume(candidate_id: str, file: UploadFile, db: AsyncSession)
     candidate.resumeText = text
     candidate.resumeFilePath = str(dest)
     candidate.updatedAt = datetime.utcnow()
+
+    # Get most recent application to re-score
+    apps_result = await db.execute(
+        select(JobApplication)
+        .where(JobApplication.candidateId == candidate_id)
+        .order_by(JobApplication.createdAt.desc())
+    )
+    most_recent_app = apps_result.scalars().first()
+
     await db.commit()
 
-    from app.workers.tasks import score_candidate
-    score_candidate.delay(candidate_id)
+    if most_recent_app:
+        from app.workers.tasks import score_application
+        score_application.delay(most_recent_app.id)
 
     return {"status": "reanalysis_queued"}

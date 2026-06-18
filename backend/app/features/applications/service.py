@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.shared.models import (
-    Candidate, Decision, Interview, InterviewAnalysis, Job, JobApplication, TalentProfile
+    Candidate, Decision, Interview, InterviewAnalysis, Job, JobApplication, PipelineStage, TalentProfile
 )
 
 
@@ -18,7 +18,6 @@ def _serialize_application(app: JobApplication) -> dict:
             "id": app.candidate.id,
             "name": app.candidate.name,
             "email": app.candidate.email,
-            "status": app.candidate.status,
             "source": "portal" if app.candidate.passwordHash else "manual",
         } if app.candidate else None,
         "job": {"id": app.job.id, "title": app.job.title} if app.job else None,
@@ -132,6 +131,27 @@ async def run_talent(app_id: str, org_id: str, db: AsyncSession) -> dict:
 
     score_application.delay(app_id)
     return {"status": "queued"}
+
+
+async def update_application_stage(app_id: str, org_id: str, stage: str, db: AsyncSession) -> dict:
+    valid_stages = {s.value for s in PipelineStage}
+    if stage not in valid_stages:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid stage. Must be one of: {', '.join(sorted(valid_stages))}",
+        )
+    result = await db.execute(
+        select(JobApplication).where(
+            JobApplication.id == app_id,
+            JobApplication.organizationId == org_id,
+        )
+    )
+    app = result.scalar_one_or_none()
+    if not app:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Application not found")
+    app.stage = PipelineStage(stage)
+    await db.commit()
+    return {"id": app.id, "stage": app.stage}
 
 
 async def run_live_assist(app_id: str, org_id: str, current_question: str, current_answer: str | None, db: AsyncSession) -> dict:

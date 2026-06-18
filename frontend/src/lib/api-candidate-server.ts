@@ -34,20 +34,11 @@ export async function serverCandidateFetch<T>(path: string, options: RequestInit
   return res.json();
 }
 
-export interface CandidateMe {
+export interface CandidateApplication {
   id: string;
-  name: string;
-  email: string;
-  jobId: string | null;
-  status: string;
-  applicationStage: string | null;
-  linkedInUrl: string | null;
-  githubUrl: string | null;
-  resumeFilePath: string | null;
-  talentProfile: {
-    skills: string[];
-    experienceYears: number | null;
-  } | null;
+  jobTitle: string | null;
+  stage: string;
+  roleFitScore: number | null;
   interviews: Array<{
     id: string;
     title: string;
@@ -55,6 +46,18 @@ export interface CandidateMe {
     status: string;
     meetingUrl: string | null;
   }>;
+}
+
+export interface CandidateMe {
+  id: string;
+  name: string;
+  email: string;
+  linkedInUrl: string | null;
+  githubUrl: string | null;
+  resumeFilePath: string | null;
+  skills: string[] | null;
+  experienceYears: number | null;
+  applications: CandidateApplication[];
 }
 
 export async function getCandidateMe(): Promise<CandidateMe> {

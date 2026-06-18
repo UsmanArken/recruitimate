@@ -232,14 +232,11 @@ class Candidate(Base):
     resumeText: Mapped[str | None] = mapped_column(Text)
     resumeFilePath: Mapped[str | None] = mapped_column(String)
     passwordHash: Mapped[str | None] = mapped_column(String)
-    jobId: Mapped[str | None] = mapped_column(String, ForeignKey("Job.id"))
-    status: Mapped[str] = mapped_column(String, default="applied")
     portalCreatedAt: Mapped[datetime | None] = mapped_column(DateTime)
     createdAt: Mapped[datetime] = mapped_column(DateTime, default=_now)
     updatedAt: Mapped[datetime] = mapped_column(DateTime, default=_now, onupdate=_now)
 
     organization: Mapped["Organization"] = relationship(back_populates="candidates")
-    applied_job: Mapped["Job | None"] = relationship(foreign_keys=[jobId])
     applications: Mapped[list["JobApplication"]] = relationship(back_populates="candidate", cascade="all, delete-orphan")
     notes: Mapped[list["Note"]] = relationship(back_populates="candidate", cascade="all, delete-orphan")
 

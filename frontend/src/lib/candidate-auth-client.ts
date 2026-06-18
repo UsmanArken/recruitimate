@@ -7,7 +7,6 @@ export interface CandidateUser {
   id: string;
   name: string;
   email: string;
-  jobId: string | null;
 }
 
 export function getCandidateToken(): string | null {

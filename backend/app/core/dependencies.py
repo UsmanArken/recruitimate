@@ -75,7 +75,6 @@ def make_permission_dep(resource: str, action: str, job_id_param: str | None = N
 class CandidateAuthContext:
     def __init__(self, payload: dict):
         self.candidate_id: str = payload["sub"]
-        self.job_id: str | None = payload.get("jobId")
 
 
 async def get_current_candidate(

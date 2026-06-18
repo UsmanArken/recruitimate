@@ -8,7 +8,6 @@ from app.features.candidates.schemas import (
     CreateNoteRequest,
     LinkedInRequest,
     UpdateNoteRequest,
-    UpdateStatusRequest,
 )
 
 router = APIRouter(prefix="/api/candidates", tags=["candidates"])
@@ -87,6 +86,3 @@ async def store_linkedin(candidate_id: str, body: LinkedInRequest, auth: Current
     return {"id": candidate.id, "linkedInUrl": candidate.linkedInUrl}
 
 
-@router.patch("/{candidate_id}/status")
-async def update_status(candidate_id: str, body: UpdateStatusRequest, auth: CurrentUser, db: DB):
-    return await service.update_candidate_status(candidate_id, auth.organization_id, body.status, db)

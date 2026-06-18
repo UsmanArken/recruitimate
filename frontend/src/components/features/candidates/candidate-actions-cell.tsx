@@ -5,23 +5,23 @@ import { useRouter } from "next/navigation";
 import { apiFetch, ApiError } from "@/lib/api-fetch";
 
 interface Props {
-  candidateId: string;
-  currentStatus: string;
+  applicationId: string;
+  currentStage: string;
   source: "portal" | "manual";
 }
 
-export function CandidateActionsCell({ candidateId, currentStatus, source }: Props) {
+export function CandidateActionsCell({ applicationId, currentStage, source }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function updateStatus(status: string) {
-    setLoading(status);
+  async function updateStage(stage: string) {
+    setLoading(stage);
     setError(null);
     try {
-      await apiFetch(`/api/candidates/${candidateId}/status`, {
+      await apiFetch(`/api/applications/${applicationId}/status`, {
         method: "PATCH",
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ stage }),
       });
       router.refresh();
     } catch (err) {
@@ -38,22 +38,22 @@ export function CandidateActionsCell({ candidateId, currentStatus, source }: Pro
           Portal
         </span>
       )}
-      {currentStatus !== "shortlisted" && (
+      {currentStage !== "SHORTLISTED" && (
         <button
-          onClick={() => updateStatus("shortlisted")}
+          onClick={() => updateStage("SHORTLISTED")}
           disabled={loading !== null}
           className="rounded-md border border-green-200 bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 transition hover:bg-green-100 disabled:opacity-50"
         >
-          {loading === "shortlisted" ? "…" : "Shortlist"}
+          {loading === "SHORTLISTED" ? "…" : "Shortlist"}
         </button>
       )}
-      {currentStatus !== "rejected" && (
+      {currentStage !== "REJECTED" && (
         <button
-          onClick={() => updateStatus("rejected")}
+          onClick={() => updateStage("REJECTED")}
           disabled={loading !== null}
           className="rounded-md border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100 disabled:opacity-50"
         >
-          {loading === "rejected" ? "…" : "Reject"}
+          {loading === "REJECTED" ? "…" : "Reject"}
         </button>
       )}
       {error && <span className="text-xs text-risk">{error}</span>}
