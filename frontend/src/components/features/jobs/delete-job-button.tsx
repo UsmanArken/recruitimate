@@ -12,7 +12,6 @@ export function DeleteJobButton({
   jobId: string;
   jobTitle: string;
 }) {
-  const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [loading, setLoading] = useState(false);
 

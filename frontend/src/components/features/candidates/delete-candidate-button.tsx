@@ -12,7 +12,6 @@ export function DeleteCandidateButton({
   candidateId: string;
   candidateName: string;
 }) {
-  const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [loading, setLoading] = useState(false);
 
