@@ -41,6 +41,11 @@ def _serialize_application(app: JobApplication) -> dict:
 def _serialize_talent(tp: TalentProfile) -> dict:
     return {
         "roleFitScore": tp.roleFitScore,
+        "experienceYears": tp.experienceYears,
+        "skills": tp.skills,
+        "matchedSkills": tp.matchedSkills,
+        "missingSkills": tp.missingSkills,
+        "extraSkills": tp.extraSkills,
         "strengths": tp.strengths,
         "gaps": tp.gaps,
         "hiddenSignals": tp.hiddenSignals,
@@ -71,6 +76,7 @@ async def create_candidate(org_id: str, data: dict, db: AsyncSession) -> dict:
     db.add(candidate)
     await db.flush()
     out = _serialize_candidate(candidate)
+    app_id_to_score: str | None = None
     if job_id:
         job = await db.get(Job, job_id)
         if job and job.organizationId == org_id:
@@ -85,7 +91,11 @@ async def create_candidate(org_id: str, data: dict, db: AsyncSession) -> dict:
             out["applicationId"] = app.id
             out["applications"] = [{"id": app.id, "jobId": job_id}]
             if candidate.resumeText:
-                score_application.delay(app.id)
+                app_id_to_score = app.id
+    # Commit before enqueuing — Celery worker must find the row in the DB
+    await db.commit()
+    if app_id_to_score:
+        score_application.delay(app_id_to_score)
     return out
 
 

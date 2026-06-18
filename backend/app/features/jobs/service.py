@@ -163,6 +163,8 @@ async def bulk_import_resumes(job_id: str, org_id: str, files: list[tuple[str, b
     from app.features.intelligence.engines import extract_resume_identity
 
     results = []
+    app_ids_to_score: list[str] = []
+
     for filename, data in files[:40]:
         try:
             text = extract_text(data, filename)
@@ -225,8 +227,7 @@ async def bulk_import_resumes(job_id: str, org_id: str, files: list[tuple[str, b
             db.add(app)
             await db.flush()
 
-            score_application.delay(app.id)
-
+            app_ids_to_score.append(app.id)
             results.append({
                 "status": "created",
                 "fileName": filename,
@@ -242,5 +243,10 @@ async def bulk_import_resumes(job_id: str, org_id: str, files: list[tuple[str, b
                 "fileName": filename,
                 "error": str(exc),
             })
+
+    # Commit all rows before enqueuing — Celery worker must find them in the DB
+    await db.commit()
+    for app_id in app_ids_to_score:
+        score_application.delay(app_id)
 
     return {"results": results}
