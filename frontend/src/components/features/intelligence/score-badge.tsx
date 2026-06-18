@@ -15,7 +15,7 @@ export function ScoreBadge({
   /** Shown when score is null (e.g. missing hiring campaign). */
   emptyLabel?: string;
 }) {
-  const pct = score != null ? Math.round(score * 100) : 0;
+  const pct = score != null ? Math.min(100, Math.max(0, Math.round(score))) : 0;
   const barPct = invertBar && score != null ? 100 - pct : pct;
 
   return (

@@ -1,6 +1,7 @@
 from collections.abc import AsyncGenerator
+from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase, sessionmaker, Session
 
 from app.core.config import get_settings
 
@@ -47,3 +48,28 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
         except Exception:
             await session.rollback()
             raise
+
+
+# ---------------------------------------------------------------------------
+# Sync engine for Celery workers
+# ---------------------------------------------------------------------------
+
+_sync_engine = None
+_sync_session_factory = None
+
+
+def get_sync_engine():
+    global _sync_engine
+    if _sync_engine is None:
+        settings = get_settings()
+        # Convert asyncpg URL to psycopg2 URL for sync use
+        sync_url = settings.DATABASE_URL.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
+        _sync_engine = create_engine(sync_url, pool_pre_ping=True)
+    return _sync_engine
+
+
+def get_sync_session_factory() -> sessionmaker[Session]:
+    global _sync_session_factory
+    if _sync_session_factory is None:
+        _sync_session_factory = sessionmaker(get_sync_engine(), expire_on_commit=False)
+    return _sync_session_factory

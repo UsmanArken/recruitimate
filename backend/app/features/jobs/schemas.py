@@ -6,6 +6,8 @@ class CreateJobRequest(BaseModel):
     description: str | None = None
     requirements: str | None = None
     hiringManagerId: str | None = None
+    interviewMode: str = "live"
+    autoInterviewThreshold: int = 60
 
 
 class UpdateJobRequest(BaseModel):
@@ -13,6 +15,8 @@ class UpdateJobRequest(BaseModel):
     description: str | None = None
     requirements: str | None = None
     hiringManagerId: str | None = None
+    interviewMode: str | None = None
+    autoInterviewThreshold: int | None = None
 
 
 class CreateAssignmentRequest(BaseModel):

@@ -24,7 +24,9 @@ export async function serverFetch<T>(path: string, options: RequestInit = {}): P
   });
 
   if (res.status === 401) {
-    redirect("/login");
+    // Redirect through the sign-out route so the stale cookie is cleared before
+    // hitting /login — otherwise middleware sees the cookie and bounces back here.
+    redirect("/auth/signout");
   }
 
   if (!res.ok) {
@@ -48,7 +50,7 @@ export async function getAuthUser() {
   } catch (err) {
     // Re-throw Next.js redirect errors — swallowing them would break the redirect
     if (isRedirectError(err)) throw err;
-    // For network errors (backend down), redirect to login
-    redirect("/login");
+    // For network errors (backend down), clear cookie and redirect
+    redirect("/auth/signout");
   }
 }

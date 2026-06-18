@@ -14,6 +14,9 @@ def _serialize_job(job: Job, application_count: int = 0) -> dict:
         "requirements": job.requirements,
         "hiringManagerId": job.hiringManagerId,
         "organizationId": job.organizationId,
+        "signupToken": job.signupToken,
+        "interviewMode": job.interviewMode,
+        "autoInterviewThreshold": job.autoInterviewThreshold,
         "applicationCount": application_count,
         "createdAt": job.createdAt,
         "updatedAt": job.updatedAt,
@@ -71,11 +74,47 @@ async def update_job(job_id: str, org_id: str, data: dict, db: AsyncSession) -> 
 
 
 async def delete_job(job_id: str, org_id: str, db: AsyncSession) -> None:
+    from sqlalchemy import func
+    from app.shared.models import Candidate, JobApplication
+
     result = await db.execute(select(Job).where(Job.id == job_id, Job.organizationId == org_id))
     job = result.scalar_one_or_none()
     if not job:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
-    db.delete(job)
+
+    # Find all candidate IDs attached to this job
+    apps_result = await db.execute(
+        select(JobApplication.candidateId).where(JobApplication.jobId == job_id)
+    )
+    candidate_ids = [row[0] for row in apps_result.all()]
+
+    # Among those, find candidates who have NO other applications (would become orphans)
+    orphan_ids: list[str] = []
+    for cid in candidate_ids:
+        count = await db.scalar(
+            select(func.count()).where(
+                JobApplication.candidateId == cid,
+                JobApplication.jobId != job_id,
+            )
+        )
+        if count == 0:
+            orphan_ids.append(cid)
+
+    # Delete ALL applications for this job first (removes FK dependency on Job)
+    all_apps = await db.execute(
+        select(JobApplication).where(JobApplication.jobId == job_id)
+    )
+    for app in all_apps.scalars().all():
+        await db.delete(app)
+
+    # Now delete orphan candidates (their only application was to this job)
+    for cid in orphan_ids:
+        candidate = await db.get(Candidate, cid)
+        if candidate:
+            await db.delete(candidate)
+
+    await db.delete(job)
+    await db.commit()
 
 
 async def list_assignments(job_id: str, org_id: str, db: AsyncSession) -> list:
@@ -155,21 +194,106 @@ async def bulk_import_resumes(job_id: str, org_id: str, files: list[tuple[str, b
 
     from app.features.intelligence.document_parser import extract_text
     from app.shared.models import PipelineStage
+    from app.workers.tasks import score_application
 
-    created = 0
-    errors = []
+    from app.features.intelligence.engines import extract_resume_identity
+
+    results = []
+    app_ids_to_score: list[str] = []
+
     for filename, data in files[:40]:
         try:
             text = extract_text(data, filename)
-            name = filename.rsplit(".", 1)[0]
-            candidate = Candidate(organizationId=org_id, name=name, resumeText=text)
-            db.add(candidate)
-            await db.flush()
-            app = JobApplication(organizationId=org_id, candidateId=candidate.id, jobId=job_id, stage=PipelineStage.NEW)
-            db.add(app)
-            created += 1
-        except Exception as exc:
-            errors.append({"file": filename, "error": str(exc)})
 
-    await db.flush()
-    return {"created": created, "errors": errors}
+            # Extract real name + email from resume text; fall back to filename
+            identity = await extract_resume_identity(text)
+            name = identity.get("name") or filename.rsplit(".", 1)[0]
+            raw_email = identity.get("email") or None
+            email = raw_email.lower().strip() if raw_email else None
+
+            # Dedup by email first (most reliable), then name
+            existing_candidate = None
+            if email:
+                res = await db.execute(
+                    select(Candidate).where(
+                        Candidate.organizationId == org_id,
+                        Candidate.email == email,
+                    )
+                )
+                existing_candidate = res.scalar_one_or_none()
+
+            if not existing_candidate:
+                res = await db.execute(
+                    select(Candidate).where(
+                        Candidate.organizationId == org_id,
+                        Candidate.name == name,
+                    )
+                )
+                existing_candidate = res.scalar_one_or_none()
+
+            if existing_candidate:
+                dup_app = await db.execute(
+                    select(JobApplication).where(
+                        JobApplication.candidateId == existing_candidate.id,
+                        JobApplication.jobId == job_id,
+                    )
+                )
+                dup = dup_app.scalar_one_or_none()
+                if dup:
+                    results.append({
+                        "status": "duplicate",
+                        "fileName": filename,
+                        "candidateId": existing_candidate.id,
+                        "applicationId": dup.id,
+                        "candidateName": existing_candidate.name,
+                        "roleFitScore": None,
+                        "hireConfidence": None,
+                        "message": "Already in pipeline for this role",
+                    })
+                    continue
+                # Existing candidate, new application for this job — reuse the record
+                if existing_candidate.resumeText is None and text:
+                    existing_candidate.resumeText = text
+                candidate = existing_candidate
+            else:
+                candidate = Candidate(
+                    organizationId=org_id,
+                    name=name,
+                    email=email,  # already lowercased above
+                    resumeText=text,
+                )
+                db.add(candidate)
+                await db.flush()
+
+            app = JobApplication(
+                organizationId=org_id,
+                candidateId=candidate.id,
+                jobId=job_id,
+                stage=PipelineStage.NEW,
+            )
+            db.add(app)
+            await db.flush()
+
+            app_ids_to_score.append(app.id)
+            results.append({
+                "status": "created",
+                "fileName": filename,
+                "candidateId": candidate.id,
+                "applicationId": app.id,
+                "candidateName": candidate.name,
+                "roleFitScore": None,
+                "hireConfidence": None,
+            })
+        except Exception as exc:
+            results.append({
+                "status": "failed",
+                "fileName": filename,
+                "error": str(exc),
+            })
+
+    # Commit all rows before enqueuing — Celery worker must find them in the DB
+    await db.commit()
+    for app_id in app_ids_to_score:
+        score_application.delay(app_id)
+
+    return {"results": results}

@@ -9,6 +9,7 @@ import {
   UserPlus,
   Shield,
   Eye,
+  Settings,
 } from "lucide-react";
 import { AdminNavLink } from "@/components/layout/admin-nav-link";
 import { NavLink } from "@/components/layout/nav-link";
@@ -19,6 +20,7 @@ const workspaceNav = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/candidates", label: "Candidates", icon: Users },
   { href: "/jobs", label: "Open roles", icon: Briefcase },
+  { href: "/settings/team", label: "Team & access", icon: Settings },
 ];
 
 export function Sidebar() {

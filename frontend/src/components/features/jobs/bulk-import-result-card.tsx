@@ -37,7 +37,7 @@ export function BulkImportResultCard({ row }: { row: BulkImportResultCardData })
         <p className="text-[11px] text-muted">role fit</p>
         {row.hireConfidence != null && (
           <p className="mt-0.5 text-[11px] text-muted">
-            {Math.round(row.hireConfidence * 100)}% confidence
+            {Math.round(row.hireConfidence)}% confidence
           </p>
         )}
       </div>

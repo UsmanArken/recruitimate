@@ -9,6 +9,7 @@ import { ApplyToPosition } from "@/components/features/candidates/apply-to-posit
 import { CandidateNotesPanel } from "@/components/features/candidates/candidate-notes-panel";
 import { LinkedInEnrichPanel } from "@/components/features/candidates/linkedin-enrich-panel";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DeleteCandidateButton } from "@/components/features/candidates/delete-candidate-button";
 import { ChevronLeft, Mail, Briefcase } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -72,7 +73,10 @@ export default async function CandidatePersonPage({
         <div className="flex flex-wrap items-start gap-5">
           <Avatar name={candidate.name} size="lg" />
           <div className="min-w-0 flex-1">
-            <h1 className="text-2xl font-bold tracking-tight">{candidate.name}</h1>
+            <div className="mb-1 flex items-center gap-3">
+              <h1 className="text-2xl font-bold tracking-tight">{candidate.name}</h1>
+              <DeleteCandidateButton candidateId={candidate.id} candidateName={candidate.name} />
+            </div>
             {candidate.email && (
               <p className="mt-1 flex items-center gap-1.5 text-sm text-muted">
                 <Mail className="h-3.5 w-3.5" />

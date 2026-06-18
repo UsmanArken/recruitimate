@@ -1,7 +1,8 @@
 """All intelligence engines — pure async functions, no HTTP or DB access."""
+from datetime import date
+
 from app.features.intelligence.llm_runtime import chat_json
 from app.features.intelligence.types import (
-    AudioSignalResult,
     CrossSignalResult,
     DecisionResult,
     InconsistencyResult,
@@ -9,7 +10,6 @@ from app.features.intelligence.types import (
     InterviewerQualityResult,
     LiveAssistResult,
     TalentResult,
-    VideoMetricsResult,
 )
 
 # ---------------------------------------------------------------------------
@@ -18,6 +18,9 @@ from app.features.intelligence.types import (
 
 _TALENT_FALLBACK = {
     "skills": [],
+    "matchedSkills": [],
+    "missingSkills": [],
+    "extraSkills": [],
     "experienceYears": None,
     "roleFitScore": None,
     "strengths": [],
@@ -31,16 +34,30 @@ async def run_talent_intelligence(
     resume_text: str,
     job_requirements: str,
 ) -> TalentResult:
+    today = date.today().isoformat()
     system = (
-        "You are an expert talent analyst. Analyse the candidate's resume against the job requirements. "
-        "Return a JSON object with keys: skills (string[]), experienceYears (int|null), "
-        "roleFitScore (0-100 float|null), strengths (string[]), gaps (string[]), "
-        "hiddenSignals (string[]), explanation (string)."
+        f"You are an expert talent analyst. Today's date is {today}. "
+        "Use this date to accurately calculate experience durations from resumes. "
+        "Analyse the candidate's resume against the job requirements. "
+        "Return a JSON object with these keys:\n"
+        "- skills: string[] — all skills the candidate has\n"
+        "- matchedSkills: string[] — skills the candidate has that are required by the job\n"
+        "- missingSkills: string[] — skills required by the job that the candidate lacks\n"
+        "- extraSkills: string[] — skills the candidate has that are not required by the job\n"
+        "- experienceYears: int|null — total years of relevant professional experience\n"
+        "- roleFitScore: 0-100 float|null — overall fit score\n"
+        "- strengths: string[] — candidate's key strengths for this role\n"
+        "- gaps: string[] — areas to probe in interview\n"
+        "- hiddenSignals: string[] — non-obvious positive or negative signals\n"
+        "- explanation: string — 2-3 sentence summary of the assessment"
     )
     user = f"JOB REQUIREMENTS:\n{job_requirements}\n\nRESUME:\n{resume_text}"
     raw = await chat_json(system, user, _TALENT_FALLBACK)
     return TalentResult(
         skills=raw.get("skills", []),
+        matchedSkills=raw.get("matchedSkills", []),
+        missingSkills=raw.get("missingSkills", []),
+        extraSkills=raw.get("extraSkills", []),
         experienceYears=raw.get("experienceYears"),
         roleFitScore=raw.get("roleFitScore"),
         strengths=raw.get("strengths", []),
@@ -169,41 +186,6 @@ async def run_cross_signal(
 
 
 # ---------------------------------------------------------------------------
-# Audio Signal Engine
-# ---------------------------------------------------------------------------
-
-_AUDIO_FALLBACK = {"pauseFrequency": None, "toneShifts": [], "hesitationMarkers": [], "summary": ""}
-
-
-async def extract_audio_signals(
-    transcript: str,
-) -> AudioSignalResult:
-    system = (
-        "You are an audio signal analyst. From the interview transcript, infer pause frequency, "
-        "tone shifts, and hesitation markers. Return JSON with: "
-        "pauseFrequency (float|null), toneShifts (object[]), hesitationMarkers (string[]), summary (string)."
-    )
-    raw = await chat_json(system, transcript, _AUDIO_FALLBACK)
-    return AudioSignalResult(**{k: raw.get(k, v) for k, v in _AUDIO_FALLBACK.items()})
-
-
-# ---------------------------------------------------------------------------
-# Video Behavioral Engine
-# ---------------------------------------------------------------------------
-
-_VIDEO_FALLBACK = {"engagementScore": None, "attentionScore": None, "aggregates": {}}
-
-
-async def extract_video_metrics(description: str) -> VideoMetricsResult:
-    system = (
-        "You are a video engagement analyst. Given a description of video frame data, "
-        "return JSON with: engagementScore (0-100), attentionScore (0-100), aggregates (object)."
-    )
-    raw = await chat_json(system, description, _VIDEO_FALLBACK)
-    return VideoMetricsResult(**{k: raw.get(k, v) for k, v in _VIDEO_FALLBACK.items()})
-
-
-# ---------------------------------------------------------------------------
 # Interviewer Quality Engine
 # ---------------------------------------------------------------------------
 
@@ -218,6 +200,26 @@ async def run_interviewer_quality(transcript: str) -> InterviewerQualityResult:
     )
     raw = await chat_json(system, transcript, _IQ_FALLBACK)
     return InterviewerQualityResult(**{k: raw.get(k, v) for k, v in _IQ_FALLBACK.items()})
+
+
+# ---------------------------------------------------------------------------
+# Resume Identity Extraction
+# ---------------------------------------------------------------------------
+
+_IDENTITY_FALLBACK = {"name": None, "email": None}
+
+
+async def extract_resume_identity(resume_text: str) -> dict:
+    """Extract candidate name and email from the top of a resume. Fast, cheap call."""
+    system = (
+        "You are a resume parser. Extract the candidate's full name and email address "
+        "from the resume text. Return JSON with exactly two keys: "
+        "name (string|null) and email (string|null). "
+        "Return null for either field if it cannot be found. Do not infer or guess."
+    )
+    # Only send the first 500 chars — name/email are always near the top
+    user = resume_text[:500]
+    return await chat_json(system, user, _IDENTITY_FALLBACK)
 
 
 # ---------------------------------------------------------------------------

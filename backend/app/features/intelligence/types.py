@@ -5,6 +5,9 @@ from typing import Any
 @dataclass
 class TalentResult:
     skills: list[str] = field(default_factory=list)
+    matchedSkills: list[str] = field(default_factory=list)
+    missingSkills: list[str] = field(default_factory=list)
+    extraSkills: list[str] = field(default_factory=list)
     experienceYears: int | None = None
     roleFitScore: float | None = None
     strengths: list[str] = field(default_factory=list)
@@ -49,21 +52,6 @@ class CrossSignalResult:
     consistencyScore: float | None = None
     inconsistencies: list[str] = field(default_factory=list)
     explanation: str = ""
-
-
-@dataclass
-class AudioSignalResult:
-    pauseFrequency: float | None = None
-    toneShifts: list[dict[str, Any]] = field(default_factory=list)
-    hesitationMarkers: list[str] = field(default_factory=list)
-    summary: str = ""
-
-
-@dataclass
-class VideoMetricsResult:
-    engagementScore: float | None = None
-    attentionScore: float | None = None
-    aggregates: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
