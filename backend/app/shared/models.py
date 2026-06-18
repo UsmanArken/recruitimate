@@ -240,8 +240,8 @@ class Candidate(Base):
 
     organization: Mapped["Organization"] = relationship(back_populates="candidates")
     applied_job: Mapped["Job | None"] = relationship(foreign_keys=[jobId])
-    applications: Mapped[list["JobApplication"]] = relationship(back_populates="candidate")
-    notes: Mapped[list["Note"]] = relationship(back_populates="candidate")
+    applications: Mapped[list["JobApplication"]] = relationship(back_populates="candidate", cascade="all, delete-orphan")
+    notes: Mapped[list["Note"]] = relationship(back_populates="candidate", cascade="all, delete-orphan")
 
 
 class JobApplication(Base):
@@ -259,9 +259,9 @@ class JobApplication(Base):
     organization: Mapped["Organization"] = relationship()
     candidate: Mapped["Candidate"] = relationship(back_populates="applications")
     job: Mapped["Job"] = relationship(back_populates="applications")
-    talent_profile: Mapped["TalentProfile | None"] = relationship(back_populates="application", uselist=False)
-    interviews: Mapped[list["Interview"]] = relationship(back_populates="application")
-    decision: Mapped["Decision | None"] = relationship(back_populates="application", uselist=False)
+    talent_profile: Mapped["TalentProfile | None"] = relationship(back_populates="application", uselist=False, cascade="all, delete-orphan")
+    interviews: Mapped[list["Interview"]] = relationship(back_populates="application", cascade="all, delete-orphan")
+    decision: Mapped["Decision | None"] = relationship(back_populates="application", uselist=False, cascade="all, delete-orphan")
 
 
 # ---------------------------------------------------------------------------
@@ -305,7 +305,7 @@ class Interview(Base):
     updatedAt: Mapped[datetime] = mapped_column(DateTime, default=_now, onupdate=_now)
 
     application: Mapped["JobApplication"] = relationship(back_populates="interviews")
-    analysis: Mapped["InterviewAnalysis | None"] = relationship(back_populates="interview", uselist=False)
+    analysis: Mapped["InterviewAnalysis | None"] = relationship(back_populates="interview", uselist=False, cascade="all, delete-orphan")
 
 
 class InterviewAnalysis(Base):
