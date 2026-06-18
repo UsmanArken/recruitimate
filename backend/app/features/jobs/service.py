@@ -158,21 +158,73 @@ async def bulk_import_resumes(job_id: str, org_id: str, files: list[tuple[str, b
 
     from app.features.intelligence.document_parser import extract_text
     from app.shared.models import PipelineStage
+    from app.workers.tasks import score_application
 
-    created = 0
-    errors = []
+    results = []
     for filename, data in files[:40]:
         try:
             text = extract_text(data, filename)
             name = filename.rsplit(".", 1)[0]
+
+            # Dedup: same candidate email or name+job already in pipeline
+            existing = await db.execute(
+                select(Candidate).where(
+                    Candidate.organizationId == org_id,
+                    Candidate.name == name,
+                )
+            )
+            existing_candidate = existing.scalar_one_or_none()
+
+            if existing_candidate:
+                # Check if already applied to this job
+                dup_app = await db.execute(
+                    select(JobApplication).where(
+                        JobApplication.candidateId == existing_candidate.id,
+                        JobApplication.jobId == job_id,
+                    )
+                )
+                dup = dup_app.scalar_one_or_none()
+                if dup:
+                    results.append({
+                        "status": "duplicate",
+                        "fileName": filename,
+                        "candidateId": existing_candidate.id,
+                        "applicationId": dup.id,
+                        "candidateName": existing_candidate.name,
+                        "roleFitScore": None,
+                        "hireConfidence": None,
+                        "message": "Already in pipeline for this role",
+                    })
+                    continue
+
             candidate = Candidate(organizationId=org_id, name=name, resumeText=text)
             db.add(candidate)
             await db.flush()
-            app = JobApplication(organizationId=org_id, candidateId=candidate.id, jobId=job_id, stage=PipelineStage.NEW)
+            app = JobApplication(
+                organizationId=org_id,
+                candidateId=candidate.id,
+                jobId=job_id,
+                stage=PipelineStage.NEW,
+            )
             db.add(app)
-            created += 1
-        except Exception as exc:
-            errors.append({"file": filename, "error": str(exc)})
+            await db.flush()
 
-    await db.flush()
-    return {"created": created, "errors": errors}
+            score_application.delay(app.id)
+
+            results.append({
+                "status": "created",
+                "fileName": filename,
+                "candidateId": candidate.id,
+                "applicationId": app.id,
+                "candidateName": candidate.name,
+                "roleFitScore": None,
+                "hireConfidence": None,
+            })
+        except Exception as exc:
+            results.append({
+                "status": "failed",
+                "fileName": filename,
+                "error": str(exc),
+            })
+
+    return {"results": results}

@@ -64,6 +64,8 @@ async def list_candidates(org_id: str, db: AsyncSession) -> list:
 
 
 async def create_candidate(org_id: str, data: dict, db: AsyncSession) -> dict:
+    from app.workers.tasks import score_application
+
     job_id = data.pop("jobId", None)
     candidate = Candidate(organizationId=org_id, **data)
     db.add(candidate)
@@ -82,6 +84,8 @@ async def create_candidate(org_id: str, data: dict, db: AsyncSession) -> dict:
             await db.flush()
             out["applicationId"] = app.id
             out["applications"] = [{"id": app.id, "jobId": job_id}]
+            if candidate.resumeText:
+                score_application.delay(app.id)
     return out
 
 
