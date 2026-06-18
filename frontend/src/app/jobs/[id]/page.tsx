@@ -7,6 +7,8 @@ import { JobAssignmentsPanel } from "@/components/features/jobs/job-assignments-
 import { BulkResumeUploadPanel } from "@/components/features/jobs/bulk-resume-upload-panel";
 import { JobPipelineTable } from "@/components/features/jobs/job-pipeline-table";
 import { InterviewQuestionBankPanel } from "@/components/features/jobs/interview-question-bank-panel";
+import { SignupLinkCard } from "@/components/features/jobs/signup-link-card";
+import { DeleteJobButton } from "@/components/features/jobs/delete-job-button";
 import { ChevronLeft, Users } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -27,15 +29,17 @@ export default async function JobDetailPage({
       requirements: string | null;
       applicationCount: number;
       hiringManagerId: string | null;
+      signupToken: string;
+      interviewMode: string;
       assignments: Array<{ id: string; assignmentRole: string; user: { id: string; name: string | null; email: string } }>;
     }>(`/api/jobs/${id}`).catch(() => null),
     serverFetch<Array<{
       id: string;
       stage: string;
-      candidate: { id: string; name: string };
+      candidate: { id: string; name: string; email: string | null };
       job: { id: string; title: string };
       talentProfile: { roleFitScore: number | null } | null;
-      decision: { recommendation: string | null } | null;
+      decision: { hireConfidence: number | null; recommendation: string | null } | null;
     }>>(`/api/applications`).then(apps => apps.filter(a => a.job.id === id)).catch(() => []),
   ]);
 
@@ -46,13 +50,16 @@ export default async function JobDetailPage({
   return (
     <>
       <div className="border-b border-border bg-card/90 px-8 py-4 backdrop-blur-sm">
-        <Link
-          href="/jobs"
-          className="mb-3 inline-flex items-center gap-1 text-sm font-medium text-muted hover:text-primary"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Back to open roles
-        </Link>
+        <div className="flex items-center justify-between">
+          <Link
+            href="/jobs"
+            className="inline-flex items-center gap-1 text-sm font-medium text-muted hover:text-primary"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Back to open roles
+          </Link>
+          <DeleteJobButton jobId={job.id} jobTitle={job.title} />
+        </div>
       </div>
 
       <PageHeader
@@ -73,6 +80,8 @@ export default async function JobDetailPage({
             </p>
           </div>
         </div>
+
+        <SignupLinkCard signupToken={job.signupToken} interviewMode={job.interviewMode} />
 
         {canManageTeam && (
           <Card className="mb-8 border-primary/15 shadow-md shadow-primary/5">

@@ -5,32 +5,6 @@ export interface Signal {
   evidence: string;
 }
 
-export interface PauseEvent {
-  startSec: number;
-  endSec: number;
-  durationSec: number;
-  label: string;
-}
-
-export interface ToneShift {
-  atSec: number;
-  fromLevel: string;
-  toLevel: string;
-  evidence: string;
-}
-
-export interface AudioSignalResult {
-  pauseCount: number;
-  pauseDensityScore: number;
-  energyVariabilityScore: number;
-  longestPauseSec: number;
-  source: string;
-  pauses: PauseEvent[];
-  toneShifts: ToneShift[];
-  signals: Signal[];
-  explanation?: string | null;
-}
-
 export interface InterviewerQualityResult {
   coverageScore: number;
   probingScore: number;
@@ -100,19 +74,5 @@ export interface LiveAssistResult {
   mismatchAlerts: MismatchAlert[];
   inconsistencyFlags: InconsistencyFlag[];
   suggestions: LiveAssistSuggestion[];
-  explanation?: string | null;
-}
-
-export interface VideoBehavioralResult {
-  engagementScore: number;
-  attentionScore: number;
-  faceVisiblePercent: number;
-  sampleCount: number;
-  durationSec: number;
-  source: "webcam_live" | "recording_playback" | "motion_fallback";
-  consentGiven: boolean;
-  consentAt: string;
-  ethicalNotice: string;
-  signals: Signal[];
   explanation?: string | null;
 }

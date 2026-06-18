@@ -1,10 +1,15 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, status as http_status
+from pydantic import BaseModel
 
 from app.core.dependencies import CurrentUser, DB
 from app.features.applications import service
 from app.features.applications.schemas import LiveAssistRequest
 
 router = APIRouter(prefix="/api/applications", tags=["applications"])
+
+
+class UpdateStageRequest(BaseModel):
+    stage: str
 
 
 @router.get("")
@@ -17,9 +22,14 @@ async def get_application(application_id: str, auth: CurrentUser, db: DB):
     return await service.get_application(application_id, auth.organization_id, db)
 
 
-@router.post("/{application_id}/talent")
+@router.post("/{application_id}/talent", status_code=http_status.HTTP_202_ACCEPTED)
 async def run_talent(application_id: str, auth: CurrentUser, db: DB):
     return await service.run_talent(application_id, auth.organization_id, db)
+
+
+@router.patch("/{application_id}/status")
+async def update_status(application_id: str, body: UpdateStageRequest, auth: CurrentUser, db: DB):
+    return await service.update_application_stage(application_id, auth.organization_id, body.stage, db)
 
 
 @router.post("/{application_id}/live-assist")

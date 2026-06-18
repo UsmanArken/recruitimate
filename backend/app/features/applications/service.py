@@ -1,12 +1,10 @@
-import dataclasses
-
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.shared.models import (
-    Candidate, Decision, Interview, InterviewAnalysis, Job, JobApplication, TalentProfile
+    Candidate, Decision, Interview, InterviewAnalysis, Job, JobApplication, PipelineStage, TalentProfile
 )
 
 
@@ -20,6 +18,7 @@ def _serialize_application(app: JobApplication) -> dict:
             "id": app.candidate.id,
             "name": app.candidate.name,
             "email": app.candidate.email,
+            "source": "portal" if app.candidate.passwordHash else "manual",
         } if app.candidate else None,
         "job": {"id": app.job.id, "title": app.job.title} if app.job else None,
         "talentProfile": _serialize_talent(app.talent_profile) if app.talent_profile else None,
@@ -31,10 +30,14 @@ def _serialize_application(app: JobApplication) -> dict:
 
 
 def _serialize_talent(tp: TalentProfile) -> dict:
-    return dataclasses.asdict(tp) if dataclasses.is_dataclass(tp) else {
+    return {
         "id": tp.id,
         "roleFitScore": tp.roleFitScore,
         "skills": tp.skills,
+        "matchedSkills": tp.matchedSkills,
+        "missingSkills": tp.missingSkills,
+        "extraSkills": tp.extraSkills,
+        "experienceYears": tp.experienceYears,
         "strengths": tp.strengths,
         "gaps": tp.gaps,
         "hiddenSignals": tp.hiddenSignals,
@@ -58,6 +61,8 @@ def _serialize_interview(i: Interview) -> dict:
         "title": i.title,
         "status": i.status,
         "scheduledAt": i.scheduledAt,
+        "meetingUrl": i.meetingUrl,
+        "transcript": i.transcript,
         "analysis": _serialize_analysis(i.analysis) if i.analysis else None,
     }
 
@@ -68,7 +73,12 @@ def _serialize_analysis(a: InterviewAnalysis) -> dict:
         "confidenceScore": a.confidenceScore,
         "clarityScore": a.clarityScore,
         "consistencyScore": a.consistencyScore,
+        "engagementScore": a.engagementScore,
+        "cognitiveSignals": a.cognitiveSignals,
+        "behavioralMetrics": a.behavioralMetrics,
         "riskFlags": a.riskFlags,
+        "interviewerQuality": a.interviewerQuality,
+        "explanation": getattr(a, "explanation", None),
     }
 
 
@@ -105,10 +115,18 @@ async def list_applications(org_id: str, db: AsyncSession) -> list:
     return [{
         "id": a.id,
         "stage": a.stage,
-        "candidate": {"id": a.candidate.id, "name": a.candidate.name} if a.candidate else None,
+        "candidate": {
+            "id": a.candidate.id,
+            "name": a.candidate.name,
+            "email": a.candidate.email,
+            "source": "portal" if a.candidate.passwordHash else "manual",
+        } if a.candidate else None,
         "job": {"id": a.job.id, "title": a.job.title} if a.job else None,
         "talentProfile": {"roleFitScore": a.talent_profile.roleFitScore} if a.talent_profile else None,
-        "decision": {"recommendation": a.decision.recommendation} if a.decision else None,
+        "decision": {
+            "hireConfidence": a.decision.hireConfidence,
+            "recommendation": a.decision.recommendation,
+        } if a.decision else None,
     } for a in apps]
 
 
@@ -118,7 +136,7 @@ async def get_application(app_id: str, org_id: str, db: AsyncSession) -> dict:
 
 
 async def run_talent(app_id: str, org_id: str, db: AsyncSession) -> dict:
-    from app.features.intelligence.engines import run_talent_intelligence
+    from app.workers.tasks import score_application
 
     app = await _load_application(app_id, org_id, db)
     if not app.candidate or not app.candidate.resumeText:
@@ -126,33 +144,31 @@ async def run_talent(app_id: str, org_id: str, db: AsyncSession) -> dict:
     if not app.job:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Job not found")
 
-    result = await run_talent_intelligence(
-        app.candidate.resumeText,
-        app.job.requirements or app.job.description or "",
+    score_application.delay(app_id)
+    return {"status": "queued"}
+
+
+async def update_application_stage(app_id: str, org_id: str, stage: str, db: AsyncSession) -> dict:
+    valid_stages = {s.value for s in PipelineStage}
+    if stage not in valid_stages:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid stage. Must be one of: {', '.join(sorted(valid_stages))}",
+        )
+    result = await db.execute(
+        select(JobApplication).where(
+            JobApplication.id == app_id,
+            JobApplication.organizationId == org_id,
+        )
     )
-
-    if app.talent_profile:
-        tp = app.talent_profile
-    else:
-        tp = TalentProfile(applicationId=app.id)
-        db.add(tp)
-
-    tp.skills = result.skills
-    tp.experienceYears = result.experienceYears
-    tp.roleFitScore = result.roleFitScore
-    tp.strengths = result.strengths
-    tp.gaps = result.gaps
-    tp.hiddenSignals = result.hiddenSignals
-    tp.explanation = result.explanation
-    await db.flush()
-
-    # Advance stage
-    from app.shared.models import PipelineStage
-    if app.stage == PipelineStage.NEW:
-        app.stage = PipelineStage.TALENT_REVIEW
-        await db.flush()
-
-    return {"roleFitScore": tp.roleFitScore, "explanation": tp.explanation}
+    app = result.scalar_one_or_none()
+    if not app:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Application not found")
+    new_stage = PipelineStage(stage)
+    app.stage = new_stage
+    app_id = app.id
+    await db.commit()
+    return {"id": app_id, "stage": new_stage}
 
 
 async def run_live_assist(app_id: str, org_id: str, current_question: str, current_answer: str | None, db: AsyncSession) -> dict:

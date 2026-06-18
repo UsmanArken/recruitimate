@@ -17,6 +17,7 @@ def _serialize_candidate(c: Candidate) -> dict:
         "githubUrl": c.githubUrl,
         "portfolioUrl": c.portfolioUrl,
         "resumeText": c.resumeText,
+        "source": "portal" if c.passwordHash else "manual",
         "createdAt": c.createdAt,
         "updatedAt": c.updatedAt,
     }
@@ -39,6 +40,11 @@ def _serialize_application(app: JobApplication) -> dict:
 def _serialize_talent(tp: TalentProfile) -> dict:
     return {
         "roleFitScore": tp.roleFitScore,
+        "experienceYears": tp.experienceYears,
+        "skills": tp.skills,
+        "matchedSkills": tp.matchedSkills,
+        "missingSkills": tp.missingSkills,
+        "extraSkills": tp.extraSkills,
         "strengths": tp.strengths,
         "gaps": tp.gaps,
         "hiddenSignals": tp.hiddenSignals,
@@ -62,25 +68,76 @@ async def list_candidates(org_id: str, db: AsyncSession) -> list:
 
 
 async def create_candidate(org_id: str, data: dict, db: AsyncSession) -> dict:
+    from app.workers.tasks import score_application
+
     job_id = data.pop("jobId", None)
-    candidate = Candidate(organizationId=org_id, **data)
-    db.add(candidate)
-    await db.flush()
+    email = data.get("email")
+
+    # Dedup by (organizationId, email) — reuse existing candidate if found
+    candidate: Candidate | None = None
+    if email:
+        existing_result = await db.execute(
+            select(Candidate).where(
+                Candidate.organizationId == org_id,
+                Candidate.email == email.lower(),
+            )
+        )
+        candidate = existing_result.scalar_one_or_none()
+
+    if candidate is None:
+        if email:
+            data["email"] = email.lower()
+        candidate = Candidate(organizationId=org_id, **data)
+        db.add(candidate)
+        await db.flush()
+
     out = _serialize_candidate(candidate)
+    app_id_to_score: str | None = None
+
     if job_id:
         job = await db.get(Job, job_id)
         if job and job.organizationId == org_id:
-            app = JobApplication(
-                organizationId=org_id,
-                candidateId=candidate.id,
-                jobId=job_id,
-                stage=PipelineStage.NEW,
+            # Check if already applied to this job
+            dup_result = await db.execute(
+                select(JobApplication).where(
+                    JobApplication.candidateId == candidate.id,
+                    JobApplication.jobId == job_id,
+                )
             )
-            db.add(app)
-            await db.flush()
-            out["applicationId"] = app.id
-            out["applications"] = [{"id": app.id, "jobId": job_id}]
+            existing_app = dup_result.scalar_one_or_none()
+            if existing_app is None:
+                app = JobApplication(
+                    organizationId=org_id,
+                    candidateId=candidate.id,
+                    jobId=job_id,
+                    stage=PipelineStage.NEW,
+                )
+                db.add(app)
+                await db.flush()
+                out["applicationId"] = app.id
+                out["applications"] = [{"id": app.id, "jobId": job_id}]
+                if candidate.resumeText:
+                    app_id_to_score = app.id
+            else:
+                out["applicationId"] = existing_app.id
+                out["applications"] = [{"id": existing_app.id, "jobId": job_id}]
+
+    # Commit before enqueuing — Celery worker must find the row in the DB
+    await db.commit()
+    if app_id_to_score:
+        score_application.delay(app_id_to_score)
     return out
+
+
+async def delete_candidate(candidate_id: str, org_id: str, db: AsyncSession) -> None:
+    result = await db.execute(
+        select(Candidate).where(Candidate.id == candidate_id, Candidate.organizationId == org_id)
+    )
+    candidate = result.scalar_one_or_none()
+    if not candidate:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Candidate not found")
+    await db.delete(candidate)
+    await db.commit()
 
 
 async def get_candidate(candidate_id: str, org_id: str, db: AsyncSession) -> dict:
@@ -155,8 +212,20 @@ async def create_application(candidate_id: str, org_id: str, job_id: str, db: As
     )
     db.add(app)
     await db.flush()
-    await db.refresh(app, ["job"])
-    return _serialize_application(app)
+    await db.commit()
+
+    # Re-query with relationships loaded so serialize doesn't hit lazy loads
+    result2 = await db.execute(
+        select(JobApplication)
+        .where(JobApplication.id == app.id)
+        .options(
+            selectinload(JobApplication.job),
+            selectinload(JobApplication.talent_profile),
+            selectinload(JobApplication.decision),
+        )
+    )
+    loaded_app = result2.scalar_one()
+    return _serialize_application(loaded_app)
 
 
 async def list_notes(candidate_id: str, org_id: str, db: AsyncSession) -> list:
@@ -214,3 +283,5 @@ async def delete_note(note_id: str, candidate_id: str, org_id: str, db: AsyncSes
     if not note:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")
     db.delete(note)
+
+

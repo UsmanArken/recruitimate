@@ -2,7 +2,7 @@ import json
 import logging
 from typing import Any, TypeVar
 
-from app.core.config import LLMProvider, TranscriptionProvider, get_settings
+from app.core.config import LLMProvider, get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -66,50 +66,40 @@ async def _anthropic_chat_json(system: str, user: str, fallback: T, settings) ->
 
 
 async def _google_chat_json(system: str, user: str, fallback: T, settings) -> T:
-    import google.generativeai as genai
+    from google import genai
+    from google.genai import types
 
-    genai.configure(api_key=settings.GOOGLE_API_KEY)
-    model = genai.GenerativeModel(
-        settings.GOOGLE_CHAT_MODEL,
-        system_instruction=system + "\n\nRespond with valid JSON only.",
-        generation_config={"response_mime_type": "application/json"},
+    client = genai.Client(api_key=settings.GOOGLE_API_KEY)
+    response = await client.aio.models.generate_content(
+        model=settings.GOOGLE_CHAT_MODEL,
+        contents=user,
+        config=types.GenerateContentConfig(
+            system_instruction=system + "\n\nRespond with valid JSON only.",
+            response_mime_type="application/json",
+        ),
     )
-    response = await model.generate_content_async(user)
     return _parse_json(response.text or "", fallback)
 
 
 def _parse_json(text: str, fallback: T) -> T:
     text = text.strip()
-    # Strip markdown code fences if present
+    # Strip markdown code fences
     if text.startswith("```"):
         lines = text.split("\n")
         text = "\n".join(lines[1:-1]) if len(lines) > 2 else text
+        text = text.strip()
     try:
         return json.loads(text)
     except json.JSONDecodeError:
-        logger.warning("Failed to parse LLM JSON response")
+        # Thinking models sometimes emit preamble before the JSON object
+        brace = text.find("{")
+        if brace > 0:
+            try:
+                return json.loads(text[brace:])
+            except json.JSONDecodeError:
+                pass
+        logger.warning("Failed to parse LLM JSON response: %.200s", text)
         return fallback
-
-
-async def transcribe_audio(data: bytes, filename: str, mime_type: str) -> str:
-    settings = get_settings()
-    if settings.TRANSCRIPTION_PROVIDER != TranscriptionProvider.openai or not settings.OPENAI_API_KEY:
-        from fastapi import HTTPException, status
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Transcription requires OPENAI_API_KEY and TRANSCRIPTION_PROVIDER=openai",
-        )
-
-    from openai import AsyncOpenAI
-    import io
-
-    client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-    file_tuple = (filename, io.BytesIO(data), mime_type)
-    response = await client.audio.transcriptions.create(
-        model="whisper-1",
-        file=file_tuple,
-    )
-    return response.text
 
 
 def get_provider_status() -> dict[str, Any]:
@@ -120,5 +110,4 @@ def get_provider_status() -> dict[str, Any]:
         "openaiModel": settings.OPENAI_CHAT_MODEL if settings.OPENAI_API_KEY else None,
         "anthropicModel": settings.ANTHROPIC_CHAT_MODEL if settings.ANTHROPIC_API_KEY else None,
         "googleModel": settings.GOOGLE_CHAT_MODEL if settings.GOOGLE_API_KEY else None,
-        "transcriptionProvider": settings.TRANSCRIPTION_PROVIDER,
     }

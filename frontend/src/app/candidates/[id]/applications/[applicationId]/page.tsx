@@ -4,7 +4,6 @@ import { serverFetch } from "@/lib/api-server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LayerBadge } from "@/components/features/intelligence/layer-badge";
 import { ScoreBadge } from "@/components/features/intelligence/score-badge";
-import { SignalList } from "@/components/features/intelligence/signal-list";
 import { IntelligencePhasePanel } from "@/components/features/candidates/intelligence-phase-panel";
 import { ApplicationDetailTabs } from "@/components/features/candidates/application-detail-tabs";
 import { StageBadge } from "@/components/features/candidates/stage-badge";
@@ -14,15 +13,8 @@ import {
   InterviewerQualityPanel,
   parseInterviewerQuality,
 } from "@/components/features/interview/interviewer-quality-panel";
-import {
-  AudioSignalsPanel,
-  parseAudioSignals,
-} from "@/components/features/interview/audio-signals-panel";
-import {
-  VideoBehavioralPanel,
-  parseVideoBehavioralMetrics,
-} from "@/components/features/interview/video-behavioral-panel";
 import { ReanalyzeButton } from "@/components/features/candidates/reanalyze-button";
+import { TalentPoller } from "@/components/features/candidates/talent-poller";
 import { PageBody } from "@/components/layout/page-header";
 import { Briefcase, ChevronLeft, Mail, Mic2 } from "lucide-react";
 
@@ -52,6 +44,9 @@ export default async function ApplicationDetailPage({
       roleFitScore: number | null;
       experienceYears: number | null;
       skills: string[] | null;
+      matchedSkills: string[] | null;
+      missingSkills: string[] | null;
+      extraSkills: string[] | null;
       strengths: string[] | null;
       gaps: string[] | null;
       hiddenSignals: string[] | null;
@@ -69,10 +64,7 @@ export default async function ApplicationDetailPage({
       status: string;
       scheduledAt: string | null;
       meetingUrl: string | null;
-      recordingPath: string | null;
       transcript: string | null;
-      audioSignals: unknown;
-      videoBehavioralMetrics: unknown;
       analysis: {
         hesitationScore: number | null;
         confidenceScore: number | null;
@@ -104,8 +96,6 @@ export default async function ApplicationDetailPage({
   const behavioralMetrics = (ia?.behavioralMetrics ?? []) as string[];
   const interviewRisks = (ia?.riskFlags ?? []) as string[];
   const interviewerQuality = parseInterviewerQuality(ia?.interviewerQuality);
-  const audioSignals = parseAudioSignals(latestInterview?.audioSignals);
-  const videoBehavioral = parseVideoBehavioralMetrics(latestInterview?.videoBehavioralMetrics);
 
   const talentCard = (
     <section>
@@ -119,28 +109,39 @@ export default async function ApplicationDetailPage({
           <CardDescription>Pre-interview signals vs {application.job?.title}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <TalentPoller active={!tp} />
           <div className="grid grid-cols-2 gap-3">
             <ScoreBadge label="Role fit" score={tp?.roleFitScore} />
             <div className="rounded-lg border border-border-subtle bg-card p-4 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted">Experience</p>
               <p className="mt-1 text-2xl font-bold tabular-nums">
-                {tp?.experienceYears != null ? `${tp.experienceYears} years` : "—"}
+                {tp?.experienceYears != null ? `${tp.experienceYears} yrs` : "—"}
               </p>
             </div>
           </div>
-          {tp?.skills && (
-            <div>
-              <p className="mb-2 text-sm font-semibold">Matched skills</p>
-              <div className="flex flex-wrap gap-1.5">
-                {tp.skills.map((s) => (
-                  <span
-                    key={s}
-                    className="rounded-md bg-talent-bg px-2.5 py-1 text-xs font-medium text-talent"
-                  >
-                    {s}
-                  </span>
-                ))}
-              </div>
+          {tp && (
+            <div className="space-y-3">
+              <SkillSection
+                label="Matched skills"
+                skills={tp.matchedSkills ?? []}
+                chipClass="bg-success-bg text-success"
+                labelClass="text-success"
+                emptyLabel="No required skills matched"
+              />
+              <SkillSection
+                label="Missing skills"
+                skills={tp.missingSkills ?? []}
+                chipClass="bg-risk/10 text-risk"
+                labelClass="text-risk"
+                emptyLabel="No missing skills — all requirements met"
+              />
+              <SkillSection
+                label="Extra skills"
+                skills={tp.extraSkills ?? []}
+                chipClass="bg-talent-bg text-talent"
+                labelClass="text-muted"
+                emptyLabel="No extra skills noted"
+              />
             </div>
           )}
           {(tp?.strengths ?? []).length > 0 && (
@@ -166,7 +167,11 @@ export default async function ApplicationDetailPage({
           {hiddenSignals.length > 0 && (
             <div>
               <p className="mb-2 text-sm font-semibold">Additional signals</p>
-              <SignalList signals={hiddenSignals} />
+              <ul className="space-y-1 text-sm text-foreground/90">
+                {hiddenSignals.map((s) => (
+                  <li key={s}>· {s}</li>
+                ))}
+              </ul>
             </div>
           )}
           {tp?.explanation && (
@@ -200,24 +205,28 @@ export default async function ApplicationDetailPage({
           {cognitiveSignals.length > 0 && (
             <div>
               <p className="mb-2 text-sm font-semibold">Cognitive signals</p>
-              <SignalList signals={cognitiveSignals} />
+              <ul className="space-y-1 text-sm text-foreground/90">
+                {cognitiveSignals.map((s) => <li key={s}>· {s}</li>)}
+              </ul>
             </div>
           )}
           {behavioralMetrics.length > 0 && (
             <div>
               <p className="mb-2 text-sm font-semibold">Behavioral observations</p>
-              <SignalList signals={behavioralMetrics} />
+              <ul className="space-y-1 text-sm text-foreground/90">
+                {behavioralMetrics.map((s) => <li key={s}>· {s}</li>)}
+              </ul>
             </div>
           )}
           {interviewRisks.length > 0 && (
             <div>
               <p className="mb-2 text-sm font-semibold text-warning">Follow-up suggested</p>
-              <SignalList signals={interviewRisks} />
+              <ul className="space-y-1 text-sm text-foreground/90">
+                {interviewRisks.map((s) => <li key={s}>· {s}</li>)}
+              </ul>
             </div>
           )}
           {interviewerQuality && <InterviewerQualityPanel quality={interviewerQuality} />}
-          {audioSignals && <AudioSignalsPanel audio={audioSignals} />}
-          {videoBehavioral && <VideoBehavioralPanel metrics={videoBehavioral} />}
         </CardContent>
       </Card>
     </section>
@@ -229,8 +238,7 @@ export default async function ApplicationDetailPage({
           Interview workspace
         </CardTitle>
         <CardDescription>
-          Use live assist during the call, then paste or transcribe a transcript to unlock hire
-          confidence.
+          Use live assist during the call, then paste a transcript to unlock hire confidence.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -244,10 +252,7 @@ export default async function ApplicationDetailPage({
             status: i.status,
             scheduledAt: i.scheduledAt,
             meetingUrl: i.meetingUrl,
-            recordingPath: i.recordingPath,
             transcript: i.transcript,
-            audioSignals: parseAudioSignals(i.audioSignals),
-            videoBehavioralMetrics: parseVideoBehavioralMetrics(i.videoBehavioralMetrics),
           }))}
         />
       </CardContent>
@@ -264,7 +269,9 @@ export default async function ApplicationDetailPage({
               <CardDescription>Topics for your hiring committee</CardDescription>
             </CardHeader>
             <CardContent>
-              <SignalList signals={riskFactors} />
+              <ul className="space-y-1 text-sm text-foreground/90">
+                {riskFactors.map((s) => <li key={s}>· {s}</li>)}
+              </ul>
             </CardContent>
           </Card>
         )}
@@ -349,5 +356,36 @@ export default async function ApplicationDetailPage({
         />
       </PageBody>
     </>
+  );
+}
+
+function SkillSection({
+  label,
+  skills,
+  chipClass,
+  labelClass,
+  emptyLabel,
+}: {
+  label: string;
+  skills: string[];
+  chipClass: string;
+  labelClass: string;
+  emptyLabel: string;
+}) {
+  return (
+    <div>
+      <p className={`mb-2 text-sm font-semibold ${labelClass}`}>{label}</p>
+      {skills.length > 0 ? (
+        <div className="flex flex-wrap gap-1.5">
+          {skills.map((s) => (
+            <span key={s} className={`rounded-md px-2.5 py-1 text-xs font-medium ${chipClass}`}>
+              {s}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-muted">{emptyLabel}</p>
+      )}
+    </div>
   );
 }
