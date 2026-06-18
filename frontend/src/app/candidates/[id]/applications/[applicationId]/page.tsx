@@ -4,7 +4,6 @@ import { serverFetch } from "@/lib/api-server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LayerBadge } from "@/components/features/intelligence/layer-badge";
 import { ScoreBadge } from "@/components/features/intelligence/score-badge";
-import { SignalList } from "@/components/features/intelligence/signal-list";
 import { IntelligencePhasePanel } from "@/components/features/candidates/intelligence-phase-panel";
 import { ApplicationDetailTabs } from "@/components/features/candidates/application-detail-tabs";
 import { StageBadge } from "@/components/features/candidates/stage-badge";
@@ -118,40 +117,29 @@ export default async function ApplicationDetailPage({
               </p>
             </div>
           </div>
-          {(tp?.matchedSkills ?? []).length > 0 && (
-            <div>
-              <p className="mb-2 text-sm font-semibold text-success">Matched skills</p>
-              <div className="flex flex-wrap gap-1.5">
-                {(tp!.matchedSkills!).map((s) => (
-                  <span key={s} className="rounded-md bg-success-bg px-2.5 py-1 text-xs font-medium text-success">
-                    {s}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-          {(tp?.missingSkills ?? []).length > 0 && (
-            <div>
-              <p className="mb-2 text-sm font-semibold text-risk">Missing skills</p>
-              <div className="flex flex-wrap gap-1.5">
-                {(tp!.missingSkills!).map((s) => (
-                  <span key={s} className="rounded-md bg-risk/10 px-2.5 py-1 text-xs font-medium text-risk">
-                    {s}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-          {(tp?.extraSkills ?? []).length > 0 && (
-            <div>
-              <p className="mb-2 text-sm font-semibold text-muted">Extra skills</p>
-              <div className="flex flex-wrap gap-1.5">
-                {(tp!.extraSkills!).map((s) => (
-                  <span key={s} className="rounded-md bg-talent-bg px-2.5 py-1 text-xs font-medium text-talent">
-                    {s}
-                  </span>
-                ))}
-              </div>
+          {tp && (
+            <div className="space-y-3">
+              <SkillSection
+                label="Matched skills"
+                skills={tp.matchedSkills ?? []}
+                chipClass="bg-success-bg text-success"
+                labelClass="text-success"
+                emptyLabel="No required skills matched"
+              />
+              <SkillSection
+                label="Missing skills"
+                skills={tp.missingSkills ?? []}
+                chipClass="bg-risk/10 text-risk"
+                labelClass="text-risk"
+                emptyLabel="No missing skills — all requirements met"
+              />
+              <SkillSection
+                label="Extra skills"
+                skills={tp.extraSkills ?? []}
+                chipClass="bg-talent-bg text-talent"
+                labelClass="text-muted"
+                emptyLabel="No extra skills noted"
+              />
             </div>
           )}
           {(tp?.strengths ?? []).length > 0 && (
@@ -177,7 +165,11 @@ export default async function ApplicationDetailPage({
           {hiddenSignals.length > 0 && (
             <div>
               <p className="mb-2 text-sm font-semibold">Additional signals</p>
-              <SignalList signals={hiddenSignals} />
+              <ul className="space-y-1 text-sm text-foreground/90">
+                {hiddenSignals.map((s) => (
+                  <li key={s}>· {s}</li>
+                ))}
+              </ul>
             </div>
           )}
           {tp?.explanation && (
@@ -211,19 +203,25 @@ export default async function ApplicationDetailPage({
           {cognitiveSignals.length > 0 && (
             <div>
               <p className="mb-2 text-sm font-semibold">Cognitive signals</p>
-              <SignalList signals={cognitiveSignals} />
+              <ul className="space-y-1 text-sm text-foreground/90">
+                {cognitiveSignals.map((s) => <li key={s}>· {s}</li>)}
+              </ul>
             </div>
           )}
           {behavioralMetrics.length > 0 && (
             <div>
               <p className="mb-2 text-sm font-semibold">Behavioral observations</p>
-              <SignalList signals={behavioralMetrics} />
+              <ul className="space-y-1 text-sm text-foreground/90">
+                {behavioralMetrics.map((s) => <li key={s}>· {s}</li>)}
+              </ul>
             </div>
           )}
           {interviewRisks.length > 0 && (
             <div>
               <p className="mb-2 text-sm font-semibold text-warning">Follow-up suggested</p>
-              <SignalList signals={interviewRisks} />
+              <ul className="space-y-1 text-sm text-foreground/90">
+                {interviewRisks.map((s) => <li key={s}>· {s}</li>)}
+              </ul>
             </div>
           )}
           {interviewerQuality && <InterviewerQualityPanel quality={interviewerQuality} />}
@@ -269,7 +267,9 @@ export default async function ApplicationDetailPage({
               <CardDescription>Topics for your hiring committee</CardDescription>
             </CardHeader>
             <CardContent>
-              <SignalList signals={riskFactors} />
+              <ul className="space-y-1 text-sm text-foreground/90">
+                {riskFactors.map((s) => <li key={s}>· {s}</li>)}
+              </ul>
             </CardContent>
           </Card>
         )}
@@ -354,5 +354,36 @@ export default async function ApplicationDetailPage({
         />
       </PageBody>
     </>
+  );
+}
+
+function SkillSection({
+  label,
+  skills,
+  chipClass,
+  labelClass,
+  emptyLabel,
+}: {
+  label: string;
+  skills: string[];
+  chipClass: string;
+  labelClass: string;
+  emptyLabel: string;
+}) {
+  return (
+    <div>
+      <p className={`mb-2 text-sm font-semibold ${labelClass}`}>{label}</p>
+      {skills.length > 0 ? (
+        <div className="flex flex-wrap gap-1.5">
+          {skills.map((s) => (
+            <span key={s} className={`rounded-md px-2.5 py-1 text-xs font-medium ${chipClass}`}>
+              {s}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-muted">{emptyLabel}</p>
+      )}
+    </div>
   );
 }
