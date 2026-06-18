@@ -57,6 +57,9 @@ else:
                 )
                 if existing:
                     existing.skills = result.skills
+                    existing.matchedSkills = result.matchedSkills
+                    existing.missingSkills = result.missingSkills
+                    existing.extraSkills = result.extraSkills
                     existing.experienceYears = result.experienceYears
                     existing.roleFitScore = result.roleFitScore
                     existing.strengths = result.strengths
@@ -68,6 +71,9 @@ else:
                     profile = TalentProfile(
                         applicationId=application.id,
                         skills=result.skills,
+                        matchedSkills=result.matchedSkills,
+                        missingSkills=result.missingSkills,
+                        extraSkills=result.extraSkills,
                         experienceYears=result.experienceYears,
                         roleFitScore=result.roleFitScore,
                         strengths=result.strengths,
@@ -127,6 +133,9 @@ else:
                 )
                 if existing:
                     existing.skills = result.skills
+                    existing.matchedSkills = result.matchedSkills
+                    existing.missingSkills = result.missingSkills
+                    existing.extraSkills = result.extraSkills
                     existing.experienceYears = result.experienceYears
                     existing.roleFitScore = result.roleFitScore
                     existing.strengths = result.strengths
@@ -138,6 +147,9 @@ else:
                     profile = TalentProfile(
                         applicationId=application_id,
                         skills=result.skills,
+                        matchedSkills=result.matchedSkills,
+                        missingSkills=result.missingSkills,
+                        extraSkills=result.extraSkills,
                         experienceYears=result.experienceYears,
                         roleFitScore=result.roleFitScore,
                         strengths=result.strengths,

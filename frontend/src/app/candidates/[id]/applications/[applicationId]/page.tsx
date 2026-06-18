@@ -14,14 +14,6 @@ import {
   InterviewerQualityPanel,
   parseInterviewerQuality,
 } from "@/components/features/interview/interviewer-quality-panel";
-import {
-  AudioSignalsPanel,
-  parseAudioSignals,
-} from "@/components/features/interview/audio-signals-panel";
-import {
-  VideoBehavioralPanel,
-  parseVideoBehavioralMetrics,
-} from "@/components/features/interview/video-behavioral-panel";
 import { ReanalyzeButton } from "@/components/features/candidates/reanalyze-button";
 import { PageBody } from "@/components/layout/page-header";
 import { Briefcase, ChevronLeft, Mail, Mic2 } from "lucide-react";
@@ -52,6 +44,9 @@ export default async function ApplicationDetailPage({
       roleFitScore: number | null;
       experienceYears: number | null;
       skills: string[] | null;
+      matchedSkills: string[] | null;
+      missingSkills: string[] | null;
+      extraSkills: string[] | null;
       strengths: string[] | null;
       gaps: string[] | null;
       hiddenSignals: string[] | null;
@@ -69,10 +64,7 @@ export default async function ApplicationDetailPage({
       status: string;
       scheduledAt: string | null;
       meetingUrl: string | null;
-      recordingPath: string | null;
       transcript: string | null;
-      audioSignals: unknown;
-      videoBehavioralMetrics: unknown;
       analysis: {
         hesitationScore: number | null;
         confidenceScore: number | null;
@@ -104,8 +96,6 @@ export default async function ApplicationDetailPage({
   const behavioralMetrics = (ia?.behavioralMetrics ?? []) as string[];
   const interviewRisks = (ia?.riskFlags ?? []) as string[];
   const interviewerQuality = parseInterviewerQuality(ia?.interviewerQuality);
-  const audioSignals = parseAudioSignals(latestInterview?.audioSignals);
-  const videoBehavioral = parseVideoBehavioralMetrics(latestInterview?.videoBehavioralMetrics);
 
   const talentCard = (
     <section>
@@ -124,19 +114,40 @@ export default async function ApplicationDetailPage({
             <div className="rounded-lg border border-border-subtle bg-card p-4 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted">Experience</p>
               <p className="mt-1 text-2xl font-bold tabular-nums">
-                {tp?.experienceYears != null ? `${tp.experienceYears} years` : "—"}
+                {tp?.experienceYears != null ? `${tp.experienceYears} yrs` : "—"}
               </p>
             </div>
           </div>
-          {tp?.skills && (
+          {(tp?.matchedSkills ?? []).length > 0 && (
             <div>
-              <p className="mb-2 text-sm font-semibold">Matched skills</p>
+              <p className="mb-2 text-sm font-semibold text-success">Matched skills</p>
               <div className="flex flex-wrap gap-1.5">
-                {tp.skills.map((s) => (
-                  <span
-                    key={s}
-                    className="rounded-md bg-talent-bg px-2.5 py-1 text-xs font-medium text-talent"
-                  >
+                {(tp!.matchedSkills!).map((s) => (
+                  <span key={s} className="rounded-md bg-success-bg px-2.5 py-1 text-xs font-medium text-success">
+                    {s}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {(tp?.missingSkills ?? []).length > 0 && (
+            <div>
+              <p className="mb-2 text-sm font-semibold text-risk">Missing skills</p>
+              <div className="flex flex-wrap gap-1.5">
+                {(tp!.missingSkills!).map((s) => (
+                  <span key={s} className="rounded-md bg-risk/10 px-2.5 py-1 text-xs font-medium text-risk">
+                    {s}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {(tp?.extraSkills ?? []).length > 0 && (
+            <div>
+              <p className="mb-2 text-sm font-semibold text-muted">Extra skills</p>
+              <div className="flex flex-wrap gap-1.5">
+                {(tp!.extraSkills!).map((s) => (
+                  <span key={s} className="rounded-md bg-talent-bg px-2.5 py-1 text-xs font-medium text-talent">
                     {s}
                   </span>
                 ))}
@@ -216,8 +227,6 @@ export default async function ApplicationDetailPage({
             </div>
           )}
           {interviewerQuality && <InterviewerQualityPanel quality={interviewerQuality} />}
-          {audioSignals && <AudioSignalsPanel audio={audioSignals} />}
-          {videoBehavioral && <VideoBehavioralPanel metrics={videoBehavioral} />}
         </CardContent>
       </Card>
     </section>
@@ -229,8 +238,7 @@ export default async function ApplicationDetailPage({
           Interview workspace
         </CardTitle>
         <CardDescription>
-          Use live assist during the call, then paste or transcribe a transcript to unlock hire
-          confidence.
+          Use live assist during the call, then paste a transcript to unlock hire confidence.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -244,10 +252,7 @@ export default async function ApplicationDetailPage({
             status: i.status,
             scheduledAt: i.scheduledAt,
             meetingUrl: i.meetingUrl,
-            recordingPath: i.recordingPath,
             transcript: i.transcript,
-            audioSignals: parseAudioSignals(i.audioSignals),
-            videoBehavioralMetrics: parseVideoBehavioralMetrics(i.videoBehavioralMetrics),
           }))}
         />
       </CardContent>
