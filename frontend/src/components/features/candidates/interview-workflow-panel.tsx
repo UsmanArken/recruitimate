@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2, Calendar, Mic, FileAudio, Sparkles, Upload, Download } from "lucide-react";
+import { Loader2, Calendar, Mic, Sparkles, Download } from "lucide-react";
 import {
   ScheduleDateTimeField,
   defaultScheduleDateTime,
@@ -12,11 +12,6 @@ import {
 } from "@/components/features/candidates/schedule-datetime-field";
 import { LiveInterviewAssistPanel } from "@/components/features/candidates/live-interview-assist-panel";
 import { InterviewQuestionBankPanel } from "@/components/features/jobs/interview-question-bank-panel";
-import {
-  AudioSignalsPanel,
-  parseAudioSignals,
-} from "@/components/features/interview/audio-signals-panel";
-import type { AudioSignalResult } from "@/lib/intelligence/types";
 import { apiFetch, ApiError } from "@/lib/api-fetch";
 
 export type InterviewRow = {
@@ -25,9 +20,7 @@ export type InterviewRow = {
   status: string;
   scheduledAt: string | null;
   meetingUrl: string | null;
-  recordingPath: string | null;
   transcript: string | null;
-  audioSignals?: AudioSignalResult | null;
 };
 
 export function InterviewWorkflowPanel({
@@ -50,9 +43,6 @@ export function InterviewWorkflowPanel({
   const [scheduleWhen, setScheduleWhen] = useState<ScheduleDateTimeValue>(defaultScheduleDateTime);
   const [meetingUrl, setMeetingUrl] = useState("");
   const [transcript, setTranscript] = useState("");
-  const [audioSignals, setAudioSignals] = useState<AudioSignalResult | null>(
-    interviews[0]?.audioSignals ?? null
-  );
 
   async function scheduleInterview() {
     const scheduledAt = scheduleDateTimeToIso(scheduleWhen);
@@ -68,7 +58,6 @@ export function InterviewWorkflowPanel({
         {
           method: "POST",
           body: JSON.stringify({
-            action: "schedule",
             title: scheduleTitle,
             scheduledAt,
             meetingUrl: meetingUrl || undefined,
@@ -85,77 +74,13 @@ export function InterviewWorkflowPanel({
     }
   }
 
-  async function uploadRecording(file: File) {
-    if (!activeId) {
-      setError("Schedule an interview first, or refresh the page.");
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    const form = new FormData();
-    form.set("recording", file);
-    try {
-      await apiFetch(
-        `/api/applications/${applicationId}/interviews/${activeId}/recording`,
-        { method: "POST", body: form }
-      );
-      setLoading(false);
-      router.refresh();
-    } catch (e) {
-      setLoading(false);
-      setError(e instanceof ApiError ? e.message : "Upload failed");
-    }
-  }
-
-  async function transcribe() {
-    if (!activeId) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await apiFetch<{ transcript?: string; audioSignals?: unknown }>(
-        `/api/applications/${applicationId}/interviews/${activeId}/transcribe`,
-        { method: "POST" }
-      );
-      setLoading(false);
-      if (data.transcript) setTranscript(data.transcript);
-      if (data.audioSignals) setAudioSignals(parseAudioSignals(data.audioSignals));
-      router.refresh();
-    } catch (e) {
-      setLoading(false);
-      setError(e instanceof ApiError ? e.message : "Transcription failed");
-    }
-  }
-
-  async function extractAudio() {
-    if (!activeId) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await apiFetch<{ audioSignals?: unknown }>(
-        `/api/applications/${applicationId}/interviews/${activeId}/audio-signals`,
-        { method: "POST" }
-      );
-      setLoading(false);
-      if (data.audioSignals) setAudioSignals(parseAudioSignals(data.audioSignals));
-      router.refresh();
-    } catch (e) {
-      setLoading(false);
-      setError(e instanceof ApiError ? e.message : "Audio extraction failed");
-    }
-  }
-
   async function analyze(transcriptText: string) {
+    if (!activeId) return;
     setLoading(true);
     setError(null);
     try {
-      await apiFetch(`/api/applications/${applicationId}/interviews`, {
+      await apiFetch(`/api/applications/${applicationId}/interviews/${activeId}/analyze`, {
         method: "POST",
-        body: JSON.stringify({
-          action: "analyze",
-          title: scheduleTitle,
-          transcript: transcriptText,
-          interviewId: activeId || undefined,
-        }),
       });
       setLoading(false);
       router.refresh();
@@ -166,7 +91,6 @@ export function InterviewWorkflowPanel({
   }
 
   const active = interviews.find((i) => i.id === activeId);
-  const activeAudio = audioSignals ?? parseAudioSignals(active?.audioSignals);
 
   return (
     <div className="space-y-6">
@@ -263,58 +187,6 @@ export function InterviewWorkflowPanel({
           <span className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-xs font-bold text-primary">
             2
           </span>
-          <FileAudio className="h-4 w-4 text-primary" />
-          Upload recording
-        </h3>
-        <p className="mb-3 text-xs leading-relaxed text-muted">
-          Upload an audio or video file — we&apos;ll transcribe it with Whisper.
-        </p>
-        <label
-          className={`file-input-hr ${loading || !activeId ? "pointer-events-none opacity-60" : ""}`}
-        >
-          <Upload className="h-4 w-4 shrink-0 text-primary" />
-          <span className="text-sm font-medium">Choose recording file</span>
-          <input
-            type="file"
-            accept="audio/*,video/*,.mp3,.wav,.m4a,.webm,.mp4"
-            disabled={loading || !activeId}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) void uploadRecording(file);
-            }}
-          />
-        </label>
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <Button type="button" variant="secondary" disabled={loading || !activeId} onClick={transcribe}>
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Transcribe with Whisper"}
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            disabled={loading || !active?.recordingPath}
-            onClick={extractAudio}
-          >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Extract audio signals"}
-          </Button>
-          {active?.transcript && (
-            <span className="rounded-md bg-success-bg px-2.5 py-1 text-xs font-medium text-success">
-              Transcript ready · {active.transcript.length.toLocaleString()} chars
-            </span>
-          )}
-        </div>
-        {activeAudio && (
-          <div className="mt-4">
-            <AudioSignalsPanel audio={activeAudio} />
-          </div>
-        )}
-
-      </section>
-
-      <section className="section-card">
-        <h3 className="section-card__title mb-4">
-          <span className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-xs font-bold text-primary">
-            3
-          </span>
           <Mic className="h-4 w-4 text-primary" />
           Analyze interview signals
         </h3>
@@ -322,7 +194,7 @@ export function InterviewWorkflowPanel({
           className="input-hr min-h-[140px] text-sm leading-relaxed"
           value={transcript}
           onChange={(e) => setTranscript(e.target.value)}
-          placeholder="Paste transcript or transcribe from recording above…"
+          placeholder="Paste transcript here to analyze…"
         />
         <Button
           type="button"

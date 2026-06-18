@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -33,11 +31,7 @@ def _serialize(i: Interview) -> dict:
         "scheduledAt": i.scheduledAt,
         "durationMinutes": i.durationMinutes,
         "meetingUrl": i.meetingUrl,
-        "recordingPath": i.recordingPath,
         "transcript": i.transcript,
-        "audioSignals": i.audioSignals,
-        "videoMetricsConsentAt": i.videoMetricsConsentAt,
-        "videoBehavioralMetrics": i.videoBehavioralMetrics,
         "createdAt": i.createdAt,
     }
 
@@ -66,8 +60,9 @@ async def create_interview(app_id: str, org_id: str, data: dict, db: AsyncSessio
 
 async def analyze_interview(interview_id: str, app_id: str, org_id: str, db: AsyncSession) -> dict:
     from app.features.intelligence.engines import (
-        extract_audio_signals, run_inconsistency_check,
-        run_interview_intelligence, run_interviewer_quality,
+        run_inconsistency_check,
+        run_interview_intelligence,
+        run_interviewer_quality,
     )
     from app.shared.models import TalentProfile
 
@@ -142,48 +137,6 @@ async def analyze_interview(interview_id: str, app_id: str, org_id: str, db: Asy
     }
 
 
-async def transcribe_interview(interview_id: str, app_id: str, org_id: str, db: AsyncSession) -> dict:
-    from app.features.intelligence.llm_runtime import transcribe_audio
-    from app.shared.storage import read_interview_recording
-
-    interview = await _load_interview(interview_id, app_id, org_id, db)
-    if not interview.recordingPath:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No recording uploaded")
-
-    data = read_interview_recording(interview.recordingPath)
-    filename = interview.recordingPath.split("/")[-1]
-    transcript = await transcribe_audio(data, filename, "audio/webm")
-
-    interview.transcript = transcript
-    interview.status = InterviewStatus.TRANSCRIBED
-    await db.flush()
-    return {"transcript": transcript}
-
-
-async def upload_recording(interview_id: str, app_id: str, org_id: str, data: bytes, filename: str, content_type: str, db: AsyncSession) -> dict:
-    from app.shared.storage import assert_recording_file, save_interview_recording
-
-    assert_recording_file(filename, content_type, len(data))
-    interview = await _load_interview(interview_id, app_id, org_id, db)
-    relative_path = save_interview_recording(interview_id, data, filename)
-    interview.recordingPath = relative_path
-    interview.status = InterviewStatus.RECORDED
-    await db.flush()
-    return {"recordingPath": relative_path}
-
-
-async def get_recording(interview_id: str, app_id: str, org_id: str, db: AsyncSession) -> tuple[bytes, str]:
-    from app.shared.storage import read_interview_recording
-    import mimetypes
-
-    interview = await _load_interview(interview_id, app_id, org_id, db)
-    if not interview.recordingPath:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No recording")
-    data = read_interview_recording(interview.recordingPath)
-    mime = mimetypes.guess_type(interview.recordingPath)[0] or "application/octet-stream"
-    return data, mime
-
-
 async def generate_calendar(interview_id: str, app_id: str, org_id: str, db: AsyncSession) -> bytes:
     interview = await _load_interview(interview_id, app_id, org_id, db)
     if not interview.scheduledAt:
@@ -204,30 +157,3 @@ async def generate_calendar(interview_id: str, app_id: str, org_id: str, db: Asy
         event.add("location", interview.meetingUrl)
     cal.add_component(event)
     return cal.to_ical()
-
-
-async def extract_audio_signals(interview_id: str, app_id: str, org_id: str, db: AsyncSession) -> dict:
-    from app.features.intelligence.engines import extract_audio_signals as _extract
-
-    interview = await _load_interview(interview_id, app_id, org_id, db)
-    if not interview.transcript:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No transcript available")
-    result = await _extract(interview.transcript)
-    interview.audioSignals = {
-        "pauseFrequency": result.pauseFrequency,
-        "toneShifts": result.toneShifts,
-        "hesitationMarkers": result.hesitationMarkers,
-        "summary": result.summary,
-    }
-    await db.flush()
-    return interview.audioSignals
-
-
-async def store_video_metrics(interview_id: str, app_id: str, org_id: str, consent_granted: bool, metrics_data: dict | None, db: AsyncSession) -> dict:
-    interview = await _load_interview(interview_id, app_id, org_id, db)
-    if not consent_granted:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Consent required for video metrics")
-    interview.videoMetricsConsentAt = datetime.utcnow()
-    interview.videoBehavioralMetrics = metrics_data or {}
-    await db.flush()
-    return {"consentAt": interview.videoMetricsConsentAt, "metrics": interview.videoBehavioralMetrics}
