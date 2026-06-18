@@ -29,6 +29,11 @@ async def get_candidate(candidate_id: str, auth: CurrentUser, db: DB):
     return await service.get_candidate(candidate_id, auth.organization_id, db)
 
 
+@router.delete("/{candidate_id}", status_code=204)
+async def delete_candidate(candidate_id: str, auth: CurrentUser, db: DB):
+    await service.delete_candidate(candidate_id, auth.organization_id, db)
+
+
 @router.get("/{candidate_id}/applications")
 async def list_applications(candidate_id: str, auth: CurrentUser, db: DB):
     return await service.list_applications(candidate_id, auth.organization_id, db)

@@ -99,6 +99,17 @@ async def create_candidate(org_id: str, data: dict, db: AsyncSession) -> dict:
     return out
 
 
+async def delete_candidate(candidate_id: str, org_id: str, db: AsyncSession) -> None:
+    result = await db.execute(
+        select(Candidate).where(Candidate.id == candidate_id, Candidate.organizationId == org_id)
+    )
+    candidate = result.scalar_one_or_none()
+    if not candidate:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Candidate not found")
+    await db.delete(candidate)
+    await db.commit()
+
+
 async def get_candidate(candidate_id: str, org_id: str, db: AsyncSession) -> dict:
     result = await db.execute(
         select(Candidate)
