@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, status as http_status
 
 from app.core.dependencies import CurrentUser, DB
 from app.features.applications import service
@@ -17,7 +17,7 @@ async def get_application(application_id: str, auth: CurrentUser, db: DB):
     return await service.get_application(application_id, auth.organization_id, db)
 
 
-@router.post("/{application_id}/talent")
+@router.post("/{application_id}/talent", status_code=http_status.HTTP_202_ACCEPTED)
 async def run_talent(application_id: str, auth: CurrentUser, db: DB):
     return await service.run_talent(application_id, auth.organization_id, db)
 

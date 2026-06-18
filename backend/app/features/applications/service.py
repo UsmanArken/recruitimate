@@ -118,7 +118,7 @@ async def get_application(app_id: str, org_id: str, db: AsyncSession) -> dict:
 
 
 async def run_talent(app_id: str, org_id: str, db: AsyncSession) -> dict:
-    from app.features.intelligence.engines import run_talent_intelligence
+    from app.workers.tasks import score_application
 
     app = await _load_application(app_id, org_id, db)
     if not app.candidate or not app.candidate.resumeText:
@@ -126,33 +126,8 @@ async def run_talent(app_id: str, org_id: str, db: AsyncSession) -> dict:
     if not app.job:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Job not found")
 
-    result = await run_talent_intelligence(
-        app.candidate.resumeText,
-        app.job.requirements or app.job.description or "",
-    )
-
-    if app.talent_profile:
-        tp = app.talent_profile
-    else:
-        tp = TalentProfile(applicationId=app.id)
-        db.add(tp)
-
-    tp.skills = result.skills
-    tp.experienceYears = result.experienceYears
-    tp.roleFitScore = result.roleFitScore
-    tp.strengths = result.strengths
-    tp.gaps = result.gaps
-    tp.hiddenSignals = result.hiddenSignals
-    tp.explanation = result.explanation
-    await db.flush()
-
-    # Advance stage
-    from app.shared.models import PipelineStage
-    if app.stage == PipelineStage.NEW:
-        app.stage = PipelineStage.TALENT_REVIEW
-        await db.flush()
-
-    return {"roleFitScore": tp.roleFitScore, "explanation": tp.explanation}
+    score_application.delay(app_id)
+    return {"status": "queued"}
 
 
 async def run_live_assist(app_id: str, org_id: str, current_question: str, current_answer: str | None, db: AsyncSession) -> dict:
