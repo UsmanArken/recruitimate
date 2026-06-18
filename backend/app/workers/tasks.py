@@ -19,6 +19,7 @@ if celery is None:
             logger.warning("Celery not available — skipping background task: %s", self._name)
 
     score_application = _Stub("score_application")
+    process_interview_audio = _Stub("process_interview_audio")
 
 else:
     @celery.task(bind=True, max_retries=3, default_retry_delay=30)

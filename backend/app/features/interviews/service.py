@@ -91,7 +91,6 @@ async def create_interview(app_id: str, org_id: str, data: dict, db: AsyncSessio
         participant_identity=f"recruiter-{org_id}",
         participant_name="Recruiter",
     )
-    from app.features.livekit.client import build_candidate_join_url as _build_url
     from app.core.config import get_settings
     recruiter_join_url = f"{get_settings().APP_URL}/interview/join?token={recruiter_token}"
 
