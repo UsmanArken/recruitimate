@@ -160,23 +160,39 @@ async def bulk_import_resumes(job_id: str, org_id: str, files: list[tuple[str, b
     from app.shared.models import PipelineStage
     from app.workers.tasks import score_application
 
+    from app.features.intelligence.engines import extract_resume_identity
+
     results = []
     for filename, data in files[:40]:
         try:
             text = extract_text(data, filename)
-            name = filename.rsplit(".", 1)[0]
 
-            # Dedup: same candidate email or name+job already in pipeline
-            existing = await db.execute(
-                select(Candidate).where(
-                    Candidate.organizationId == org_id,
-                    Candidate.name == name,
+            # Extract real name + email from resume text; fall back to filename
+            identity = await extract_resume_identity(text)
+            name = identity.get("name") or filename.rsplit(".", 1)[0]
+            email = identity.get("email") or None
+
+            # Dedup by email first (most reliable), then name
+            existing_candidate = None
+            if email:
+                res = await db.execute(
+                    select(Candidate).where(
+                        Candidate.organizationId == org_id,
+                        Candidate.email == email,
+                    )
                 )
-            )
-            existing_candidate = existing.scalar_one_or_none()
+                existing_candidate = res.scalar_one_or_none()
+
+            if not existing_candidate:
+                res = await db.execute(
+                    select(Candidate).where(
+                        Candidate.organizationId == org_id,
+                        Candidate.name == name,
+                    )
+                )
+                existing_candidate = res.scalar_one_or_none()
 
             if existing_candidate:
-                # Check if already applied to this job
                 dup_app = await db.execute(
                     select(JobApplication).where(
                         JobApplication.candidateId == existing_candidate.id,
@@ -197,7 +213,7 @@ async def bulk_import_resumes(job_id: str, org_id: str, files: list[tuple[str, b
                     })
                     continue
 
-            candidate = Candidate(organizationId=org_id, name=name, resumeText=text)
+            candidate = Candidate(organizationId=org_id, name=name, email=email, resumeText=text)
             db.add(candidate)
             await db.flush()
             app = JobApplication(

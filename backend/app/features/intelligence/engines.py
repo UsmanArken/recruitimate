@@ -203,6 +203,26 @@ async def run_interviewer_quality(transcript: str) -> InterviewerQualityResult:
 
 
 # ---------------------------------------------------------------------------
+# Resume Identity Extraction
+# ---------------------------------------------------------------------------
+
+_IDENTITY_FALLBACK = {"name": None, "email": None}
+
+
+async def extract_resume_identity(resume_text: str) -> dict:
+    """Extract candidate name and email from the top of a resume. Fast, cheap call."""
+    system = (
+        "You are a resume parser. Extract the candidate's full name and email address "
+        "from the resume text. Return JSON with exactly two keys: "
+        "name (string|null) and email (string|null). "
+        "Return null for either field if it cannot be found. Do not infer or guess."
+    )
+    # Only send the first 500 chars — name/email are always near the top
+    user = resume_text[:500]
+    return await chat_json(system, user, _IDENTITY_FALLBACK)
+
+
+# ---------------------------------------------------------------------------
 # Question Bank Engine
 # ---------------------------------------------------------------------------
 
