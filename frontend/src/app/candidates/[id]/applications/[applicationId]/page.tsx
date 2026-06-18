@@ -14,6 +14,7 @@ import {
   parseInterviewerQuality,
 } from "@/components/features/interview/interviewer-quality-panel";
 import { ReanalyzeButton } from "@/components/features/candidates/reanalyze-button";
+import { TalentPoller } from "@/components/features/candidates/talent-poller";
 import { PageBody } from "@/components/layout/page-header";
 import { Briefcase, ChevronLeft, Mail, Mic2 } from "lucide-react";
 
@@ -108,6 +109,7 @@ export default async function ApplicationDetailPage({
           <CardDescription>Pre-interview signals vs {application.job?.title}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <TalentPoller active={!tp} />
           <div className="grid grid-cols-2 gap-3">
             <ScoreBadge label="Role fit" score={tp?.roleFitScore} />
             <div className="rounded-lg border border-border-subtle bg-card p-4 shadow-sm">
