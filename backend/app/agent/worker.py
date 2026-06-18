@@ -1,4 +1,3 @@
-import asyncio
 import logging
 
 from app.core.config import get_settings
@@ -7,7 +6,6 @@ logger = logging.getLogger(__name__)
 
 
 async def entrypoint(ctx: "JobContext"):
-    """Called when the agent is assigned to a LiveKit room."""
     from livekit.agents import AutoSubscribe, JobContext  # noqa: F401
     room_name = ctx.room.name
     logger.info("Agent joining room: %s", room_name)
@@ -15,46 +13,23 @@ async def entrypoint(ctx: "JobContext"):
     await ctx.connect(auto_subscribe=AutoSubscribe.AUDIO_ONLY)
     _update_agent_status(room_name, "joined")
 
-    # Start egress while room is still active — LiveKit stops it automatically when the room closes.
-    egress_id = await _start_egress(room_name)
+    # Register cleanup — called when the room closes
+    async def on_shutdown():
+        logger.info("Room closed: %s — marking finished", room_name)
+        _after_room_end(room_name)
 
-    await ctx.wait_for_disconnect()
-
-    logger.info("Room ended: %s", room_name)
-    if egress_id:
-        await _after_room_end(room_name)
+    ctx.add_shutdown_callback(on_shutdown)
 
 
-async def _start_egress(room_name: str) -> str | None:
-    """Start composite egress while the room is live. Returns egress_id or None on failure."""
-    from app.features.livekit.client import trigger_egress
-
-    audio_key = f"interviews/{room_name}.ogg"
-    try:
-        egress_id = await trigger_egress(room_name, audio_key)
-        logger.info("Egress started: %s for room %s", egress_id, room_name)
-        return egress_id
-    except Exception:
-        logger.exception("Failed to start egress for room %s", room_name)
-        _update_agent_status(room_name, "failed")
-        return None
-
-
-async def _after_room_end(room_name: str) -> None:
-    """After the room closes, enqueue the audio processing task."""
-    from app.core.config import get_settings
-
-    settings = get_settings()
-    audio_key = f"interviews/{room_name}.ogg"
-    audio_url = f"r2://{settings.R2_BUCKET_NAME}/{audio_key}"
-
+def _after_room_end(room_name: str) -> None:
+    """Mark interview finished. Egress/audio analysis added in Phase 2."""
     try:
         interview_id = _get_interview_id_by_room(room_name)
         if interview_id:
             from app.workers.tasks import process_interview_audio
-            process_interview_audio.delay(interview_id, audio_url)
+            # No audio URL yet (egress is a paid LiveKit feature — Phase 2)
+            process_interview_audio.delay(interview_id, "")
             logger.info("Enqueued process_interview_audio for interview %s", interview_id)
-
         _update_agent_status(room_name, "finished")
     except Exception:
         logger.exception("Post-room cleanup failed for %s", room_name)
