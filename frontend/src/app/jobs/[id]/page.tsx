@@ -8,6 +8,7 @@ import { BulkResumeUploadPanel } from "@/components/features/jobs/bulk-resume-up
 import { JobPipelineTable } from "@/components/features/jobs/job-pipeline-table";
 import { InterviewQuestionBankPanel } from "@/components/features/jobs/interview-question-bank-panel";
 import { SignupLinkCard } from "@/components/features/jobs/signup-link-card";
+import { DeleteJobButton } from "@/components/features/jobs/delete-job-button";
 import { ChevronLeft, Users } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -49,13 +50,16 @@ export default async function JobDetailPage({
   return (
     <>
       <div className="border-b border-border bg-card/90 px-8 py-4 backdrop-blur-sm">
-        <Link
-          href="/jobs"
-          className="mb-3 inline-flex items-center gap-1 text-sm font-medium text-muted hover:text-primary"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Back to open roles
-        </Link>
+        <div className="flex items-center justify-between">
+          <Link
+            href="/jobs"
+            className="inline-flex items-center gap-1 text-sm font-medium text-muted hover:text-primary"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Back to open roles
+          </Link>
+          <DeleteJobButton jobId={job.id} jobTitle={job.title} />
+        </div>
       </div>
 
       <PageHeader

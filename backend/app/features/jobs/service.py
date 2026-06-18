@@ -74,11 +74,47 @@ async def update_job(job_id: str, org_id: str, data: dict, db: AsyncSession) -> 
 
 
 async def delete_job(job_id: str, org_id: str, db: AsyncSession) -> None:
+    from sqlalchemy import func
+    from app.shared.models import Candidate, JobApplication
+
     result = await db.execute(select(Job).where(Job.id == job_id, Job.organizationId == org_id))
     job = result.scalar_one_or_none()
     if not job:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
-    db.delete(job)
+
+    # Find all candidate IDs attached to this job
+    apps_result = await db.execute(
+        select(JobApplication.candidateId).where(JobApplication.jobId == job_id)
+    )
+    candidate_ids = [row[0] for row in apps_result.all()]
+
+    # Among those, find candidates who have NO other applications (would become orphans)
+    orphan_ids: list[str] = []
+    for cid in candidate_ids:
+        count = await db.scalar(
+            select(func.count()).where(
+                JobApplication.candidateId == cid,
+                JobApplication.jobId != job_id,
+            )
+        )
+        if count == 0:
+            orphan_ids.append(cid)
+
+    # Delete ALL applications for this job first (removes FK dependency on Job)
+    all_apps = await db.execute(
+        select(JobApplication).where(JobApplication.jobId == job_id)
+    )
+    for app in all_apps.scalars().all():
+        await db.delete(app)
+
+    # Now delete orphan candidates (their only application was to this job)
+    for cid in orphan_ids:
+        candidate = await db.get(Candidate, cid)
+        if candidate:
+            await db.delete(candidate)
+
+    await db.delete(job)
+    await db.commit()
 
 
 async def list_assignments(job_id: str, org_id: str, db: AsyncSession) -> list:
