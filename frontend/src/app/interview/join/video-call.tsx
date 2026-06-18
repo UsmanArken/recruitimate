@@ -12,9 +12,10 @@ interface Props {
   token: string;
   serverUrl: string;
   interviewTitle: string;
+  returnTo: string;
 }
 
-export function VideoCall({ token, serverUrl, interviewTitle }: Props) {
+export function VideoCall({ token, serverUrl, interviewTitle, returnTo }: Props) {
   const router = useRouter();
 
   return (
@@ -29,7 +30,7 @@ export function VideoCall({ token, serverUrl, interviewTitle }: Props) {
           connect={true}
           video={true}
           audio={true}
-          onDisconnected={() => router.back()}
+          onDisconnected={() => router.push(returnTo)}
           data-lk-theme="default"
           style={{ height: "100%" }}
         >

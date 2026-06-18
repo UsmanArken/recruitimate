@@ -116,7 +116,9 @@ export function InterviewWorkflowPanel({
       const data = await apiFetch<{ token: string; joinUrl: string }>(
         `/api/applications/${applicationId}/interviews/${activeId}/token`,
       );
-      window.open(data.joinUrl, "_blank");
+      const url = new URL(data.joinUrl, window.location.origin);
+      url.searchParams.set("returnTo", window.location.pathname);
+      window.open(url.toString(), "_blank");
     } catch (e) {
       setJoinError(e instanceof ApiError ? e.message : "Could not get join token");
     } finally {

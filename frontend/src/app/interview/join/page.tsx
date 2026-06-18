@@ -2,11 +2,11 @@ import { notFound } from "next/navigation";
 import { VideoCall } from "./video-call";
 
 interface Props {
-  searchParams: Promise<{ token?: string; title?: string }>;
+  searchParams: Promise<{ token?: string; title?: string; returnTo?: string }>;
 }
 
 export default async function InterviewJoinPage({ searchParams }: Props) {
-  const { token, title } = await searchParams;
+  const { token, title, returnTo } = await searchParams;
 
   if (!token) {
     notFound();
@@ -19,6 +19,7 @@ export default async function InterviewJoinPage({ searchParams }: Props) {
       token={token}
       serverUrl={serverUrl}
       interviewTitle={title ?? "Interview"}
+      returnTo={returnTo ?? "/"}
     />
   );
 }
