@@ -208,7 +208,8 @@ async def bulk_import_resumes(job_id: str, org_id: str, files: list[tuple[str, b
             # Extract real name + email from resume text; fall back to filename
             identity = await extract_resume_identity(text)
             name = identity.get("name") or filename.rsplit(".", 1)[0]
-            email = identity.get("email") or None
+            raw_email = identity.get("email") or None
+            email = raw_email.lower().strip() if raw_email else None
 
             # Dedup by email first (most reliable), then name
             existing_candidate = None
@@ -255,7 +256,12 @@ async def bulk_import_resumes(job_id: str, org_id: str, files: list[tuple[str, b
                     existing_candidate.resumeText = text
                 candidate = existing_candidate
             else:
-                candidate = Candidate(organizationId=org_id, name=name, email=email, resumeText=text)
+                candidate = Candidate(
+                    organizationId=org_id,
+                    name=name,
+                    email=email,  # already lowercased above
+                    resumeText=text,
+                )
                 db.add(candidate)
                 await db.flush()
 
