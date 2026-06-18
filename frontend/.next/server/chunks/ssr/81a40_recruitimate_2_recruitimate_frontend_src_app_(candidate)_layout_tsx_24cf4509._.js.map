@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/safee/Desktop/WORk/ARKENS%20WORK/recruitimate_2/recruitimate/frontend/src/app/%28candidate%29/layout.tsx"],"sourcesContent":["export default function CandidateGroupLayout({ children }: { children: React.ReactNode }) {\n  return <>{children}</>;\n}\n"],"names":[],"mappings":";;;;;;AAAe,SAAS,qBAAqB,EAAE,QAAQ,EAAiC;IACtF,qBAAO;kBAAG;;AACZ","debugId":null}}]
-}
