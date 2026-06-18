@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const RECRUITER_PUBLIC_PATHS = ["/login", "/signup", "/invite", "/auth/signout"];
+const RECRUITER_PUBLIC_PATHS = ["/login", "/signup", "/invite", "/auth/signout", "/interview"];
 const CANDIDATE_PUBLIC_PATHS = ["/apply", "/candidate/login"];
 const TOKEN_KEY = "recruitimate_token";
 const CANDIDATE_TOKEN_KEY = "candidate_token";

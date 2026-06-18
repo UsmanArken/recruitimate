@@ -56,6 +56,8 @@ class PipelineStage(str, enum.Enum):
 
 class InterviewStatus(str, enum.Enum):
     SCHEDULED = "SCHEDULED"
+    IN_PROGRESS = "IN_PROGRESS"
+    COMPLETED = "COMPLETED"
     ANALYZED = "ANALYZED"
 
 
@@ -298,6 +300,10 @@ class Interview(Base):
     durationMinutes: Mapped[int] = mapped_column(Integer, default=60)
     meetingUrl: Mapped[str | None] = mapped_column(String)
     transcript: Mapped[str | None] = mapped_column(Text)
+    livekitRoomName: Mapped[str | None] = mapped_column(String)
+    candidateJoinUrl: Mapped[str | None] = mapped_column(String)
+    audioUrl: Mapped[str | None] = mapped_column(String)
+    agentStatus: Mapped[str] = mapped_column(String, default="pending")
     createdAt: Mapped[datetime] = mapped_column(DateTime, default=_now)
     updatedAt: Mapped[datetime] = mapped_column(DateTime, default=_now, onupdate=_now)
 

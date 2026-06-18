@@ -10,8 +10,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@livekit/components-react": "^2.9.21",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "livekit-client": "^2.19.2",
     "lucide-react": "^0.511.0",
     "next": "^15.3.3",
     "react": "^19.1.0",

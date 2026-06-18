@@ -1,0 +1,19 @@
+{
+  "/(candidate)/apply/[token]/page": "app/(candidate)/apply/[token]/page.js",
+  "/(candidate)/candidate/dashboard/page": "app/(candidate)/candidate/dashboard/page.js",
+  "/(candidate)/candidate/login/page": "app/(candidate)/candidate/login/page.js",
+  "/admin/page": "app/admin/page.js",
+  "/auth/signout/route": "app/auth/signout/route.js",
+  "/candidates/[id]/applications/[applicationId]/page": "app/candidates/[id]/applications/[applicationId]/page.js",
+  "/candidates/[id]/page": "app/candidates/[id]/page.js",
+  "/candidates/new/page": "app/candidates/new/page.js",
+  "/candidates/page": "app/candidates/page.js",
+  "/icon.svg/route": "app/icon.svg/route.js",
+  "/jobs/[id]/page": "app/jobs/[id]/page.js",
+  "/jobs/new/page": "app/jobs/new/page.js",
+  "/jobs/page": "app/jobs/page.js",
+  "/login/page": "app/login/page.js",
+  "/page": "app/page.js",
+  "/settings/team/page": "app/settings/team/page.js",
+  "/signup/page": "app/signup/page.js"
+}

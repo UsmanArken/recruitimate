@@ -96,3 +96,14 @@ else:
             except Exception as exc:
                 db.rollback()
                 raise self.retry(exc=exc)
+
+    @celery.task(name="process_interview_audio")
+    def process_interview_audio(interview_id: str, audio_url: str) -> None:
+        """Phase 2 fills this with full audio analysis. Stub: store audio URL and mark finished."""
+        Session = get_sync_session_factory()
+        with Session() as db:
+            interview = db.get(Interview, interview_id)
+            if interview:
+                interview.audioUrl = audio_url
+                interview.agentStatus = "finished"
+                db.commit()

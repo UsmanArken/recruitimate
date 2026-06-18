@@ -20,6 +20,18 @@ async def create_interview(application_id: str, body: CreateInterviewRequest, au
     return await service.create_interview(application_id, auth.organization_id, body.model_dump(exclude_none=True), db)
 
 
+@router.get("/{interview_id}/token")
+async def get_token(application_id: str, interview_id: str, auth: CurrentUser, db: DB):
+    return await service.get_interview_token(
+        interview_id=interview_id,
+        app_id=application_id,
+        org_id=auth.organization_id,
+        user_identity=f"recruiter-{auth.user_id}",
+        user_name="Recruiter",
+        db=db,
+    )
+
+
 @router.post("/{interview_id}/analyze")
 async def analyze(application_id: str, interview_id: str, auth: CurrentUser, db: DB):
     return await service.analyze_interview(interview_id, application_id, auth.organization_id, db)

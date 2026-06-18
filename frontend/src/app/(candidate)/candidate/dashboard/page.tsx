@@ -56,14 +56,14 @@ export default async function CandidateDashboardPage() {
                                 {iv.scheduledAt && (
                                   <span>— {new Date(iv.scheduledAt).toLocaleString()}</span>
                                 )}
-                                {iv.meetingUrl && (
+                                {(iv.candidateJoinUrl || iv.meetingUrl) && (
                                   <a
-                                    href={iv.meetingUrl}
-                                    target="_blank"
+                                    href={iv.candidateJoinUrl ?? iv.meetingUrl ?? "#"}
+                                    target={iv.candidateJoinUrl ? "_self" : "_blank"}
                                     rel="noopener noreferrer"
-                                    className="ml-1 text-primary underline"
+                                    className="ml-1 inline-flex items-center gap-1 rounded bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
                                   >
-                                    Join
+                                    Join Interview
                                   </a>
                                 )}
                               </li>

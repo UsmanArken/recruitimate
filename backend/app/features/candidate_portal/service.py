@@ -43,6 +43,7 @@ def _serialize_application_for_me(app: JobApplication) -> dict:
                 "status": i.status,
                 "scheduledAt": i.scheduledAt,
                 "meetingUrl": i.meetingUrl,
+                "candidateJoinUrl": i.candidateJoinUrl,
             }
             for i in (app.interviews or [])
         ],

@@ -41,6 +41,21 @@ class Settings(BaseSettings):
     # Celery / Redis
     REDIS_URL: str = "redis://localhost:6379/0"
 
+    # LiveKit
+    LIVEKIT_URL: str = "wss://your-project.livekit.cloud"
+    LIVEKIT_API_KEY: str = ""
+    LIVEKIT_API_SECRET: str = ""
+
+    # Cloudflare R2 (S3-compatible audio storage)
+    R2_ACCOUNT_ID: str = ""
+    R2_ACCESS_KEY_ID: str = ""
+    R2_SECRET_ACCESS_KEY: str = ""
+    R2_BUCKET_NAME: str = "recruitimate-audio"
+    R2_ENDPOINT_URL: str = ""  # https://<account_id>.r2.cloudflarestorage.com
+
+    # Frontend URL (used for building join links)
+    APP_URL: str = "http://localhost:3000"
+
     # Platform admin
     SUPER_ADMIN_EMAIL: str = "admin@recruitimate.local"
     SUPER_ADMIN_PASSWORD: str = ""

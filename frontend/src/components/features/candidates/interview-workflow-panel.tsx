@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2, Calendar, Mic, Sparkles, Download } from "lucide-react";
+import { Loader2, Calendar, Mic, Sparkles, Download, Video, Copy, Check } from "lucide-react";
 import {
   ScheduleDateTimeField,
   defaultScheduleDateTime,
@@ -21,6 +21,9 @@ export type InterviewRow = {
   scheduledAt: string | null;
   meetingUrl: string | null;
   transcript: string | null;
+  livekitRoomName: string | null;
+  candidateJoinUrl: string | null;
+  agentStatus: string | null;
 };
 
 export function InterviewWorkflowPanel({
@@ -41,8 +44,9 @@ export function InterviewWorkflowPanel({
 
   const [scheduleTitle, setScheduleTitle] = useState("Technical interview");
   const [scheduleWhen, setScheduleWhen] = useState<ScheduleDateTimeValue>(defaultScheduleDateTime);
-  const [meetingUrl, setMeetingUrl] = useState("");
   const [transcript, setTranscript] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [joiningInterview, setJoiningInterview] = useState(false);
 
   async function scheduleInterview() {
     const scheduledAt = scheduleDateTimeToIso(scheduleWhen);
@@ -60,7 +64,6 @@ export function InterviewWorkflowPanel({
           body: JSON.stringify({
             title: scheduleTitle,
             scheduledAt,
-            meetingUrl: meetingUrl || undefined,
           }),
         }
       );
@@ -72,6 +75,28 @@ export function InterviewWorkflowPanel({
       setLoading(false);
       setError(e instanceof ApiError ? e.message : "Could not schedule interview");
     }
+  }
+
+  async function joinInterview() {
+    if (!activeId) return;
+    setJoiningInterview(true);
+    try {
+      const data = await apiFetch<{ token: string; joinUrl: string }>(
+        `/api/applications/${applicationId}/interviews/${activeId}/token`
+      );
+      window.open(data.joinUrl, "_blank");
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Could not get join token");
+    } finally {
+      setJoiningInterview(false);
+    }
+  }
+
+  async function copyCandidateLink() {
+    if (!active?.candidateJoinUrl) return;
+    await navigator.clipboard.writeText(active.candidateJoinUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   async function analyze(transcriptText: string) {
@@ -127,18 +152,6 @@ export function InterviewWorkflowPanel({
               <ScheduleDateTimeField value={scheduleWhen} onChange={setScheduleWhen} />
             </div>
           </div>
-          <label className="block sm:col-span-2">
-            <span className="text-xs font-semibold uppercase tracking-wide text-muted">
-              Meeting link
-              <span className="ml-1 font-normal normal-case text-muted-foreground">(optional)</span>
-            </span>
-            <input
-              className="input-hr mt-1.5"
-              value={meetingUrl}
-              onChange={(e) => setMeetingUrl(e.target.value)}
-              placeholder="https://meet.google.com/…"
-            />
-          </label>
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
           <Button type="button" disabled={loading} onClick={scheduleInterview}>
@@ -161,6 +174,45 @@ export function InterviewWorkflowPanel({
             </a>
           )}
         </div>
+
+        {active?.livekitRoomName && (
+          <div className="mt-4 space-y-3 rounded-lg border border-border bg-muted/30 p-4">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                disabled={joiningInterview}
+                onClick={joinInterview}
+                className="gap-2"
+              >
+                {joiningInterview ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Video className="h-4 w-4" />
+                )}
+                Join Interview
+              </Button>
+            </div>
+            {active.candidateJoinUrl && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground shrink-0">Candidate link:</span>
+                <code className="min-w-0 flex-1 truncate rounded bg-background px-2 py-1 text-xs border border-border">
+                  {active.candidateJoinUrl}
+                </code>
+                <button
+                  type="button"
+                  onClick={copyCandidateLink}
+                  className="shrink-0 rounded p-1 text-muted-foreground hover:text-foreground transition"
+                  title="Copy candidate join link"
+                >
+                  {copied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
+                </button>
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Agent status: <span className="font-medium capitalize">{active.agentStatus ?? "pending"}</span>
+            </p>
+          </div>
+        )}
       </section>
 
       {interviews.length > 0 && (

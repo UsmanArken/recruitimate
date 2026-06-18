@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,6 +34,10 @@ def _serialize(i: Interview) -> dict:
         "durationMinutes": i.durationMinutes,
         "meetingUrl": i.meetingUrl,
         "transcript": i.transcript,
+        "livekitRoomName": i.livekitRoomName,
+        "candidateJoinUrl": i.candidateJoinUrl,
+        "audioUrl": i.audioUrl,
+        "agentStatus": i.agentStatus,
         "createdAt": i.createdAt,
     }
 
@@ -47,15 +53,71 @@ async def list_interviews(app_id: str, org_id: str, db: AsyncSession) -> list:
 
 
 async def create_interview(app_id: str, org_id: str, data: dict, db: AsyncSession) -> dict:
+    from app.features.livekit.client import create_room, generate_token, build_candidate_join_url
+
     result = await db.execute(
-        select(JobApplication).where(JobApplication.id == app_id, JobApplication.organizationId == org_id)
+        select(JobApplication)
+        .where(JobApplication.id == app_id, JobApplication.organizationId == org_id)
+        .options(selectinload(JobApplication.candidate))
     )
-    if not result.scalar_one_or_none():
+    app = result.scalar_one_or_none()
+    if not app:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Application not found")
-    interview = Interview(applicationId=app_id, **data)
+
+    room_name = f"interview-{uuid.uuid4().hex[:12]}"
+    await create_room(room_name)
+
+    candidate_name = app.candidate.name if app.candidate else "Candidate"
+    candidate_token = generate_token(
+        room_name=room_name,
+        participant_identity=f"candidate-{app.candidateId}",
+        participant_name=candidate_name,
+    )
+    candidate_join_url = build_candidate_join_url(candidate_token)
+
+    interview = Interview(
+        applicationId=app_id,
+        livekitRoomName=room_name,
+        candidateJoinUrl=candidate_join_url,
+        agentStatus="pending",
+        **data,
+    )
     db.add(interview)
     await db.flush()
-    return _serialize(interview)
+
+    # Generate recruiter token (not stored — use /token endpoint for fresh tokens)
+    recruiter_token = generate_token(
+        room_name=room_name,
+        participant_identity=f"recruiter-{org_id}",
+        participant_name="Recruiter",
+    )
+    from app.features.livekit.client import build_candidate_join_url as _build_url
+    from app.core.config import get_settings
+    recruiter_join_url = f"{get_settings().APP_URL}/interview/join?token={recruiter_token}"
+
+    serialized = _serialize(interview)
+    serialized["recruiterJoinUrl"] = recruiter_join_url
+    return serialized
+
+
+async def get_interview_token(
+    interview_id: str, app_id: str, org_id: str, user_identity: str, user_name: str, db: AsyncSession
+) -> dict:
+    from app.features.livekit.client import generate_token
+    from app.core.config import get_settings
+
+    interview = await _load_interview(interview_id, app_id, org_id, db)
+    if not interview.livekitRoomName:
+        raise HTTPException(status_code=400, detail="Interview has no LiveKit room")
+
+    token = generate_token(
+        room_name=interview.livekitRoomName,
+        participant_identity=user_identity,
+        participant_name=user_name,
+    )
+    settings = get_settings()
+    join_url = f"{settings.APP_URL}/interview/join?token={token}"
+    return {"token": token, "joinUrl": join_url, "roomName": interview.livekitRoomName}
 
 
 async def analyze_interview(interview_id: str, app_id: str, org_id: str, db: AsyncSession) -> dict:

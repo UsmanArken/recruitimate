@@ -65,6 +65,9 @@ export default async function ApplicationDetailPage({
       scheduledAt: string | null;
       meetingUrl: string | null;
       transcript: string | null;
+      livekitRoomName: string | null;
+      candidateJoinUrl: string | null;
+      agentStatus: string | null;
       analysis: {
         hesitationScore: number | null;
         confidenceScore: number | null;
@@ -253,6 +256,9 @@ export default async function ApplicationDetailPage({
             scheduledAt: i.scheduledAt,
             meetingUrl: i.meetingUrl,
             transcript: i.transcript,
+            livekitRoomName: i.livekitRoomName,
+            candidateJoinUrl: i.candidateJoinUrl,
+            agentStatus: i.agentStatus,
           }))}
         />
       </CardContent>

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 3, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"","debugId":null}},
+    {"offset": {"line": 55, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/safee/Desktop/WORk/ARKENS%20WORK/recruitimate_2/recruitimate/frontend/src/app/auth/signout/route.ts"],"sourcesContent":["import { NextResponse } from \"next/server\";\n\nexport function GET() {\n  const response = NextResponse.redirect(\n    new URL(\"/login\", process.env.NEXT_PUBLIC_APP_URL ?? \"http://localhost:3000\")\n  );\n  response.cookies.delete(\"recruitimate_token\");\n  return response;\n}\n"],"names":[],"mappings":";;;;AAAA;;AAEO,SAAS;IACd,MAAM,WAAW,iOAAY,CAAC,QAAQ,CACpC,IAAI,IAAI,UAAU,6DAAmC;IAEvD,SAAS,OAAO,CAAC,MAAM,CAAC;IACxB,OAAO;AACT","debugId":null}}]
+}

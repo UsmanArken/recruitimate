@@ -45,6 +45,7 @@ export interface CandidateApplication {
     scheduledAt: string | null;
     status: string;
     meetingUrl: string | null;
+    candidateJoinUrl: string | null;
   }>;
 }
 
