@@ -61,6 +61,8 @@ def _serialize_interview(i: Interview) -> dict:
         "title": i.title,
         "status": i.status,
         "scheduledAt": i.scheduledAt,
+        "meetingUrl": i.meetingUrl,
+        "transcript": i.transcript,
         "analysis": _serialize_analysis(i.analysis) if i.analysis else None,
     }
 
@@ -71,7 +73,12 @@ def _serialize_analysis(a: InterviewAnalysis) -> dict:
         "confidenceScore": a.confidenceScore,
         "clarityScore": a.clarityScore,
         "consistencyScore": a.consistencyScore,
+        "engagementScore": a.engagementScore,
+        "cognitiveSignals": a.cognitiveSignals,
+        "behavioralMetrics": a.behavioralMetrics,
         "riskFlags": a.riskFlags,
+        "interviewerQuality": a.interviewerQuality,
+        "explanation": getattr(a, "explanation", None),
     }
 
 
@@ -108,10 +115,18 @@ async def list_applications(org_id: str, db: AsyncSession) -> list:
     return [{
         "id": a.id,
         "stage": a.stage,
-        "candidate": {"id": a.candidate.id, "name": a.candidate.name} if a.candidate else None,
+        "candidate": {
+            "id": a.candidate.id,
+            "name": a.candidate.name,
+            "email": a.candidate.email,
+            "source": "portal" if a.candidate.passwordHash else "manual",
+        } if a.candidate else None,
         "job": {"id": a.job.id, "title": a.job.title} if a.job else None,
         "talentProfile": {"roleFitScore": a.talent_profile.roleFitScore} if a.talent_profile else None,
-        "decision": {"recommendation": a.decision.recommendation} if a.decision else None,
+        "decision": {
+            "hireConfidence": a.decision.hireConfidence,
+            "recommendation": a.decision.recommendation,
+        } if a.decision else None,
     } for a in apps]
 
 

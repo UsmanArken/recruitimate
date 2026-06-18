@@ -246,9 +246,13 @@ async def update_candidate_me(candidate_id: str, body: UpdateCandidateMeRequest,
     if body.linkedInUrl is not None:
         candidate.linkedInUrl = body.linkedInUrl
     candidate.updatedAt = datetime.utcnow()
+    # Cache before commit — SQLAlchemy expires attributes after commit
+    candidate_id = candidate.id
+    candidate_name = candidate.name
+    candidate_email = candidate.email
     await db.commit()
 
-    return {"id": candidate.id, "name": candidate.name, "email": candidate.email}
+    return {"id": candidate_id, "name": candidate_name, "email": candidate_email}
 
 
 async def reupload_resume(candidate_id: str, file: UploadFile, db: AsyncSession) -> dict:
@@ -280,11 +284,13 @@ async def reupload_resume(candidate_id: str, file: UploadFile, db: AsyncSession)
         .order_by(JobApplication.createdAt.desc())
     )
     most_recent_app = apps_result.scalars().first()
+    # Cache before commit — SQLAlchemy expires attributes after commit
+    most_recent_app_id = most_recent_app.id if most_recent_app else None
 
     await db.commit()
 
-    if most_recent_app:
+    if most_recent_app_id:
         from app.workers.tasks import score_application
-        score_application.delay(most_recent_app.id)
+        score_application.delay(most_recent_app_id)
 
     return {"status": "reanalysis_queued"}
