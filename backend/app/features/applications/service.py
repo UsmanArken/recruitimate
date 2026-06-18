@@ -63,6 +63,9 @@ def _serialize_interview(i: Interview) -> dict:
         "scheduledAt": i.scheduledAt,
         "meetingUrl": i.meetingUrl,
         "transcript": i.transcript,
+        "livekitRoomName": i.livekitRoomName,
+        "candidateJoinUrl": i.candidateJoinUrl,
+        "agentStatus": i.agentStatus,
         "analysis": _serialize_analysis(i.analysis) if i.analysis else None,
     }
 
