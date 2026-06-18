@@ -4,6 +4,7 @@ from app.features.candidate_portal import service
 from app.features.candidate_portal.schemas import (
     CandidateLoginRequest,
     CandidateSignupRequest,
+    CheckEmailRequest,
     UpdateCandidateMeRequest,
 )
 
@@ -30,6 +31,11 @@ def _set_candidate_cookie(response: Response, token: str) -> None:
 @router.get("/api/apply/{token}")
 async def get_apply_info(token: str, db: DB):
     return await service.get_apply_info(token, db)
+
+
+@router.post("/api/apply/{token}/check-email")
+async def check_email(token: str, body: CheckEmailRequest, db: DB):
+    return await service.check_email(token, body.email, db)
 
 
 @router.post("/api/apply/{token}/signup", status_code=201)

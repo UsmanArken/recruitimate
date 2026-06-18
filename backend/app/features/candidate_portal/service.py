@@ -88,6 +88,36 @@ async def get_apply_info(token: str, db: AsyncSession) -> dict:
     }
 
 
+async def check_email(token: str, email: str, db: AsyncSession) -> dict:
+    result = await db.execute(select(Job).where(Job.signupToken == token))
+    job = result.scalar_one_or_none()
+    if not job:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invalid signup link")
+
+    existing_result = await db.execute(
+        select(Candidate).where(
+            Candidate.organizationId == job.organizationId,
+            Candidate.email == email.lower(),
+        )
+    )
+    existing = existing_result.scalar_one_or_none()
+
+    if existing is None:
+        return {"exists": False, "hasResume": False, "name": None}
+
+    if existing.passwordHash is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="An account with this email already exists — please log in.",
+        )
+
+    return {
+        "exists": True,
+        "hasResume": bool(existing.resumeText),
+        "name": existing.name,
+    }
+
+
 async def candidate_signup(token: str, body: CandidateSignupRequest, db: AsyncSession) -> dict:
     result = await db.execute(select(Job).where(Job.signupToken == token))
     job = result.scalar_one_or_none()
