@@ -149,9 +149,11 @@ async def update_application_stage(app_id: str, org_id: str, stage: str, db: Asy
     app = result.scalar_one_or_none()
     if not app:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Application not found")
-    app.stage = PipelineStage(stage)
+    new_stage = PipelineStage(stage)
+    app.stage = new_stage
+    app_id = app.id
     await db.commit()
-    return {"id": app.id, "stage": app.stage}
+    return {"id": app_id, "stage": new_stage}
 
 
 async def run_live_assist(app_id: str, org_id: str, current_question: str, current_answer: str | None, db: AsyncSession) -> dict:

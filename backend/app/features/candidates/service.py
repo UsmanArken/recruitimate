@@ -212,8 +212,20 @@ async def create_application(candidate_id: str, org_id: str, job_id: str, db: As
     )
     db.add(app)
     await db.flush()
-    await db.refresh(app, ["job"])
-    return _serialize_application(app)
+    await db.commit()
+
+    # Re-query with relationships loaded so serialize doesn't hit lazy loads
+    result2 = await db.execute(
+        select(JobApplication)
+        .where(JobApplication.id == app.id)
+        .options(
+            selectinload(JobApplication.job),
+            selectinload(JobApplication.talent_profile),
+            selectinload(JobApplication.decision),
+        )
+    )
+    loaded_app = result2.scalar_one()
+    return _serialize_application(loaded_app)
 
 
 async def list_notes(candidate_id: str, org_id: str, db: AsyncSession) -> list:

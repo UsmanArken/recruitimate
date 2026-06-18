@@ -74,4 +74,5 @@ async def reupload_resume(file: UploadFile, auth: CurrentCandidate, db: DB):
 @router.get("/api/candidate/me/interviews")
 async def get_my_interviews(auth: CurrentCandidate, db: DB):
     data = await service.get_candidate_me(auth.candidate_id, db)
-    return {"interviews": data["interviews"]}
+    interviews = [iv for app in data["applications"] for iv in app["interviews"]]
+    return {"interviews": interviews}

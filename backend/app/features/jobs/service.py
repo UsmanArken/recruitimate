@@ -250,10 +250,15 @@ async def bulk_import_resumes(job_id: str, org_id: str, files: list[tuple[str, b
                         "message": "Already in pipeline for this role",
                     })
                     continue
+                # Existing candidate, new application for this job — reuse the record
+                if existing_candidate.resumeText is None and text:
+                    existing_candidate.resumeText = text
+                candidate = existing_candidate
+            else:
+                candidate = Candidate(organizationId=org_id, name=name, email=email, resumeText=text)
+                db.add(candidate)
+                await db.flush()
 
-            candidate = Candidate(organizationId=org_id, name=name, email=email, resumeText=text)
-            db.add(candidate)
-            await db.flush()
             app = JobApplication(
                 organizationId=org_id,
                 candidateId=candidate.id,

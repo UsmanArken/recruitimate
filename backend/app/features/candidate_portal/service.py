@@ -157,19 +157,26 @@ async def candidate_signup(token: str, body: CandidateSignupRequest, db: AsyncSe
     else:
         application = existing_app
 
+    # Cache values before commit — SQLAlchemy expires attributes after commit
+    has_resume = bool(candidate.resumeText)
+    app_id = application.id
+    candidate_id = candidate.id
+    candidate_name = candidate.name
+    candidate_email = candidate.email
+
     await db.commit()
 
-    if candidate.resumeText:
+    if has_resume:
         from app.workers.tasks import score_application
-        score_application.delay(application.id)
+        score_application.delay(app_id)
 
-    token_str = _make_candidate_token(candidate)
+    token_str = create_access_token({"sub": candidate_id, "type": "candidate"})
     return {
         "access_token": token_str,
         "candidate": {
-            "id": candidate.id,
-            "name": candidate.name,
-            "email": candidate.email,
+            "id": candidate_id,
+            "name": candidate_name,
+            "email": candidate_email,
         },
     }
 
@@ -181,8 +188,13 @@ async def candidate_login(email: str, password: str, db: AsyncSession) -> dict:
             Candidate.passwordHash.isnot(None),
         )
     )
-    candidate = result.scalar_one_or_none()
-    if not candidate or not verify_password(password, candidate.passwordHash):
+    candidates = result.scalars().all()
+    # Find the one whose password matches (handles same email across multiple orgs)
+    candidate = next(
+        (c for c in candidates if verify_password(password, c.passwordHash)),
+        None,
+    )
+    if not candidate:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
     token_str = _make_candidate_token(candidate)
