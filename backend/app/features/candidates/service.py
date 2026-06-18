@@ -106,6 +106,13 @@ async def delete_candidate(candidate_id: str, org_id: str, db: AsyncSession) -> 
     candidate = result.scalar_one_or_none()
     if not candidate:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Candidate not found")
+    # Delete applications first — SQLAlchemy has no cascade on this relationship so deleting
+    # the candidate directly makes it emit SET candidateId=NULL, which Postgres rejects (NOT NULL).
+    apps = await db.execute(
+        select(JobApplication).where(JobApplication.candidateId == candidate_id)
+    )
+    for app in apps.scalars().all():
+        await db.delete(app)
     await db.delete(candidate)
     await db.commit()
 
