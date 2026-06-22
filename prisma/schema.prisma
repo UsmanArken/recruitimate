@@ -74,6 +74,7 @@ model Organization {
   jobs            Job[]
   candidates      Candidate[]
   jobApplications JobApplication[]
+  talentPools     TalentPool[]
   createdAt DateTime             @default(now())
   updatedAt DateTime             @updatedAt
 }
@@ -205,6 +206,14 @@ model Job {
   @@index([hiringManagerId])
 }
 
+enum CandidateSource {
+  MANUAL
+  RESUME
+  LINKEDIN
+  BULK
+  EXTERNAL
+}
+
 model Candidate {
   id             String           @id @default(cuid())
   organizationId String
@@ -216,14 +225,49 @@ model Candidate {
   portfolioUrl   String?
   resumeText     String?          @db.Text
   resumeFilePath String?
+  /// P2-009 how this profile entered the talent corpus
+  source             CandidateSource @default(MANUAL)
+  /// P2-009 denormalized text for discovery search (no raw files)
+  searchDocument     String?         @db.Text
+  /// P2-009 extracted skill keywords for ranking
+  searchSkills       Json?
+  discoveryIndexedAt DateTime?
   organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   applications   JobApplication[]
   notes          Note[]
+  poolMemberships TalentPoolMember[]
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
   @@index([organizationId])
   @@index([email])
+}
+
+/// P2-009 org-scoped talent pool for multi-source discovery
+model TalentPool {
+  id             String             @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  members        TalentPoolMember[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model TalentPoolMember {
+  id          String     @id @default(cuid())
+  poolId      String
+  candidateId String
+  pool        TalentPool @relation(fields: [poolId], references: [id], onDelete: Cascade)
+  candidate   Candidate  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  addedAt     DateTime   @default(now())
+
+  @@unique([poolId, candidateId])
+  @@index([candidateId])
 }
 
 /// One applicant's journey on a specific open position (hiring campaign).

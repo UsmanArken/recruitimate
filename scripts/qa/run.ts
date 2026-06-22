@@ -54,6 +54,9 @@ async function main() {
       "scripts/qa/interviewer-quality.test.ts",
       "scripts/qa/audio-signal.test.ts",
       "scripts/qa/video-behavioral.test.ts",
+      "scripts/qa/talent-discovery.test.ts",
+      "scripts/qa/talent-search.test.ts",
+      "scripts/qa/talent-suggest.test.ts",
     ])
   );
 

@@ -10,6 +10,7 @@ import {
   Sparkles,
   Shield,
   Eye,
+  Search,
 } from "lucide-react";
 import { AdminNavLink } from "@/components/layout/admin-nav-link";
 import { NavLink } from "@/components/layout/nav-link";
@@ -18,6 +19,7 @@ import { UserMenu } from "@/components/layout/user-menu";
 const workspaceNav = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/candidates", label: "Candidates", icon: Users },
+  { href: "/talent", label: "Talent", icon: Search },
   { href: "/jobs", label: "Open roles", icon: Briefcase },
 ];
 

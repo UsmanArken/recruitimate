@@ -60,9 +60,9 @@ P2-005,Phase 2,Interview Intelligence,Interview,AI-generated interview questions
 P2-006,Phase 2,Interview Intelligence,Interview,Interview quality analysis,Score interviewer question coverage probing bias,P1,Done,MVP-008,interviewer-quality-engine + panel on analyzed interviews
 P2-007,Phase 2,Interview Intelligence,Interview,Audio signal extraction,Pauses tone shifts from audio stream,P2,Done,MVP-031,audio-signal-engine WAV PCM + transcript fallback
 P2-008,Phase 2,Interview Intelligence,Interview,Video behavioral metrics,Engagement facial cues opt-in ethical guardrails,P2,Done,MVP-030,opt-in capture panel + FaceDetector/motion + aggregated metrics API
-P2-009,Phase 2,Talent Intelligence,Talent,Talent Discovery Engine,AI search across talent pools multi-source ingestion,P1,Not Started,,
-P2-010,Phase 2,Talent Intelligence,Talent,Ranked candidate search,"""Find backend engineers with distributed systems""",P1,Not Started,P2-009,
-P2-011,Phase 2,Talent Intelligence,Talent,Suggested candidates,Recommend from internal database,P2,Not Started,P2-009,
+P2-009,Phase 2,Talent Intelligence,Talent,Talent Discovery Engine,AI search across talent pools multi-source ingestion,P1,Done,,talent pools + ingest API + discovery index on Candidate
+P2-010,Phase 2,Talent Intelligence,Talent,Ranked candidate search,"""Find backend engineers with distributed systems""",P1,Done,P2-009,NL search API + /talent ranked results panel
+P2-011,Phase 2,Talent Intelligence,Talent,Suggested candidates,Recommend from internal database,P2,Done,P2-009,suggest-engine + job page panel + API
 P2-012,Phase 2,Outreach,—,Outreach Engine foundation,Campaign model templates tracking,P1,Not Started,,
 P2-013,Phase 2,Outreach,—,AI personalized outreach,Generate tailored candidate messages,P1,Not Started,P2-012,
 P2-014,Phase 2,Outreach,—,Response tracking,Track opens replies campaign status,P2,Not Started,P2-012,

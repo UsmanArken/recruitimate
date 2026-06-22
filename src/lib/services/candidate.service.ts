@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { applicationDetailInclude, candidatePersonInclude } from "@/lib/db/includes";
 import { notFound } from "@/lib/api/errors";
@@ -11,6 +12,7 @@ import type { AuthContext } from "@/lib/auth/types";
 import type { CreateCandidateInput } from "@/lib/validators/candidate";
 import { getJobById } from "@/lib/services/job.service";
 import { buildCandidateIntelligenceText } from "@/lib/candidate/intelligence-text";
+import { buildDiscoveryDocument } from "@/lib/intelligence/talent/discovery-engine";
 import {
   computeTalentAndDecision,
   talentForStorage,
@@ -49,6 +51,12 @@ export async function createCandidate(ctx: AuthContext, input: CreateCandidateIn
     linkedInText: input.linkedInText,
     githubUrl: input.githubUrl,
   });
+  const discoveryDoc = buildDiscoveryDocument({
+    resumeText: input.resumeText,
+    linkedInText: input.linkedInText,
+    githubUrl: input.githubUrl,
+    name: input.name,
+  });
 
   const { talent, decision } = await computeTalentAndDecision({
     candidateName: input.name,
@@ -70,6 +78,10 @@ export async function createCandidate(ctx: AuthContext, input: CreateCandidateIn
       linkedInText: input.linkedInText?.trim() || null,
       linkedInUrl: input.linkedInUrl || null,
       githubUrl: input.githubUrl || null,
+      source: "MANUAL",
+      searchDocument: discoveryDoc.searchDocument || null,
+      searchSkills: discoveryDoc.searchSkills as Prisma.InputJsonValue,
+      discoveryIndexedAt: new Date(),
       applications: {
         create: {
           organizationId,

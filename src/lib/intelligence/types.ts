@@ -166,6 +166,69 @@ export type VideoBehavioralResult = {
   explanation: string;
 };
 
+export type TalentDiscoverySource =
+  | "manual"
+  | "resume"
+  | "linkedin"
+  | "bulk"
+  | "external";
+
+export type DiscoveryDocument = {
+  searchDocument: string;
+  searchSkills: string[];
+  experienceYears: number | null;
+};
+
+export type TalentDiscoveryIngestResult = {
+  candidateId: string;
+  poolId: string | null;
+  source: TalentDiscoverySource;
+  searchSkills: string[];
+  experienceYears: number | null;
+  explanation: string;
+};
+
+export type RankedCandidateResult = {
+  candidateId: string;
+  name: string;
+  email: string | null;
+  matchScore: number;
+  matchedSkills: string[];
+  matchedTerms: string[];
+  experienceYears: number | null;
+  explanation: string;
+};
+
+export type TalentSearchResult = {
+  query: string;
+  parsedTerms: string[];
+  poolId: string | null;
+  results: RankedCandidateResult[];
+  totalCandidates: number;
+  explanation: string;
+};
+
+export type SuggestedCandidateResult = {
+  candidateId: string;
+  name: string;
+  email: string | null;
+  matchScore: number;
+  matchedSkills: string[];
+  strengths: string[];
+  gaps: string[];
+  experienceYears: number | null;
+  alreadyApplied: boolean;
+  explanation: string;
+};
+
+export type TalentSuggestResult = {
+  jobId: string;
+  jobTitle: string;
+  suggestions: SuggestedCandidateResult[];
+  corpusSize: number;
+  explanation: string;
+};
+
 export type HireRecommendation =
   | "strong_yes"
   | "yes"
