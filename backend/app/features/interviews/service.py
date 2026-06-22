@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.shared.models import Interview, InterviewAnalysis, InterviewStatus, JobApplication
+from app.shared.models import Interview, InterviewAnalysis, InterviewStatus, Job, JobApplication
 
 
 async def _load_interview(interview_id: str, app_id: str, org_id: str, db: AsyncSession) -> Interview:
@@ -159,7 +159,12 @@ async def analyze_interview(interview_id: str, app_id: str, org_id: str, db: Asy
     analysis.cognitiveSignals = result.cognitiveSignals
     analysis.behavioralMetrics = result.behavioralMetrics
     analysis.riskFlags = result.riskFlags
-    analysis.interviewerQuality = {"coverageScore": iq.coverageScore, "probingDepthScore": iq.probingDepthScore, "biasAdvisory": iq.biasAdvisory}
+    analysis.interviewerQuality = {
+        "coverageScore": iq.coverageScore,
+        "probingDepthScore": iq.probingDepthScore,
+        "biasAdvisory": iq.biasAdvisory,
+        "summary": iq.summary,
+    }
     interview.status = InterviewStatus.ANALYZED
 
     if app and app.talent_profile:
@@ -186,7 +191,12 @@ async def analyze_interview(interview_id: str, app_id: str, org_id: str, db: Asy
         decision.recommendation = decision_result.recommendation
         decision.riskFactors = decision_result.riskFactors
         decision.explanation = decision_result.explanation
-        decision.signalBreakdown = {**decision_result.signalBreakdown, "crossSignalConsistency": cross.consistencyScore}
+        decision.signalBreakdown = {
+            **decision_result.signalBreakdown,
+            "crossSignalConsistency": cross.consistencyScore,
+            "inconsistencies": cross.inconsistencies,
+            "inconsistenciesExplanation": cross.explanation,
+        }
 
     await db.flush()
     return {
@@ -196,6 +206,78 @@ async def analyze_interview(interview_id: str, app_id: str, org_id: str, db: Asy
         "consistencyScore": analysis.consistencyScore,
         "riskFlags": analysis.riskFlags,
     }
+
+
+async def write_segment(
+    interview_id: str, speaker: str, text: str, timestamp_ms: int, db: AsyncSession
+) -> None:
+    from app.shared.models import LiveTranscriptSegment
+    segment = LiveTranscriptSegment(
+        interviewId=interview_id,
+        speaker=speaker,
+        text=text,
+        timestampMs=timestamp_ms,
+    )
+    db.add(segment)
+    await db.flush()
+
+
+async def get_live_transcript(
+    interview_id: str, app_id: str, org_id: str, db: AsyncSession
+) -> dict:
+    from app.shared.models import LiveTranscriptSegment
+    from sqlalchemy import select
+
+    await _load_interview(interview_id, app_id, org_id, db)
+    result = await db.execute(
+        select(LiveTranscriptSegment)
+        .where(LiveTranscriptSegment.interviewId == interview_id)
+        .order_by(LiveTranscriptSegment.timestampMs)
+    )
+    segments = result.scalars().all()
+    return {
+        "segments": [
+            {"speaker": s.speaker, "text": s.text, "timestampMs": s.timestampMs}
+            for s in segments
+        ]
+    }
+
+
+async def suggest_followup(
+    interview_id: str, app_id: str, org_id: str, db: AsyncSession
+) -> dict:
+    from app.shared.models import LiveTranscriptSegment
+    from app.features.intelligence.engines import run_live_assist
+    from sqlalchemy import select
+    from sqlalchemy.orm import selectinload
+
+    await _load_interview(interview_id, app_id, org_id, db)
+
+    seg_result = await db.execute(
+        select(LiveTranscriptSegment)
+        .where(LiveTranscriptSegment.interviewId == interview_id)
+        .order_by(LiveTranscriptSegment.timestampMs)
+    )
+    segments = seg_result.scalars().all()
+    if not segments:
+        return {"followUpQuestions": []}
+
+    app_result = await db.execute(
+        select(JobApplication)
+        .where(JobApplication.id == app_id)
+        .options(selectinload(JobApplication.job))
+    )
+    app = app_result.scalar_one_or_none()
+    job_context = ""
+    if app and app.job:
+        job_context = f"{app.job.title}\n{app.job.requirements or app.job.description or ''}"
+
+    conversation = [
+        {"speaker": s.speaker, "text": s.text, "ts": s.timestampMs}
+        for s in segments
+    ]
+    result = await run_live_assist(job_context, conversation)
+    return {"followUpQuestions": result.followUpQuestions}
 
 
 async def generate_calendar(interview_id: str, app_id: str, org_id: str, db: AsyncSession) -> bytes:

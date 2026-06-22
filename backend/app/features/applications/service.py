@@ -81,7 +81,6 @@ def _serialize_analysis(a: InterviewAnalysis) -> dict:
         "behavioralMetrics": a.behavioralMetrics,
         "riskFlags": a.riskFlags,
         "interviewerQuality": a.interviewerQuality,
-        "explanation": getattr(a, "explanation", None),
     }
 
 
@@ -174,15 +173,3 @@ async def update_application_stage(app_id: str, org_id: str, stage: str, db: Asy
     return {"id": app_id, "stage": new_stage}
 
 
-async def run_live_assist(app_id: str, org_id: str, current_question: str, current_answer: str | None, db: AsyncSession) -> dict:
-    from app.features.intelligence.engines import run_live_assist as _live_assist
-
-    app = await _load_application(app_id, org_id, db)
-    job_context = f"{app.job.title}\n{app.job.requirements or ''}" if app.job else ""
-    exchange = f"Q: {current_question}\nA: {current_answer or ''}"
-    result = await _live_assist(job_context, exchange)
-    return {
-        "followUpQuestions": result.followUpQuestions,
-        "hints": result.hints,
-        "redFlags": result.redFlags,
-    }

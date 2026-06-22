@@ -23,19 +23,16 @@ class InterviewResult:
     clarityScore: float | None = None
     consistencyScore: float | None = None
     engagementScore: float | None = None
-    cognitiveSignals: dict[str, Any] = field(default_factory=dict)
-    behavioralMetrics: dict[str, Any] = field(default_factory=dict)
+    cognitiveSignals: dict[str, Any] = field(default_factory=lambda: {"items": []})
+    behavioralMetrics: dict[str, Any] = field(default_factory=lambda: {"workStyleNotes": []})
     riskFlags: list[str] = field(default_factory=list)
-    interviewerQuality: dict[str, Any] = field(default_factory=dict)
-    rawAnalysis: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class DecisionResult:
     hireConfidence: float | None = None
-    recommendation: str = ""
+    recommendation: str = "HOLD"
     riskFactors: list[str] = field(default_factory=list)
-    comparisonNotes: str = ""
     explanation: str = ""
     signalBreakdown: dict[str, Any] = field(default_factory=dict)
 
@@ -43,8 +40,6 @@ class DecisionResult:
 @dataclass
 class LiveAssistResult:
     followUpQuestions: list[str] = field(default_factory=list)
-    hints: list[str] = field(default_factory=list)
-    redFlags: list[str] = field(default_factory=list)
 
 
 @dataclass

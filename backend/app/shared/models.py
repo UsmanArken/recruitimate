@@ -259,7 +259,7 @@ class JobApplication(Base):
     candidate: Mapped["Candidate"] = relationship(back_populates="applications")
     job: Mapped["Job"] = relationship(back_populates="applications")
     talent_profile: Mapped["TalentProfile | None"] = relationship(back_populates="application", uselist=False, cascade="all, delete-orphan")
-    interviews: Mapped[list["Interview"]] = relationship(back_populates="application", cascade="all, delete-orphan")
+    interviews: Mapped[list["Interview"]] = relationship(back_populates="application", cascade="all, delete-orphan", order_by="Interview.createdAt.desc()")
     decision: Mapped["Decision | None"] = relationship(back_populates="application", uselist=False, cascade="all, delete-orphan")
 
 
@@ -309,6 +309,7 @@ class Interview(Base):
 
     application: Mapped["JobApplication"] = relationship(back_populates="interviews")
     analysis: Mapped["InterviewAnalysis | None"] = relationship(back_populates="interview", uselist=False, cascade="all, delete-orphan")
+    segments: Mapped[list["LiveTranscriptSegment"]] = relationship(back_populates="interview", cascade="all, delete-orphan", order_by="LiveTranscriptSegment.timestampMs")
 
 
 class InterviewAnalysis(Base):
@@ -325,11 +326,23 @@ class InterviewAnalysis(Base):
     behavioralMetrics: Mapped[dict | None] = mapped_column(JSON)
     riskFlags: Mapped[list | None] = mapped_column(JSON)
     interviewerQuality: Mapped[dict | None] = mapped_column(JSON)
-    rawAnalysis: Mapped[dict | None] = mapped_column(JSON)
     createdAt: Mapped[datetime] = mapped_column(DateTime, default=_now)
     updatedAt: Mapped[datetime] = mapped_column(DateTime, default=_now, onupdate=_now)
 
     interview: Mapped["Interview"] = relationship(back_populates="analysis")
+
+
+class LiveTranscriptSegment(Base):
+    __tablename__ = "LiveTranscriptSegment"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    interviewId: Mapped[str] = mapped_column(String, ForeignKey("Interview.id"), nullable=False)
+    speaker: Mapped[str] = mapped_column(String, nullable=False)  # "candidate" | "recruiter"
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    timestampMs: Mapped[int] = mapped_column(Integer, nullable=False)
+    createdAt: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+    interview: Mapped["Interview"] = relationship(back_populates="segments")
 
 
 class Decision(Base):

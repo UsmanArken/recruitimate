@@ -1,21 +1,24 @@
 import type { InterviewerQualityResult } from "@/lib/intelligence/types";
 import { ScoreBadge } from "@/components/features/intelligence/score-badge";
-import { SignalList } from "@/components/features/intelligence/signal-list";
 import { ClipboardCheck } from "lucide-react";
 
 export function parseInterviewerQuality(
   value: unknown
 ): InterviewerQualityResult | null {
   if (!value || typeof value !== "object") return null;
-  const q = value as InterviewerQualityResult;
+  const q = value as Record<string, unknown>;
   if (
     typeof q.coverageScore !== "number" ||
-    typeof q.probingScore !== "number" ||
-    typeof q.biasRiskScore !== "number"
+    typeof q.probingDepthScore !== "number"
   ) {
     return null;
   }
-  return q;
+  return {
+    coverageScore: q.coverageScore as number,
+    probingDepthScore: q.probingDepthScore as number,
+    biasAdvisory: Array.isArray(q.biasAdvisory) ? (q.biasAdvisory as string[]) : [],
+    summary: typeof q.summary === "string" ? q.summary : null,
+  };
 }
 
 export function InterviewerQualityPanel({
@@ -28,44 +31,29 @@ export function InterviewerQualityPanel({
       <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold">
         <ClipboardCheck className="h-4 w-4 text-primary" />
         Interviewer quality
-        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
-          Phase 2
-        </span>
       </h4>
-      <p className="mb-3 text-xs text-muted">
-        Advisory scores for question coverage, probing depth, and potential bias patterns in
-        this interview.
-      </p>
 
-      <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+      <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
         <ScoreBadge label="Requirement coverage" score={quality.coverageScore} />
-        <ScoreBadge label="Probing depth" score={quality.probingScore} />
-        <ScoreBadge label="Bias risk" score={quality.biasRiskScore} invertBar />
+        <ScoreBadge label="Probing depth" score={quality.probingDepthScore} />
       </div>
 
-      {quality.coverageGaps.length > 0 && (
+      {quality.biasAdvisory.length > 0 && (
         <div className="mb-3">
-          <p className="mb-2 text-sm font-semibold text-warning">Coverage gaps</p>
-          <SignalList signals={quality.coverageGaps} />
+          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-warning">Bias advisory</p>
+          <ul className="space-y-1.5">
+            {quality.biasAdvisory.map((note, i) => (
+              <li key={i} className="flex items-start gap-2 text-xs text-foreground/80">
+                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-warning" />
+                {note}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
-      {quality.probingSignals.length > 0 && (
-        <div className="mb-3">
-          <p className="mb-2 text-sm font-semibold">Probing observations</p>
-          <SignalList signals={quality.probingSignals} />
-        </div>
-      )}
-
-      {quality.biasFlags.length > 0 && (
-        <div className="mb-3">
-          <p className="mb-2 text-sm font-semibold text-risk">Bias pattern flags</p>
-          <SignalList signals={quality.biasFlags} />
-        </div>
-      )}
-
-      {quality.explanation && (
-        <p className="text-xs italic text-muted">{quality.explanation}</p>
+      {quality.summary && (
+        <p className="text-xs italic text-muted">{quality.summary}</p>
       )}
     </section>
   );

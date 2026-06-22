@@ -1,30 +1,21 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { serverFetch } from "@/lib/api-server";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChevronLeft, Briefcase, Mail } from "lucide-react";
+import { Avatar } from "@/components/features/candidates/avatar";
+import { StageBadge } from "@/components/features/candidates/stage-badge";
 import { LayerBadge } from "@/components/features/intelligence/layer-badge";
 import { ScoreBadge } from "@/components/features/intelligence/score-badge";
-import { IntelligencePhasePanel } from "@/components/features/candidates/intelligence-phase-panel";
-import { ApplicationDetailTabs } from "@/components/features/candidates/application-detail-tabs";
-import { StageBadge } from "@/components/features/candidates/stage-badge";
-import { Avatar } from "@/components/features/candidates/avatar";
-import { InterviewWorkflowPanel } from "@/components/features/candidates/interview-workflow-panel";
-import {
-  InterviewerQualityPanel,
-  parseInterviewerQuality,
-} from "@/components/features/interview/interviewer-quality-panel";
 import { ReanalyzeButton } from "@/components/features/candidates/reanalyze-button";
 import { TalentPoller } from "@/components/features/candidates/talent-poller";
-import { PageBody } from "@/components/layout/page-header";
-import { Briefcase, ChevronLeft, Mail, Mic2 } from "lucide-react";
+import { InterviewSection } from "@/components/features/candidates/interview-section";
+import { VerdictCard } from "@/components/features/candidates/verdict-card";
+import { SkillMatchBar } from "@/components/features/candidates/skill-match-bar";
+import { ApplicationTabs } from "@/components/features/candidates/application-tabs";
+import type { InterviewAnalysisData } from "@/components/features/interview/interview-analysis-tabs";
+import type { AnalysedInterview } from "@/components/features/candidates/interview-section";
 
 export const dynamic = "force-dynamic";
-
-function getIntelligencePhase(hasJob: boolean, hasInterview: boolean): string {
-  if (!hasJob) return "no_job";
-  if (hasInterview) return "ready_for_decision";
-  return "talent_only";
-}
 
 export default async function ApplicationDetailPage({
   params,
@@ -57,6 +48,7 @@ export default async function ApplicationDetailPage({
       recommendation: string | null;
       riskFactors: string[] | null;
       explanation: string | null;
+      signalBreakdown: Record<string, unknown> | null;
     } | null;
     interviews: Array<{
       id: string;
@@ -78,7 +70,6 @@ export default async function ApplicationDetailPage({
         behavioralMetrics: unknown;
         riskFlags: string[] | null;
         interviewerQuality: unknown;
-        explanation?: string | null;
       } | null;
     }>;
   }>(`/api/applications/${applicationId}`).catch(() => null);
@@ -88,310 +79,216 @@ export default async function ApplicationDetailPage({
   const candidate = application.candidate;
   const tp = application.talentProfile;
   const dec = application.decision;
-  const latestInterview = application.interviews[0];
-  const ia = latestInterview?.analysis;
 
-  const phase = getIntelligencePhase(Boolean(application.job), Boolean(ia));
+  const analysedInterviews: AnalysedInterview[] = application.interviews
+    .filter((i) => i.analysis != null)
+    .map((i) => ({
+      id: i.id,
+      analysis: {
+        title: i.title ?? "Interview",
+        transcript: i.transcript ?? null,
+        hesitationScore: i.analysis!.hesitationScore,
+        confidenceScore: i.analysis!.confidenceScore,
+        clarityScore: i.analysis!.clarityScore,
+        consistencyScore: i.analysis!.consistencyScore,
+        engagementScore: i.analysis!.engagementScore,
+        cognitiveSignals: i.analysis!.cognitiveSignals,
+        behavioralMetrics: i.analysis!.behavioralMetrics,
+        riskFlags: i.analysis!.riskFlags,
+        interviewerQuality: i.analysis!.interviewerQuality,
+      } satisfies InterviewAnalysisData,
+    }));
 
+  const interviewRows = application.interviews.map((i) => ({
+    id: i.id,
+    title: i.title,
+    status: i.status,
+    scheduledAt: i.scheduledAt,
+    meetingUrl: i.meetingUrl,
+    transcript: i.transcript,
+    livekitRoomName: i.livekitRoomName,
+    candidateJoinUrl: i.candidateJoinUrl,
+    agentStatus: i.agentStatus,
+  }));
+
+  const hasInterview = analysedInterviews.length > 0;
   const hiddenSignals = (tp?.hiddenSignals ?? []) as string[];
   const riskFactors = (dec?.riskFactors ?? []) as string[];
-  const cognitiveSignals = (ia?.cognitiveSignals ?? []) as string[];
-  const behavioralMetrics = (ia?.behavioralMetrics ?? []) as string[];
-  const interviewRisks = (ia?.riskFlags ?? []) as string[];
-  const interviewerQuality = parseInterviewerQuality(ia?.interviewerQuality);
 
-  const talentCard = (
-    <section>
-      <div className="mb-3 flex items-center justify-between gap-2">
+  const talentContent = (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between gap-2">
         <LayerBadge layer="talent" />
         <ReanalyzeButton applicationId={application.id} />
       </div>
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>Talent profile</CardTitle>
-          <CardDescription>Pre-interview signals vs {application.job?.title}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <TalentPoller active={!tp} />
-          <div className="grid grid-cols-2 gap-3">
-            <ScoreBadge label="Role fit" score={tp?.roleFitScore} />
-            <div className="rounded-lg border border-border-subtle bg-card p-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted">Experience</p>
-              <p className="mt-1 text-2xl font-bold tabular-nums">
-                {tp?.experienceYears != null ? `${tp.experienceYears} yrs` : "—"}
-              </p>
+
+      <TalentPoller active={!tp} />
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <ScoreBadge label="Role fit" score={tp?.roleFitScore} />
+        <div className="rounded-lg border border-border-subtle bg-card p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Experience</p>
+          <p className="mt-1 text-2xl font-bold tabular-nums">
+            {tp?.experienceYears != null ? `${tp.experienceYears} yrs` : "—"}
+          </p>
+        </div>
+      </div>
+
+      {tp && (
+        <div className="rounded-lg border border-border-subtle bg-card p-4 shadow-sm">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted">Skills</p>
+          {((tp.matchedSkills ?? []).length > 0 || (tp.missingSkills ?? []).length > 0 || (tp.extraSkills ?? []).length > 0) ? (
+            <SkillMatchBar
+              matched={tp.matchedSkills ?? []}
+              missing={tp.missingSkills ?? []}
+              extra={tp.extraSkills ?? []}
+            />
+          ) : (tp.skills ?? []).length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {(tp.skills ?? []).map((s) => (
+                <span key={s} className="rounded-md bg-muted/40 px-2.5 py-1 text-xs font-medium text-foreground/70">
+                  {s}
+                </span>
+              ))}
             </div>
-          </div>
-          {tp && (
-            <div className="space-y-3">
-              <SkillSection
-                label="Matched skills"
-                skills={tp.matchedSkills ?? []}
-                chipClass="bg-success-bg text-success"
-                labelClass="text-success"
-                emptyLabel="No required skills matched"
-              />
-              <SkillSection
-                label="Missing skills"
-                skills={tp.missingSkills ?? []}
-                chipClass="bg-risk/10 text-risk"
-                labelClass="text-risk"
-                emptyLabel="No missing skills — all requirements met"
-              />
-              <SkillSection
-                label="Extra skills"
-                skills={tp.extraSkills ?? []}
-                chipClass="bg-talent-bg text-talent"
-                labelClass="text-muted"
-                emptyLabel="No extra skills noted"
-              />
-            </div>
-          )}
+          ) : null}
+        </div>
+      )}
+
+      {((tp?.strengths ?? []).length > 0 || (tp?.gaps ?? []).length > 0) && (
+        <div className="grid gap-3 sm:grid-cols-2">
           {(tp?.strengths ?? []).length > 0 && (
-            <div className="rounded-lg bg-success-bg/50 p-4">
-              <p className="mb-2 text-sm font-semibold text-success">Strengths</p>
+            <div className="rounded-lg border border-success/20 bg-success-bg/40 p-4">
+              <p className="mb-2 text-xs font-bold uppercase tracking-wide text-success">Strengths</p>
               <ul className="space-y-1 text-sm text-foreground/90">
-                {(tp?.strengths ?? []).map((s) => (
-                  <li key={s}>· {s}</li>
-                ))}
+                {(tp?.strengths ?? []).map((s) => <li key={s}>· {s}</li>)}
               </ul>
             </div>
           )}
           {(tp?.gaps ?? []).length > 0 && (
-            <div className="rounded-lg bg-warning-bg/50 p-4">
-              <p className="mb-2 text-sm font-semibold text-warning">Gaps to probe in interview</p>
+            <div className="rounded-lg border border-warning/20 bg-warning-bg/40 p-4">
+              <p className="mb-2 text-xs font-bold uppercase tracking-wide text-warning">Gaps</p>
               <ul className="space-y-1 text-sm text-foreground/90">
-                {(tp?.gaps ?? []).map((g) => (
-                  <li key={g}>· {g}</li>
-                ))}
+                {(tp?.gaps ?? []).map((g) => <li key={g}>· {g}</li>)}
               </ul>
             </div>
           )}
-          {hiddenSignals.length > 0 && (
-            <div>
-              <p className="mb-2 text-sm font-semibold">Additional signals</p>
-              <ul className="space-y-1 text-sm text-foreground/90">
-                {hiddenSignals.map((s) => (
-                  <li key={s}>· {s}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {tp?.explanation && (
-            <p className="rounded-lg border border-border-subtle bg-background p-4 text-sm leading-relaxed italic text-muted">
-              {tp.explanation}
-            </p>
-          )}
-        </CardContent>
-      </Card>
-    </section>
+        </div>
+      )}
+
+      {hiddenSignals.length > 0 && (
+        <div className="rounded-lg border border-border-subtle bg-card p-4 shadow-sm">
+          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted">Signals</p>
+          <ul className="space-y-1 text-sm text-foreground/90">
+            {hiddenSignals.map((s) => <li key={s}>· {s}</li>)}
+          </ul>
+        </div>
+      )}
+
+      {tp?.explanation && (
+        <p className="rounded-lg border border-border-subtle bg-background px-4 py-3 text-sm leading-relaxed text-muted italic">
+          {tp.explanation}
+        </p>
+      )}
+    </div>
   );
 
-  const interviewPanel = ia ? (
-    <section className="space-y-6">
-      <div className="mb-3">
+  const interviewContent = (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-2">
         <LayerBadge layer="interview" />
       </div>
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>{latestInterview?.title ?? "Interview"}</CardTitle>
-          <CardDescription>Post-interview signal report</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            <ScoreBadge label="Confidence" score={ia.confidenceScore} />
-            <ScoreBadge label="Clarity" score={ia.clarityScore} />
-            <ScoreBadge label="Hesitation" score={ia.hesitationScore} invertBar />
-            <ScoreBadge label="Consistency" score={ia.consistencyScore} />
-            <ScoreBadge label="Engagement" score={ia.engagementScore} />
-          </div>
-          {cognitiveSignals.length > 0 && (
-            <div>
-              <p className="mb-2 text-sm font-semibold">Cognitive signals</p>
-              <ul className="space-y-1 text-sm text-foreground/90">
-                {cognitiveSignals.map((s) => <li key={s}>· {s}</li>)}
-              </ul>
-            </div>
-          )}
-          {behavioralMetrics.length > 0 && (
-            <div>
-              <p className="mb-2 text-sm font-semibold">Behavioral observations</p>
-              <ul className="space-y-1 text-sm text-foreground/90">
-                {behavioralMetrics.map((s) => <li key={s}>· {s}</li>)}
-              </ul>
-            </div>
-          )}
-          {interviewRisks.length > 0 && (
-            <div>
-              <p className="mb-2 text-sm font-semibold text-warning">Follow-up suggested</p>
-              <ul className="space-y-1 text-sm text-foreground/90">
-                {interviewRisks.map((s) => <li key={s}>· {s}</li>)}
-              </ul>
-            </div>
-          )}
-          {interviewerQuality && <InterviewerQualityPanel quality={interviewerQuality} />}
-        </CardContent>
-      </Card>
-    </section>
-  ) : (
-    <Card className="border-interview/20 shadow-sm">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Mic2 className="h-5 w-5 text-interview" />
-          Interview workspace
-        </CardTitle>
-        <CardDescription>
-          Use live assist during the call, then paste a transcript to unlock hire confidence.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <InterviewWorkflowPanel
-          applicationId={application.id}
-          jobId={application.jobId}
-          jobTitle={application.job?.title ?? ""}
-          interviews={application.interviews.map((i) => ({
-            id: i.id,
-            title: i.title,
-            status: i.status,
-            scheduledAt: i.scheduledAt,
-            meetingUrl: i.meetingUrl,
-            transcript: i.transcript,
-            livekitRoomName: i.livekitRoomName,
-            candidateJoinUrl: i.candidateJoinUrl,
-            agentStatus: i.agentStatus,
-          }))}
-        />
-      </CardContent>
-    </Card>
+      <InterviewSection
+        analysedInterviews={analysedInterviews}
+        applicationId={application.id}
+        jobId={application.jobId}
+        jobTitle={application.job?.title ?? ""}
+        interviews={interviewRows}
+      />
+    </div>
   );
 
-  const decisionPanel =
-    phase === "ready_for_decision" ? (
-      <div className="space-y-6">
-        {riskFactors.length > 0 && (
-          <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-base">Items to discuss</CardTitle>
-              <CardDescription>Topics for your hiring committee</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-1 text-sm text-foreground/90">
-                {riskFactors.map((s) => <li key={s}>· {s}</li>)}
-              </ul>
-            </CardContent>
-          </Card>
-        )}
-        <Card className="border-decision/20 shadow-sm">
-          <CardHeader>
-            <CardTitle>Advisory summary</CardTitle>
-            <CardDescription>
-              Combined talent + interview signals for {application.job?.title}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <ScoreBadge label="Hire confidence" score={dec?.hireConfidence} />
-              <ScoreBadge label="Role fit" score={tp?.roleFitScore} />
-            </div>
-            {dec?.explanation && (
-              <p className="rounded-lg border border-border-subtle bg-background p-4 text-sm leading-relaxed">
-                {dec.explanation}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    ) : (
-      <Card className="shadow-sm">
-        <CardContent className="py-12 text-center">
-          <p className="font-semibold text-foreground">Decision not ready yet</p>
-          <p className="mx-auto mt-2 max-w-md text-sm text-muted">
-            Complete an interview in the <span className="font-medium">Interview</span> tab to
-            unlock hire confidence and committee recommendations.
-          </p>
-        </CardContent>
-      </Card>
-    );
+  const verdictPanel = (
+    <VerdictCard
+      applicationId={application.id}
+      stage={application.stage}
+      hireConfidence={dec?.hireConfidence ?? null}
+      recommendation={dec?.recommendation ?? null}
+      roleFitScore={tp?.roleFitScore ?? null}
+      riskFactors={riskFactors}
+      explanation={dec?.explanation ?? null}
+      signalBreakdown={(dec?.signalBreakdown as Parameters<typeof VerdictCard>[0]["signalBreakdown"]) ?? null}
+      hasInterview={hasInterview}
+    />
+  );
 
   return (
-    <>
-      <div className="border-b border-border bg-card/90 px-8 py-6 backdrop-blur-sm">
-        <Link
-          href={`/candidates/${candidateId}`}
-          className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-muted hover:text-primary"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Back to {candidate.name}
-        </Link>
-        <div className="flex flex-wrap items-start gap-5">
-          <Avatar name={candidate.name} size="lg" />
-          <div className="min-w-0 flex-1">
-            <div className="mb-2 flex flex-wrap items-center gap-2">
+    <div className="flex min-h-screen flex-col">
+
+      {/* ── Compact sticky header ─────────────────────────── */}
+      <div className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur-sm">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="pt-3 pb-0">
+            <Link
+              href={`/candidates/${candidateId}`}
+              className="inline-flex items-center gap-1 text-xs font-medium text-muted transition hover:text-primary"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+              {candidate.name}
+            </Link>
+          </div>
+          <div className="flex flex-wrap items-center gap-3 pt-2.5 pb-3">
+            <Avatar name={candidate.name} size="sm" />
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+              <span className="text-sm font-bold text-foreground">{candidate.name}</span>
+              {candidate.email && (
+                <span className="flex items-center gap-1 text-xs text-muted">
+                  <Mail className="h-3 w-3" />
+                  {candidate.email}
+                </span>
+              )}
               <StageBadge stage={application.stage} />
-              <span className="inline-flex items-center gap-1 rounded-md bg-brand/8 px-2.5 py-0.5 text-sm font-medium text-brand">
-                <Briefcase className="h-3.5 w-3.5" />
-                {application.job?.title}
-              </span>
+              {application.job?.title && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-brand/8 px-2 py-0.5 text-xs font-medium text-brand">
+                  <Briefcase className="h-3 w-3" />
+                  {application.job.title}
+                </span>
+              )}
             </div>
-            <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{candidate.name}</h1>
-            {candidate.email && (
-              <p className="mt-1.5 flex items-center gap-1.5 text-sm text-muted">
-                <Mail className="h-3.5 w-3.5" />
-                {candidate.email}
-              </p>
+            {(tp?.roleFitScore != null || dec?.hireConfidence != null) && (
+              <div className="flex items-center gap-3">
+                {tp?.roleFitScore != null && (
+                  <HeaderScore label="Role fit" value={tp.roleFitScore} />
+                )}
+                {dec?.hireConfidence != null && (
+                  <HeaderScore label="Hire confidence" value={dec.hireConfidence} />
+                )}
+              </div>
             )}
           </div>
         </div>
       </div>
 
-      <PageBody>
-        <IntelligencePhasePanel
-          phase={phase}
-          jobTitle={application.job?.title ?? ""}
-          explanation={dec?.explanation}
-          recommendation={dec?.recommendation}
-          hireConfidence={dec?.hireConfidence}
-          roleFitScore={tp?.roleFitScore}
-        />
+      {/* ── Tabs + content ────────────────────────────────── */}
+      <ApplicationTabs
+        tabs={[
+          { id: "talent", label: "Talent", content: talentContent },
+          { id: "interview", label: "Interview", content: interviewContent },
+        ]}
+        rightPanel={verdictPanel}
+      />
 
-        <ApplicationDetailTabs
-          phase={phase}
-          screen={talentCard}
-          interview={interviewPanel}
-          decision={decisionPanel}
-        />
-      </PageBody>
-    </>
+    </div>
   );
 }
 
-function SkillSection({
-  label,
-  skills,
-  chipClass,
-  labelClass,
-  emptyLabel,
-}: {
-  label: string;
-  skills: string[];
-  chipClass: string;
-  labelClass: string;
-  emptyLabel: string;
-}) {
+function HeaderScore({ label, value }: { label: string; value: number }) {
+  const pct = Math.round(Math.min(100, Math.max(0, value)));
+  const color = pct >= 70 ? "text-success" : pct >= 40 ? "text-warning" : "text-risk";
   return (
-    <div>
-      <p className={`mb-2 text-sm font-semibold ${labelClass}`}>{label}</p>
-      {skills.length > 0 ? (
-        <div className="flex flex-wrap gap-1.5">
-          {skills.map((s) => (
-            <span key={s} className={`rounded-md px-2.5 py-1 text-xs font-medium ${chipClass}`}>
-              {s}
-            </span>
-          ))}
-        </div>
-      ) : (
-        <p className="text-xs text-muted">{emptyLabel}</p>
-      )}
+    <div className="text-right">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">{label}</p>
+      <p className={`text-sm font-bold tabular-nums ${color}`}>{pct}%</p>
     </div>
   );
 }

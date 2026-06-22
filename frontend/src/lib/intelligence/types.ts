@@ -6,13 +6,10 @@ export interface Signal {
 }
 
 export interface InterviewerQualityResult {
-  coverageScore: number;
-  probingScore: number;
-  biasRiskScore: number;
-  coverageGaps: Signal[];
-  probingSignals: Signal[];
-  biasFlags: Signal[];
-  explanation?: string | null;
+  coverageScore: number | null;
+  probingDepthScore: number | null;
+  biasAdvisory: string[];
+  summary?: string | null;
 }
 
 export type InterviewQuestionCategory =

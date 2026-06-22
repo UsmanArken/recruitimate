@@ -77,11 +77,9 @@ _INTERVIEW_FALLBACK = {
     "clarityScore": None,
     "consistencyScore": None,
     "engagementScore": None,
-    "cognitiveSignals": {},
-    "behavioralMetrics": {},
+    "cognitiveSignals": {"items": []},
+    "behavioralMetrics": {"workStyleNotes": []},
     "riskFlags": [],
-    "interviewerQuality": {},
-    "rawAnalysis": {},
 }
 
 
@@ -90,10 +88,16 @@ async def run_interview_intelligence(
     resume_text: str = "",
 ) -> InterviewResult:
     system = (
-        "You are an expert interview analyst. Analyse the interview transcript and return a JSON object with: "
-        "hesitationScore (0-100), confidenceScore (0-100), clarityScore (0-100), consistencyScore (0-100), "
-        "engagementScore (0-100), cognitiveSignals (object), behavioralMetrics (object), "
-        "riskFlags (string[]), interviewerQuality (object), rawAnalysis (object)."
+        "You are an expert interview analyst. Analyse the interview transcript and return a JSON object with exactly these keys:\n"
+        "- hesitationScore: 0-100 number\n"
+        "- confidenceScore: 0-100 number\n"
+        "- clarityScore: 0-100 number\n"
+        "- consistencyScore: 0-100 number\n"
+        "- engagementScore: 0-100 number\n"
+        "- cognitiveSignals: object with key 'items' — array of up to 4 strings, each a concise observation about problem-solving, reasoning, or technical depth (e.g. 'Structured thinking: broke down problem before answering')\n"
+        "- behavioralMetrics: object with key 'workStyleNotes' — array of up to 4 strings, each a concise observation about communication style, collaboration, or work habits (e.g. 'Prefers autonomy over team check-ins')\n"
+        "- riskFlags: string[] — specific candidate behaviours that warrant follow-up, e.g. 'Claimed 5 years React but could not explain hooks'; leave empty if no genuine flags\n"
+        "Do NOT include call-quality issues (no audio, technical failures) in riskFlags."
     )
     context = f"RESUME CONTEXT:\n{resume_text}\n\n" if resume_text else ""
     user = f"{context}TRANSCRIPT:\n{transcript}"
@@ -107,11 +111,15 @@ async def run_interview_intelligence(
 
 _DECISION_FALLBACK = {
     "hireConfidence": None,
-    "recommendation": "INSUFFICIENT_DATA",
+    "recommendation": "HOLD",
     "riskFactors": [],
-    "comparisonNotes": "",
     "explanation": "Analysis unavailable",
-    "signalBreakdown": {},
+    "signalBreakdown": {
+        "technicalFit": "unclear",
+        "communication": "unclear",
+        "culturalFit": "unclear",
+        "reliability": "unclear",
+    },
 }
 
 
@@ -121,8 +129,13 @@ async def run_decision_intelligence(
 ) -> DecisionResult:
     system = (
         "You are a hiring decision expert. Given talent intelligence and interview results, "
-        "return a JSON object with: hireConfidence (0-100 float), recommendation (HIRE|REJECT|HOLD), "
-        "riskFactors (string[]), comparisonNotes (string), explanation (string), signalBreakdown (object)."
+        "return a JSON object with exactly these keys:\n"
+        "- hireConfidence: 0-100 float\n"
+        "- recommendation: must be exactly one of 'HIRE', 'HOLD', or 'REJECT'\n"
+        "- riskFactors: string[] — specific reasons for concern\n"
+        "- explanation: string — 2-3 sentence summary of the hiring decision\n"
+        "- signalBreakdown: object with exactly these 4 keys, each with value 'strong', 'moderate', 'weak', or 'unclear':\n"
+        "    technicalFit, communication, culturalFit, reliability"
     )
     interview_section = ""
     if interview:
@@ -138,27 +151,52 @@ async def run_decision_intelligence(
         f"{interview_section}"
     )
     raw = await chat_json(system, user, _DECISION_FALLBACK)
-    return DecisionResult(**{k: raw.get(k, v) for k, v in _DECISION_FALLBACK.items()})
+    result = DecisionResult(
+        hireConfidence=raw.get("hireConfidence"),
+        recommendation=raw.get("recommendation", "HOLD"),
+        riskFactors=raw.get("riskFactors", []),
+        explanation=raw.get("explanation", "Analysis unavailable"),
+        signalBreakdown={
+            "technicalFit": raw.get("signalBreakdown", {}).get("technicalFit", "unclear"),
+            "communication": raw.get("signalBreakdown", {}).get("communication", "unclear"),
+            "culturalFit": raw.get("signalBreakdown", {}).get("culturalFit", "unclear"),
+            "reliability": raw.get("signalBreakdown", {}).get("reliability", "unclear"),
+        },
+    )
+    return result
 
 
 # ---------------------------------------------------------------------------
 # Live Assist
 # ---------------------------------------------------------------------------
 
-_LIVE_ASSIST_FALLBACK = {"followUpQuestions": [], "hints": [], "redFlags": []}
+_LIVE_ASSIST_FALLBACK = {"followUpQuestions": []}
 
 
 async def run_live_assist(
     job_context: str,
-    exchange: str,
+    conversation: list[dict],
 ) -> LiveAssistResult:
-    system = (
-        "You are a real-time interview assistant. Based on the job context and current Q&A exchange, "
-        "return JSON with: followUpQuestions (string[]), hints (string[]), redFlags (string[])."
+    """
+    conversation: [{"speaker": "recruiter"|"candidate", "text": "...", "ts": 1200}, ...]
+    Returns 3 follow-up questions based on the full conversation so far.
+    """
+    formatted = "\n".join(
+        f"{seg['speaker'].capitalize()}: {seg['text']}"
+        for seg in conversation
     )
-    user = f"JOB CONTEXT:\n{job_context}\n\nCURRENT EXCHANGE:\n{exchange}"
+    system = (
+        "You are a live interview assistant helping a recruiter conduct a job interview. "
+        "Given the full conversation so far and the job context, suggest exactly 3 specific "
+        "follow-up questions the recruiter should ask next. "
+        "Rules: do not repeat topics already covered; prioritise vague answers that need probing; "
+        "surface gaps from the job context not yet addressed; make questions concrete and "
+        "role-specific, not generic. "
+        "Return JSON with one key: followUpQuestions (string[], exactly 3 items)."
+    )
+    user = f"JOB CONTEXT:\n{job_context}\n\nCONVERSATION SO FAR:\n{formatted}"
     raw = await chat_json(system, user, _LIVE_ASSIST_FALLBACK)
-    return LiveAssistResult(**{k: raw.get(k, v) for k, v in _LIVE_ASSIST_FALLBACK.items()})
+    return LiveAssistResult(followUpQuestions=raw.get("followUpQuestions", []))
 
 
 # ---------------------------------------------------------------------------
