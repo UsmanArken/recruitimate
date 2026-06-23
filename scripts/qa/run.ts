@@ -60,6 +60,9 @@ async function main() {
       "scripts/qa/outreach-template.test.ts",
       "scripts/qa/outreach-personalize.test.ts",
       "scripts/qa/outreach-tracking.test.ts",
+      "scripts/qa/assessment-engine.test.ts",
+      "scripts/qa/assessment-evaluation.test.ts",
+      "scripts/qa/assessment-decision.test.ts",
     ])
   );
 

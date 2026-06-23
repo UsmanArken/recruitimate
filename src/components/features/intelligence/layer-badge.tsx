@@ -1,4 +1,4 @@
-import { UserSearch, Mic2, ClipboardCheck, type LucideIcon } from "lucide-react";
+import { UserSearch, Mic2, ClipboardCheck, FlaskConical, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const layers = {
@@ -11,6 +11,11 @@ const layers = {
     icon: Mic2,
     label: "Interview Intelligence",
     className: "bg-interview-bg text-interview border-teal-200/60",
+  },
+  assessment: {
+    icon: FlaskConical,
+    label: "Assessment",
+    className: "bg-amber-500/10 text-amber-700 border-amber-200/60",
   },
   decision: {
     icon: ClipboardCheck,

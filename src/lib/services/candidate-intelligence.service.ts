@@ -28,6 +28,7 @@ export async function computeTalentAndDecision(input: {
   resumeText: string;
   job: JobContext;
   interviews: InterviewRow[];
+  assessmentScore?: number | null;
 }) {
   const hasRole = hasRoleContext(
     input.job.id,
@@ -47,10 +48,16 @@ export async function computeTalentAndDecision(input: {
     ? toInterviewIntelligenceResult(latestWithAnalysis.analysis)
     : null;
 
-  const decision = await generateDecision(talent, interviewResult, input.candidateName, {
-    jobId: input.job.id,
-    jobTitle: input.job.title,
-  });
+  const decision = await generateDecision(
+    talent,
+    interviewResult,
+    input.candidateName,
+    {
+      jobId: input.job.id,
+      jobTitle: input.job.title,
+    },
+    input.assessmentScore != null ? { overallScore: input.assessmentScore } : null
+  );
 
   return { talent, decision };
 }
@@ -61,6 +68,7 @@ export async function refreshApplicationIntelligence(input: {
   resumeText: string;
   job: JobContext;
   interviews: InterviewRow[];
+  assessmentScore?: number | null;
 }) {
   const result = await computeTalentAndDecision(input);
   await upsertTalentProfile(input.applicationId, result.talent);

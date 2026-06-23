@@ -271,6 +271,55 @@ export type OutreachTrackingEvent = {
   externalId?: string;
 };
 
+export type AssessmentTaskKind = "code" | "product" | "ops" | "scenario";
+
+export type AssessmentDifficulty = "easy" | "medium" | "hard";
+
+export type AssessmentRubricCriterion = {
+  id: string;
+  label: string;
+  weight: number;
+  description: string;
+};
+
+export type AssessmentTaskItem = {
+  id: string;
+  title: string;
+  prompt: string;
+  taskType: AssessmentTaskKind;
+  difficulty: AssessmentDifficulty;
+  rubric: AssessmentRubricCriterion[];
+  skillsTested: string[];
+  deliverables: string[];
+  estimatedMinutes: number;
+};
+
+export type AssessmentTaskSetResult = {
+  tasks: AssessmentTaskItem[];
+  roleSummary: string;
+  explanation: string;
+};
+
+export type AssessmentCriterionScore = {
+  criterionId: string;
+  label: string;
+  score: number;
+  feedback: string;
+};
+
+export type AssessmentEvaluationResult = {
+  overallScore: number;
+  criterionScores: AssessmentCriterionScore[];
+  strengths: string[];
+  gaps: string[];
+  signals: Signal[];
+  explanation: string;
+};
+
+export type AssessmentSignal = {
+  overallScore: number;
+};
+
 export type HireRecommendation =
   | "strong_yes"
   | "yes"
@@ -288,7 +337,9 @@ export type DecisionIntelligenceResult = {
   signalBreakdown: {
     talentWeight: number;
     interviewWeight: number;
+    assessmentWeight: number;
     talentScore: number;
     interviewScore: number;
+    assessmentScore: number;
   };
 };

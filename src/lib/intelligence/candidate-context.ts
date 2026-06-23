@@ -46,8 +46,10 @@ export function buildDeferredDecision(
       signalBreakdown: {
         talentWeight: 0,
         interviewWeight: 0,
+        assessmentWeight: 0,
         talentScore: 0,
         interviewScore: 0,
+        assessmentScore: 0,
       },
     };
   }
@@ -68,8 +70,10 @@ export function buildDeferredDecision(
     signalBreakdown: {
       talentWeight: 1,
       interviewWeight: 0,
+      assessmentWeight: 0,
       talentScore: 0,
       interviewScore: 0,
+      assessmentScore: 0,
     },
   };
 }

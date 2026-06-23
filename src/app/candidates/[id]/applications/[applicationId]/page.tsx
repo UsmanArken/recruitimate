@@ -24,6 +24,7 @@ import {
   VideoBehavioralPanel,
   parseVideoBehavioralMetrics,
 } from "@/components/features/interview/video-behavioral-panel";
+import { ApplicationAssessmentPanel } from "@/components/features/assessment/application-assessment-panel";
 import { ReanalyzeButton } from "@/components/features/candidates/reanalyze-button";
 import { PageBody } from "@/components/layout/page-header";
 import type { Signal } from "@/lib/intelligence/types";
@@ -67,6 +68,17 @@ export default async function ApplicationDetailPage({
   const interviewerQuality = parseInterviewerQuality(ia?.interviewerQuality);
   const audioSignals = parseAudioSignals(latestInterview?.audioSignals);
   const videoBehavioral = parseVideoBehavioralMetrics(latestInterview?.videoBehavioralMetrics);
+  const signalBreakdown = dec?.signalBreakdown as
+    | {
+        talentWeight?: number;
+        interviewWeight?: number;
+        assessmentWeight?: number;
+        talentScore?: number;
+        interviewScore?: number;
+        assessmentScore?: number;
+      }
+    | null
+    | undefined;
 
   return (
     <>
@@ -112,6 +124,7 @@ export default async function ApplicationDetailPage({
           recommendation={dec?.recommendation}
           hireConfidence={dec?.hireConfidence}
           roleFitScore={tp?.roleFitScore}
+          signalBreakdown={signalBreakdown}
         />
 
         {phase === "ready_for_decision" && riskFactors.length > 0 && (
@@ -126,6 +139,27 @@ export default async function ApplicationDetailPage({
             </Card>
           </section>
         )}
+
+        <section className="mb-8">
+          <div className="mb-3">
+            <LayerBadge layer="assessment" />
+          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Skills assessment</CardTitle>
+              <CardDescription>
+                Submit and evaluate real-world task responses — scores feed hire confidence.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {!readOnly ? (
+                <ApplicationAssessmentPanel applicationId={application.id} />
+              ) : (
+                <p className="text-sm text-muted">Read-only workspace — assessments not editable.</p>
+              )}
+            </CardContent>
+          </Card>
+        </section>
 
         <div className="grid gap-8 lg:grid-cols-2">
           <section>

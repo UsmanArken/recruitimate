@@ -66,9 +66,9 @@ P2-011,Phase 2,Talent Intelligence,Talent,Suggested candidates,Recommend from in
 P2-012,Phase 2,Outreach,—,Outreach Engine foundation,Campaign model templates tracking,P1,Done,,OutreachTemplate/Campaign/Message models + /outreach UI + APIs
 P2-013,Phase 2,Outreach,—,AI personalized outreach,Generate tailored candidate messages,P1,Done,P2-012,personalize-engine + generate API + campaign detail panel
 P2-014,Phase 2,Outreach,—,Response tracking,Track opens replies campaign status,P2,Done,P2-012,tracking-engine + webhook + send API + funnel stats
-P2-015,Phase 2,Assessment,—,Assessment Engine,AI-generated real-world tasks scenarios,P1,Not Started,,
-P2-016,Phase 2,Assessment,—,Automated task evaluation,Code product ops scenario scoring,P1,Not Started,P2-015,
-P2-017,Phase 2,Assessment,Decision,Assessment in decision layer,Feed assessment results into hire confidence,P1,Not Started,P2-016|MVP-011
+P2-015,Phase 2,Assessment,—,Assessment Engine,AI-generated real-world tasks scenarios,P1,Done,,assessment-engine + job page panel + task APIs
+P2-016,Phase 2,Assessment,—,Automated task evaluation,Code product ops scenario scoring,P1,Done,P2-015,evaluation-engine + submit/evaluate APIs + application panel
+P2-017,Phase 2,Assessment,Decision,Assessment in decision layer,Feed assessment results into hire confidence,P1,Done,P2-016,decision weights blend assessment into hire confidence
 P2-018,Phase 2,AI Copilot,—,Copilot chat interface,"""Show top candidates for this role""",P1,Not Started,,
 P2-019,Phase 2,AI Copilot,—,Candidate comparison copilot,"""Why is A better than B?""",P1,Not Started,P2-018,
 P2-020,Phase 2,AI Copilot,—,Interview summary copilot,"""Summarize this interview""",P2,Not Started,P2-018,

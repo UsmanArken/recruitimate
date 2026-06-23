@@ -78,6 +78,7 @@ model Organization {
   talentPools     TalentPool[]
   outreachTemplates OutreachTemplate[]
   outreachCampaigns OutreachCampaign[]
+  assessmentTasks   AssessmentTask[]
   createdAt DateTime             @default(now())
   updatedAt DateTime             @updatedAt
 }
@@ -203,6 +204,7 @@ model Job {
   assignments   JobAssignment[]
   applications  JobApplication[]
   outreachCampaigns OutreachCampaign[]
+  assessmentTasks   AssessmentTask[]
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
@@ -289,6 +291,7 @@ model JobApplication {
   talentProfile  TalentProfile?
   interviews     Interview[]
   decision       Decision?
+  assessmentSubmissions AssessmentSubmission[]
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 
@@ -497,4 +500,65 @@ model OutreachEvent {
 
   @@index([messageId])
   @@index([type])
+}
+
+// ─── P2-015 Assessment Engine ───────────────────────────────────────────────
+
+enum AssessmentTaskType {
+  CODE
+  PRODUCT
+  OPS
+  SCENARIO
+}
+
+enum AssessmentSubmissionStatus {
+  DRAFT
+  SUBMITTED
+  EVALUATED
+}
+
+model AssessmentTask {
+  id               String             @id @default(cuid())
+  organizationId   String
+  jobId            String
+  title            String
+  prompt           String             @db.Text
+  taskType         AssessmentTaskType
+  difficulty       String             @default("medium")
+  rubric           Json               @default("[]")
+  skillsTested     Json               @default("[]")
+  deliverables     Json               @default("[]")
+  estimatedMinutes Int?               @default(60)
+  rawGeneration    Json?
+  organization     Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  job              Job                @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  submissions      AssessmentSubmission[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@index([organizationId])
+  @@index([jobId])
+}
+
+model AssessmentSubmission {
+  id             String                     @id @default(cuid())
+  organizationId String
+  applicationId  String
+  taskId         String
+  status         AssessmentSubmissionStatus @default(DRAFT)
+  responseText   String?                    @db.Text
+  responseUrl    String?
+  submittedAt    DateTime?
+  overallScore   Float?
+  evaluation     Json?
+  evaluatedAt    DateTime?
+  application    JobApplication             @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  task           AssessmentTask             @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  createdAt      DateTime                   @default(now())
+  updatedAt      DateTime                   @updatedAt
+
+  @@unique([applicationId, taskId])
+  @@index([organizationId])
+  @@index([applicationId])
+  @@index([taskId])
 }

@@ -82,7 +82,9 @@ describe("Decision intelligence (heuristic)", () => {
     );
     assert.ok(decision.explanation.length > 0);
     assert.equal(
-      decision.signalBreakdown.talentWeight + decision.signalBreakdown.interviewWeight,
+      decision.signalBreakdown.talentWeight +
+        decision.signalBreakdown.interviewWeight +
+        (decision.signalBreakdown.assessmentWeight ?? 0),
       1
     );
   });

@@ -12,6 +12,7 @@ export function IntelligencePhasePanel({
   recommendation,
   hireConfidence,
   roleFitScore,
+  signalBreakdown,
 }: {
   phase: IntelligencePhase;
   jobTitle?: string | null;
@@ -19,6 +20,14 @@ export function IntelligencePhasePanel({
   recommendation?: string | null;
   hireConfidence?: number | null;
   roleFitScore?: number | null;
+  signalBreakdown?: {
+    talentWeight?: number;
+    interviewWeight?: number;
+    assessmentWeight?: number;
+    talentScore?: number;
+    interviewScore?: number;
+    assessmentScore?: number;
+  } | null;
 }) {
   if (phase === "talent_screening") {
     return (
@@ -98,6 +107,16 @@ export function IntelligencePhasePanel({
             <div className="rounded-lg border border-border-subtle bg-background p-4">
               <p className="mb-1 text-xs font-semibold uppercase text-muted">Summary</p>
               <p className="text-sm leading-relaxed">{explanation}</p>
+            </div>
+          )}
+          {signalBreakdown && (signalBreakdown.assessmentWeight ?? 0) > 0 && (
+            <div className="rounded-lg border border-amber-200/50 bg-amber-500/5 p-4 text-xs text-muted">
+              Signal blend: talent {Math.round((signalBreakdown.talentWeight ?? 0) * 100)}% ·
+              interview {Math.round((signalBreakdown.interviewWeight ?? 0) * 100)}% · assessment{" "}
+              {Math.round((signalBreakdown.assessmentWeight ?? 0) * 100)}%
+              {signalBreakdown.assessmentScore != null && (
+                <> (score {Math.round(signalBreakdown.assessmentScore * 100)}%)</>
+              )}
             </div>
           )}
         </CardContent>
