@@ -239,55 +239,12 @@ export function InterviewAnalysisTabs({ data }: { data: InterviewAnalysisData })
         </div>
       )}
 
-      {/* ── Per-sentence breakdown ── */}
-      {sentences.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-xs font-bold uppercase tracking-wide text-muted">Per sentence</p>
-          {sentences.map((s, i) => {
-            const isCandidate = s.speaker?.toLowerCase() === "candidate";
-            const hesitationPct = s.hesitation != null ? Math.round(s.hesitation * 100) : null;
-            const energyPct = s.energyLevel != null ? Math.round(s.energyLevel * 100) : null;
-            return (
-              <div key={i} className={cn(
-                "rounded-lg border p-3",
-                isCandidate ? "border-border-subtle bg-card" : "border-primary/15 bg-primary/5"
-              )}>
-                <div className="mb-2 flex items-start justify-between gap-2">
-                  <p className="text-sm leading-snug text-foreground/90">{s.text}</p>
-                  <span className={cn(
-                    "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
-                    isCandidate ? "bg-muted/60 text-muted-foreground" : "bg-primary/10 text-primary"
-                  )}>
-                    {s.speaker ?? "unknown"}
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-2 text-[11px]">
-                  {s.paceWpm != null && (
-                    <Pill>{Math.round(s.paceWpm)} wpm</Pill>
-                  )}
-                  {energyPct != null && (
-                    <Pill>energy {energyPct}%</Pill>
-                  )}
-                  {hesitationPct != null && (
-                    <Pill warn={hesitationPct > 60}>hesitation {hesitationPct}%</Pill>
-                  )}
-                  {s.dominantTone && (
-                    <span className="rounded bg-primary/10 px-1.5 py-0.5 font-medium capitalize text-primary">
-                      {s.dominantTone}
-                    </span>
-                  )}
-                  {s.fillerDensity != null && s.fillerDensity > 0 && (
-                    <Pill warn>{s.fillerDensity.toFixed(1)} fillers/100w</Pill>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* ── Transcript ── */}
-      <TranscriptDrawer transcript={data.transcript} interviewTitle={data.title} />
+      {/* ── Transcript (with inline audio metrics when available) ── */}
+      <TranscriptDrawer
+        transcript={data.transcript}
+        interviewTitle={data.title}
+        audioSentences={sentences.length > 0 ? sentences : null}
+      />
 
       {/* ── Interviewer quality (secondary / collapsible) ── */}
       {interviewerQuality && (
@@ -310,13 +267,3 @@ function StatTile({ label, value, unit }: { label: string; value: string; unit: 
   );
 }
 
-function Pill({ children, warn }: { children: React.ReactNode; warn?: boolean }) {
-  return (
-    <span className={cn(
-      "rounded px-1.5 py-0.5 font-medium",
-      warn ? "bg-warning/10 text-warning" : "bg-border-subtle text-muted-foreground"
-    )}>
-      {children}
-    </span>
-  );
-}
