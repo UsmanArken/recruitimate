@@ -48,6 +48,18 @@ async function main() {
       "scripts/qa/resume-extract.test.ts",
       "scripts/qa/linkedin-parse.test.ts",
       "scripts/qa/llm-config.test.ts",
+      "scripts/qa/live-assist.test.ts",
+      "scripts/qa/cross-signal.test.ts",
+      "scripts/qa/question-bank.test.ts",
+      "scripts/qa/interviewer-quality.test.ts",
+      "scripts/qa/audio-signal.test.ts",
+      "scripts/qa/video-behavioral.test.ts",
+      "scripts/qa/talent-discovery.test.ts",
+      "scripts/qa/talent-search.test.ts",
+      "scripts/qa/talent-suggest.test.ts",
+      "scripts/qa/outreach-template.test.ts",
+      "scripts/qa/outreach-personalize.test.ts",
+      "scripts/qa/outreach-tracking.test.ts",
     ])
   );
 

@@ -25,6 +25,7 @@ model User {
   jobAssignments JobAssignment[]
   jobsManaged   Job[]     @relation("JobHiringManager")
   candidateNotes Note[]    @relation("NoteAuthor")
+  outreachCampaigns OutreachCampaign[] @relation("OutreachCampaignCreator")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -74,6 +75,9 @@ model Organization {
   jobs            Job[]
   candidates      Candidate[]
   jobApplications JobApplication[]
+  talentPools     TalentPool[]
+  outreachTemplates OutreachTemplate[]
+  outreachCampaigns OutreachCampaign[]
   createdAt DateTime             @default(now())
   updatedAt DateTime             @updatedAt
 }
@@ -198,11 +202,20 @@ model Job {
   hiringManager    User?           @relation("JobHiringManager", fields: [hiringManagerId], references: [id], onDelete: SetNull)
   assignments   JobAssignment[]
   applications  JobApplication[]
+  outreachCampaigns OutreachCampaign[]
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
   @@index([organizationId])
   @@index([hiringManagerId])
+}
+
+enum CandidateSource {
+  MANUAL
+  RESUME
+  LINKEDIN
+  BULK
+  EXTERNAL
 }
 
 model Candidate {
@@ -216,14 +229,51 @@ model Candidate {
   portfolioUrl   String?
   resumeText     String?          @db.Text
   resumeFilePath String?
+  /// P2-009 how this profile entered the talent corpus
+  source             CandidateSource @default(MANUAL)
+  /// P2-009 denormalized text for discovery search (no raw files)
+  searchDocument     String?         @db.Text
+  /// P2-009 extracted skill keywords for ranking
+  searchSkills       Json?
+  discoveryIndexedAt DateTime?
   organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   applications   JobApplication[]
   notes          Note[]
+  poolMemberships TalentPoolMember[]
+  outreachMessages OutreachMessage[]
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
   @@index([organizationId])
   @@index([email])
+}
+
+/// P2-009 org-scoped talent pool for multi-source discovery
+model TalentPool {
+  id             String             @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  members        TalentPoolMember[]
+  outreachCampaigns OutreachCampaign[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model TalentPoolMember {
+  id          String     @id @default(cuid())
+  poolId      String
+  candidateId String
+  pool        TalentPool @relation(fields: [poolId], references: [id], onDelete: Cascade)
+  candidate   Candidate  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  addedAt     DateTime   @default(now())
+
+  @@unique([poolId, candidateId])
+  @@index([candidateId])
 }
 
 /// One applicant's journey on a specific open position (hiring campaign).
@@ -276,6 +326,12 @@ model Interview {
   meetingUrl      String?
   recordingPath   String?
   transcript      String?            @db.Text
+  /// P2-007 pause / tone-shift signals from recording
+  audioSignals    Json?
+  /// P2-008 explicit opt-in timestamp for video behavioral analysis
+  videoMetricsConsentAt DateTime?
+  /// P2-008 engagement / attention metrics (aggregated — no raw frames)
+  videoBehavioralMetrics Json?
   analysis        InterviewAnalysis?
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
@@ -296,6 +352,8 @@ model InterviewAnalysis {
   behavioralMetrics Json      @default("[]")
   riskFlags         Json      @default("[]")
   explanation       String?   @db.Text
+  /// P2-006 interviewer quality: coverage, probing, bias advisory scores
+  interviewerQuality Json?
   rawAnalysis       Json?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
@@ -327,4 +385,116 @@ model Note {
 
   @@index([candidateId])
   @@index([authorId])
+}
+
+// ─── P2-012 Outreach Engine ──────────────────────────────────────────────────
+
+enum OutreachCampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+enum OutreachMessageStatus {
+  DRAFT
+  GENERATED
+  SCHEDULED
+  SENT
+  DELIVERED
+  OPENED
+  REPLIED
+  BOUNCED
+  FAILED
+}
+
+enum OutreachEventType {
+  SENT
+  DELIVERED
+  OPENED
+  REPLIED
+  BOUNCED
+  FAILED
+}
+
+model OutreachTemplate {
+  id             String             @id @default(cuid())
+  organizationId String
+  name           String
+  subject        String
+  bodyMarkdown   String             @db.Text
+  variables      Json               @default("[]")
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  campaigns      OutreachCampaign[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model OutreachCampaign {
+  id              String                 @id @default(cuid())
+  organizationId  String
+  name            String
+  status          OutreachCampaignStatus @default(DRAFT)
+  jobId           String?
+  poolId          String?
+  templateId      String?
+  subjectOverride String?
+  createdById     String?
+  organization    Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  job             Job?               @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  talentPool      TalentPool?        @relation(fields: [poolId], references: [id], onDelete: SetNull)
+  template        OutreachTemplate?  @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  createdBy       User?              @relation("OutreachCampaignCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  messages        OutreachMessage[]
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([organizationId])
+  @@index([jobId])
+  @@index([status])
+}
+
+model OutreachMessage {
+  id              String                @id @default(cuid())
+  organizationId  String
+  campaignId      String
+  candidateId     String
+  status          OutreachMessageStatus @default(DRAFT)
+  subject         String
+  bodyText        String?               @db.Text
+  bodyHtml        String?               @db.Text
+  personalizedAt  DateTime?
+  personalization Json?
+  sentAt          DateTime?
+  openedAt        DateTime?
+  openCount       Int                   @default(0)
+  repliedAt       DateTime?
+  replySnippet    String?               @db.Text
+  externalId      String?
+  errorMessage    String?
+  campaign        OutreachCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  candidate       Candidate        @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  events          OutreachEvent[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@unique([campaignId, candidateId])
+  @@index([organizationId])
+  @@index([campaignId])
+  @@index([status])
+}
+
+model OutreachEvent {
+  id        String            @id @default(cuid())
+  messageId String
+  type      OutreachEventType
+  payload   Json?
+  message   OutreachMessage   @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  createdAt DateTime          @default(now())
+
+  @@index([messageId])
+  @@index([type])
 }

@@ -13,6 +13,8 @@ import * as resumeParseService from "@/lib/services/resume-parse.service";
 import * as candidateService from "@/lib/services/candidate.service";
 import * as applicationService from "@/lib/services/application.service";
 import { getJobById } from "@/lib/services/job.service";
+import { buildDiscoveryDocument } from "@/lib/intelligence/talent/discovery-engine";
+import type { Prisma } from "@prisma/client";
 
 export type BulkImportRowResult =
   | {
@@ -187,12 +189,20 @@ export async function importResumesForJob(
         }
 
         if (!candidate.resumeText || candidate.resumeText.length < 20) {
+          const doc = buildDiscoveryDocument({
+            name: candidate.name,
+            resumeText: parsed.text,
+          });
           await db.candidate.update({
             where: { id: candidate.id },
             data: {
               resumeText: parsed.text,
               name: candidate.name || name,
               email: candidate.email ?? email ?? null,
+              source: "BULK",
+              searchDocument: doc.searchDocument,
+              searchSkills: doc.searchSkills as Prisma.InputJsonValue,
+              discoveryIndexedAt: new Date(),
             },
           });
         }
@@ -214,6 +224,11 @@ export async function importResumesForJob(
         linkedInText: undefined,
         linkedInUrl: undefined,
         githubUrl: undefined,
+      });
+
+      await db.candidate.update({
+        where: { id: created.id },
+        data: { source: "BULK" },
       });
 
       const app = created.applications?.[0];

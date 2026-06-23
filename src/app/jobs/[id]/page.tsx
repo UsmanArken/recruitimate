@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { PageHeader, PageBody } from "@/components/layout/page-header";
 import { JobAssignmentsPanel } from "@/components/features/jobs/job-assignments-panel";
 import { BulkResumeUploadPanel } from "@/components/features/jobs/bulk-resume-upload-panel";
+import { InterviewQuestionBankPanel } from "@/components/features/jobs/interview-question-bank-panel";
+import { SuggestedCandidatesPanel } from "@/components/features/jobs/suggested-candidates-panel";
 import { ChevronLeft, Users } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -89,6 +91,32 @@ export default async function JobDetailPage({
             </CardContent>
           </Card>
         )}
+
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Interview preparation</CardTitle>
+            <CardDescription>
+              Generate a role-specific question bank from this requisition&apos;s description and
+              requirements.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <InterviewQuestionBankPanel jobId={job.id} jobTitle={job.title} />
+          </CardContent>
+        </Card>
+
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Talent suggestions</CardTitle>
+            <CardDescription>
+              Recommend internal candidates from your discovery corpus who are not already in this
+              role&apos;s pipeline.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SuggestedCandidatesPanel jobId={job.id} jobTitle={job.title} />
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
