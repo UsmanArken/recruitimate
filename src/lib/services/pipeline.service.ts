@@ -39,12 +39,34 @@ export async function updateApplicationStage(
 
   const existing = await db.jobApplication.findFirst({
     where: { id: applicationId, ...organizationFilter(ctx) },
+    include: {
+      candidate: { select: { id: true, name: true } },
+      job: { select: { id: true, title: true, organizationId: true } },
+    },
   });
   if (!existing) throw notFound("Application");
 
-  return db.jobApplication.update({
+  const updated = await db.jobApplication.update({
     where: { id: applicationId },
     data: { stage },
     include: applicationListInclude,
   });
+
+  const { notifyApplicationStageChange } = await import(
+    "@/lib/services/notification.service"
+  );
+  void notifyApplicationStageChange({
+    organizationId: existing.job.organizationId,
+    applicationId,
+    candidateId: existing.candidate.id,
+    candidateName: existing.candidate.name,
+    jobId: existing.job.id,
+    jobTitle: existing.job.title,
+    fromStage: existing.stage,
+    toStage: stage,
+    actorEmail: ctx.userEmail,
+    actorName: ctx.userName ?? null,
+  });
+
+  return updated;
 }

@@ -107,6 +107,19 @@ export async function executeAnalyzeInterviewJob(
     interviews: full?.interviews ?? [updatedInterview],
   });
 
+  const { notifyInterviewAnalyzed } = await import("@/lib/services/notification.service");
+  void notifyInterviewAnalyzed({
+    organizationId: application.organizationId,
+    applicationId: application.id,
+    candidateId: application.candidateId,
+    candidateName: application.candidate.name,
+    jobId: application.jobId,
+    jobTitle: full?.job.title ?? application.job.title,
+    interviewTitle: updatedInterview.title,
+    hireConfidence: decision.hireConfidence,
+    recommendation: decision.recommendation,
+  });
+
   return {
     interviewId: updatedInterview.id,
     status: updatedInterview.status,

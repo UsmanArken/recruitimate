@@ -73,10 +73,36 @@ export async function scheduleInterview(
     },
   });
 
+  const app = await db.jobApplication.findFirst({
+    where: { id: applicationId },
+    include: {
+      candidate: { select: { id: true, name: true } },
+      job: { select: { id: true, title: true, organizationId: true } },
+    },
+  });
+
+  const previousStage = app?.stage ?? "NEW";
+
   await db.jobApplication.update({
     where: { id: applicationId },
     data: { stage: "INTERVIEW_SCHEDULED" },
   });
+
+  if (app) {
+    const { notifyApplicationStageChange } = await import("@/lib/services/notification.service");
+    void notifyApplicationStageChange({
+      organizationId: app.job.organizationId,
+      applicationId,
+      candidateId: app.candidate.id,
+      candidateName: app.candidate.name,
+      jobId: app.job.id,
+      jobTitle: app.job.title,
+      fromStage: previousStage,
+      toStage: "INTERVIEW_SCHEDULED",
+      actorEmail: ctx.userEmail,
+      actorName: ctx.userName ?? null,
+    });
+  }
 
   return interview;
 }
@@ -199,6 +225,19 @@ export async function createInterviewAndAnalyze(
       requirements: full?.job.requirements ?? application.job.requirements,
     },
     interviews: full?.interviews ?? [interview],
+  });
+
+  const { notifyInterviewAnalyzed } = await import("@/lib/services/notification.service");
+  void notifyInterviewAnalyzed({
+    organizationId: full?.organizationId ?? ctx.actingOrganizationId ?? ctx.organizationId,
+    applicationId,
+    candidateId: application.candidateId,
+    candidateName: application.candidate.name,
+    jobId: application.jobId,
+    jobTitle: full?.job.title ?? application.job.title,
+    interviewTitle: interview.title,
+    hireConfidence: decision.hireConfidence,
+    recommendation: decision.recommendation,
   });
 
   return { interview, decision };

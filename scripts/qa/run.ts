@@ -67,6 +67,7 @@ async function main() {
       "scripts/qa/storage.test.ts",
       "scripts/qa/background-job.test.ts",
       "scripts/qa/pipeline.test.ts",
+      "scripts/qa/email-notifications.test.ts",
     ])
   );
 

@@ -76,7 +76,7 @@ P2-021,Phase 2,Platform,—,Media storage pipeline,S3-compatible storage for rec
 P2-022,Phase 2,Platform,—,Async job queue,Background workers for transcription and analysis,P1,Done,P2-021,BackgroundJob model + async transcribe/analyze + worker script + UI polling
 P2-023,Phase 2,UI,—,Kanban pipeline view,Drag-drop candidates across stages,P2,Done,MVP-016,/pipeline kanban + PATCH stage API + job filter
 P2-024,Phase 2,UI,—,Printable candidate brief,Export hire committee PDF summary,P2,Done,,brief page + print/PDF export + GET brief API
-P2-025,Phase 2,Platform,—,Email notifications,Stage change interview analyzed alerts,P2,Not Started,MVP-028,
+P2-025,Phase 2,Platform,—,Email notifications,Stage change interview analyzed alerts,P2,Done,MVP-028,EmailNotification model + stage/analyze hooks + /settings/notifications
 P3-001,Phase 3,Learning Engine,—,Outcome feedback collection,Record hire/reject/onboarding outcomes,P0,Not Started,,
 P3-002,Phase 3,Learning Engine,—,Recruiter feedback loop,Thumbs up/down on recommendations signals,P1,Not Started,P3-001,
 P3-003,Phase 3,Learning Engine,—,Scoring model improvement,Retrain weights from outcomes over time,P1,Not Started,P3-001,

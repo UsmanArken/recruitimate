@@ -76,7 +76,10 @@ export default function TeamSettingsPage() {
             <CardTitle>Invite teammate</CardTitle>
             <CardDescription>
               Organization roles: Admin, Recruiter, Hiring Manager. Interviewers are assigned per
-              job on each role&apos;s detail page.
+              job on each role&apos;s detail page.{" "}
+              <a href="/settings/notifications" className="font-medium text-primary hover:underline">
+                View email notification log
+              </a>
             </CardDescription>
           </CardHeader>
           <CardContent>
