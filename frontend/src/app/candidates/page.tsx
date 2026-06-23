@@ -12,13 +12,10 @@ import { UserPlus, Users } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
-function decisionStatusLabel(
-  recommendation: string | null | undefined,
-  hireConfidence: number | null | undefined
-): string {
+function decisionStatusLabel(recommendation: string | null | undefined): string {
   if (recommendation === "pending_role") return "Needs open position";
   if (recommendation === "pending_interview") return "Awaiting interview";
-  if (hireConfidence != null) return `${Math.round(hireConfidence * 100)}% confidence`;
+  if (recommendation) return recommendation.replace(/_/g, " ");
   return "—";
 }
 
@@ -30,7 +27,7 @@ export default async function CandidatesPage() {
       candidate: { id: string; name: string; email: string | null; source: "portal" | "manual" };
       job: { id: string; title: string };
       talentProfile: { roleFitScore: number | null } | null;
-      decision: { hireConfidence: number | null; recommendation: string | null } | null;
+      decision: { recommendation: string | null } | null;
     }>>("/api/applications"),
     serverFetch<Array<{ id: string }>>("/api/jobs"),
   ]);
@@ -116,10 +113,7 @@ export default async function CandidatesPage() {
                       {formatScore(app.talentProfile?.roleFitScore)}
                     </td>
                     <td className="px-5 py-4 text-sm text-muted">
-                      {decisionStatusLabel(
-                        app.decision?.recommendation,
-                        app.decision?.hireConfidence
-                      )}
+                      {decisionStatusLabel(app.decision?.recommendation)}
                     </td>
                     <td className="px-5 py-4">
                       <CandidateActionsCell

@@ -247,7 +247,6 @@ async def bulk_import_resumes(job_id: str, org_id: str, files: list[tuple[str, b
                         "applicationId": dup.id,
                         "candidateName": existing_candidate.name,
                         "roleFitScore": None,
-                        "hireConfidence": None,
                         "message": "Already in pipeline for this role",
                     })
                     continue
@@ -282,7 +281,6 @@ async def bulk_import_resumes(job_id: str, org_id: str, files: list[tuple[str, b
                 "applicationId": app.id,
                 "candidateName": candidate.name,
                 "roleFitScore": None,
-                "hireConfidence": None,
             })
         except Exception as exc:
             results.append({

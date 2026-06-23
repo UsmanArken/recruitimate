@@ -10,18 +10,12 @@ export type JobPipelineRow = {
   stage: string;
   candidate: { id: string; name: string; email: string | null };
   talentProfile: { roleFitScore: number | null } | null;
-  decision: {
-    hireConfidence: number | null;
-    recommendation: string | null;
-  } | null;
+  decision: { recommendation: string | null } | null;
 };
 
-function confidenceLabel(
-  recommendation: string | null | undefined,
-  hireConfidence: number | null | undefined
-): string {
+function decisionLabel(recommendation: string | null | undefined): string {
   if (recommendation === "pending_interview") return "Awaiting interview";
-  if (hireConfidence != null) return `${Math.round(hireConfidence * 100)}% confidence`;
+  if (recommendation) return recommendation.replace(/_/g, " ");
   return "—";
 }
 
@@ -81,7 +75,7 @@ export function JobPipelineTable({
                   {formatScore(app.talentProfile?.roleFitScore)}
                 </td>
                 <td className="px-5 py-4 text-sm text-muted">
-                  {confidenceLabel(app.decision?.recommendation, app.decision?.hireConfidence)}
+                  {decisionLabel(app.decision?.recommendation)}
                 </td>
                 <td className="px-5 py-4">
                   <Link

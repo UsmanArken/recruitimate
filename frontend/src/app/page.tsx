@@ -9,17 +9,14 @@ import { Avatar } from "@/components/features/candidates/avatar";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getAuthUser, serverFetch } from "@/lib/api-server";
-import { formatScore, scoreColor } from "@/lib/utils";
+import { formatScore } from "@/lib/utils";
 import { ArrowRight, Users, Briefcase, Mic, TrendingUp, UserPlus } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
-function decisionStatusLabel(
-  recommendation: string | null | undefined,
-  hireConfidence: number | null | undefined
-): string {
+function decisionStatusLabel(recommendation: string | null | undefined): string {
   if (recommendation === "pending_interview") return "Awaiting interview";
-  if (hireConfidence != null) return `${Math.round(hireConfidence * 100)}% confidence`;
+  if (recommendation) return recommendation.replace("_", " ");
   return "—";
 }
 
@@ -33,7 +30,7 @@ export default async function DashboardPage() {
     candidate: { id: string; name: string };
     job: { id: string; title: string };
     talentProfile: { roleFitScore: number | null } | null;
-    decision: { hireConfidence: number | null; recommendation: string | null } | null;
+    decision: { recommendation: string | null } | null;
   }>>("/api/applications");
 
   const jobs = await serverFetch<Array<{ id: string }>>("/api/jobs");
@@ -43,20 +40,11 @@ export default async function DashboardPage() {
     (a) => a.stage === "INTERVIEWED" || a.stage === "DECISION" || a.stage === "HIRED"
   ).length;
 
-  const confidences = applications
-    .map((a) => a.decision?.hireConfidence)
-    .filter((c): c is number => c != null);
-  const avgConfidence =
-    confidences.length > 0
-      ? confidences.reduce((a, b) => a + b, 0) / confidences.length
-      : null;
-
   const stats = {
     candidates: candidates.length,
     applications: applications.length,
     jobs: jobs.length,
     interviewed,
-    avgConfidence,
   };
 
   const recent = applications.slice(0, 10);
@@ -97,11 +85,11 @@ export default async function DashboardPage() {
             tone="sage"
           />
           <StatCard
-            label="Avg. hire confidence"
-            value={stats.avgConfidence != null ? formatScore(stats.avgConfidence) : "—"}
+            label="Evaluations complete"
+            value={applications.filter((a) => a.decision?.recommendation).length}
             icon={TrendingUp}
             tone="slate"
-            hint="Across completed evaluations"
+            hint="Applications with a final recommendation"
           />
         </div>
 
@@ -147,20 +135,9 @@ export default async function DashboardPage() {
                         <p className="text-sm text-muted">{app.job.title}</p>
                       </div>
                       <StageBadge stage={app.stage} />
-                      {app.decision?.hireConfidence != null ? (
-                        <span
-                          className={`text-sm font-bold tabular-nums ${scoreColor(app.decision.hireConfidence)}`}
-                        >
-                          {formatScore(app.decision.hireConfidence)}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted">
-                          {decisionStatusLabel(
-                            app.decision?.recommendation,
-                            app.decision?.hireConfidence
-                          )}
-                        </span>
-                      )}
+                      <span className="text-xs text-muted">
+                        {decisionStatusLabel(app.decision?.recommendation)}
+                      </span>
                       <ArrowRight className="h-4 w-4 text-muted" />
                     </Link>
                   </li>

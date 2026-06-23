@@ -134,7 +134,6 @@ async def list_applications(org_id: str, db: AsyncSession) -> list:
         "job": {"id": a.job.id, "title": a.job.title} if a.job else None,
         "talentProfile": {"roleFitScore": a.talent_profile.roleFitScore} if a.talent_profile else None,
         "decision": {
-            "hireConfidence": a.decision.hireConfidence,
             "recommendation": a.decision.recommendation,
         } if a.decision else None,
     } for a in apps]

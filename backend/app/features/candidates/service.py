@@ -54,9 +54,10 @@ def _serialize_talent(tp: TalentProfile) -> dict:
 
 def _serialize_decision(d: Decision) -> dict:
     return {
-        "hireConfidence": d.hireConfidence,
         "recommendation": d.recommendation,
         "explanation": d.explanation,
+        "reasonsToHire": d.reasonsToHire,
+        "reasonsToReject": d.reasonsToReject,
     }
 
 

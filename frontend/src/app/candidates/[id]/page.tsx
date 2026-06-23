@@ -14,12 +14,9 @@ import { ChevronLeft, Mail, Briefcase } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
-function decisionStatusLabel(
-  recommendation: string | null | undefined,
-  hireConfidence: number | null | undefined
-): string {
+function decisionStatusLabel(recommendation: string | null | undefined): string {
   if (recommendation === "pending_interview") return "Awaiting interview";
-  if (hireConfidence != null) return `${Math.round(hireConfidence * 100)}% confidence`;
+  if (recommendation) return recommendation.replace(/_/g, " ");
   return "—";
 }
 
@@ -42,7 +39,7 @@ export default async function CandidatePersonPage({
         jobId: string;
         job: { id: string; title: string } | null;
         talentProfile: { roleFitScore: number | null } | null;
-        decision: { hireConfidence: number | null; recommendation: string | null } | null;
+        decision: { recommendation: string | null } | null;
       }>;
       notes: Array<{
         id: string;
@@ -121,10 +118,7 @@ export default async function CandidatePersonPage({
                         <div className="min-w-0 flex-1">
                           <p className="font-semibold text-foreground">{app.job?.title ?? "Unknown role"}</p>
                           <p className="text-sm text-muted">
-                            {decisionStatusLabel(
-                              app.decision?.recommendation,
-                              app.decision?.hireConfidence
-                            )}
+                            {decisionStatusLabel(app.decision?.recommendation)}
                           </p>
                         </div>
                         <StageBadge stage={app.stage} />

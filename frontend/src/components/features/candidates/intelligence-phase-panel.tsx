@@ -10,14 +10,12 @@ export function IntelligencePhasePanel({
   jobTitle,
   explanation,
   recommendation,
-  hireConfidence,
   roleFitScore,
 }: {
   phase: IntelligencePhase;
   jobTitle?: string | null;
   explanation?: string | null;
   recommendation?: string | null;
-  hireConfidence?: number | null;
   roleFitScore?: number | null;
 }) {
   if (phase === "talent_screening") {
@@ -82,8 +80,7 @@ export function IntelligencePhasePanel({
             This recommendation assists your decision; it does not replace recruiter judgment
             or compliance review.
           </TrustBanner>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <ScoreBadge label="Hire confidence" score={hireConfidence} />
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="rounded-lg border border-border-subtle bg-card p-4 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                 Recommendation

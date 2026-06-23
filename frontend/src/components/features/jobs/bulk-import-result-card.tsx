@@ -10,7 +10,6 @@ export type BulkImportResultCardData = {
   applicationId: string;
   candidateName: string;
   roleFitScore: number | null;
-  hireConfidence: number | null;
   message?: string;
 };
 
@@ -35,11 +34,6 @@ export function BulkImportResultCard({ row }: { row: BulkImportResultCardData })
           {formatScore(row.roleFitScore)}
         </p>
         <p className="text-[11px] text-muted">role fit</p>
-        {row.hireConfidence != null && (
-          <p className="mt-0.5 text-[11px] text-muted">
-            {Math.round(row.hireConfidence)}% confidence
-          </p>
-        )}
       </div>
       <ArrowRight className="h-4 w-4 shrink-0 text-muted" />
     </Link>
