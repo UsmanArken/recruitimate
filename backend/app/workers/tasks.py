@@ -253,31 +253,41 @@ else:
                 + "\n\nReturn ONLY valid JSON with exactly this structure:\n"
                 "{\n"
                 '  "sentences": [\n'
-                '    {\n'
-                '      "text": "<exact sentence from transcript>",\n'
-                '      "speaker": "<candidate or recruiter>",\n'
-                '      "paceWpm": <number>,\n'
-                '      "energyLevel": <0.0-1.0>,\n'
-                '      "dominantTone": "<string>",\n'
-                '      "fillerDensity": <filler words per 100 words>,\n'
-                '      "hesitation": <0.0-1.0>\n'
-                "    }\n"
+                '    {"spk":"candidate|recruiter","wpm":<int>,"nrg":<0.0-1.0>,"tone":"<word>","fill":<0.0-10.0>,"hes":<0.0-1.0>}\n'
                 "  ],\n"
-                '  "aggregate": {\n'
-                '    "paceWpm": <number>,\n'
-                '    "pauseFrequency": <pauses per minute longer than 500ms>,\n'
-                '    "fillerDensity": <filler words per 100 words>,\n'
-                '    "energyLevel": <0.0-1.0>,\n'
-                '    "dominantTone": "<string>",\n'
-                '    "emotionalVariance": <0.0-1.0>\n'
-                "  }\n"
+                '  "aggregate": {"paceWpm":<int>,"pauseFreq":<float>,"fillerDensity":<float>,"energyLevel":<float>,"dominantTone":"<word>","emotionalVariance":<float>}\n'
                 "}\n"
-                "Include one entry in sentences[] for each line in the transcript. "
-                "If no transcript was provided, infer sentences from the audio."
+                "sentences[] must have exactly one entry per transcript line, in order. "
+                "Use short field names exactly as shown. No extra fields."
             )
-            response = model.generate_content([prompt, audio_file])
+            generation_config = {"max_output_tokens": 32768}
+            response = model.generate_content([prompt, audio_file], generation_config=generation_config)
             raw = response.text.strip().removeprefix("```json").removesuffix("```").strip()
-            return json.loads(raw)
+            parsed = json.loads(raw)
+            # Expand short field names back to full names for frontend compatibility
+            expanded_sentences = []
+            for s in parsed.get("sentences", []):
+                expanded_sentences.append({
+                    "speaker": s.get("spk"),
+                    "paceWpm": s.get("wpm"),
+                    "energyLevel": s.get("nrg"),
+                    "dominantTone": s.get("tone"),
+                    "fillerDensity": s.get("fill"),
+                    "hesitation": s.get("hes"),
+                })
+            agg = parsed.get("aggregate", {})
+            # Normalize aggregate field names
+            return {
+                "sentences": expanded_sentences,
+                "aggregate": {
+                    "paceWpm": agg.get("paceWpm"),
+                    "pauseFrequency": agg.get("pauseFreq"),
+                    "fillerDensity": agg.get("fillerDensity"),
+                    "energyLevel": agg.get("energyLevel"),
+                    "dominantTone": agg.get("dominantTone"),
+                    "emotionalVariance": agg.get("emotionalVariance"),
+                },
+            }
         except Exception:
             logger.exception("Gemini audio analysis failed")
             return {}
