@@ -13,40 +13,36 @@ class TalentResult:
     strengths: list[str] = field(default_factory=list)
     gaps: list[str] = field(default_factory=list)
     hiddenSignals: list[str] = field(default_factory=list)
-    explanation: str = ""
 
 
 @dataclass
-class InterviewResult:
-    hesitationScore: float | None = None
+class AudioResult:
     confidenceScore: float | None = None
     clarityScore: float | None = None
-    consistencyScore: float | None = None
-    engagementScore: float | None = None
-    cognitiveSignals: dict[str, Any] = field(default_factory=lambda: {"items": []})
-    behavioralMetrics: dict[str, Any] = field(default_factory=lambda: {"workStyleNotes": []})
+    pacingScore: float | None = None
+    fillerScore: float | None = None
+    energyLevel: float | None = None
+    dominantTone: str | None = None
+    emotionalVariance: float | None = None
+
+
+@dataclass
+class TranscriptResult:
+    truthfulnessScore: float | None = None
+    depthScore: float | None = None
+    resumeConsistencyScore: float | None = None
+    inconsistencies: list[str] = field(default_factory=list)
+    depthNotes: list[str] = field(default_factory=list)
+    workStyleNotes: list[str] = field(default_factory=list)
     riskFlags: list[str] = field(default_factory=list)
 
 
 @dataclass
 class DecisionResult:
-    hireConfidence: float | None = None
     recommendation: str = "HOLD"
-    riskFactors: list[str] = field(default_factory=list)
     explanation: str = ""
-    signalBreakdown: dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass
-class LiveAssistResult:
-    followUpQuestions: list[str] = field(default_factory=list)
-
-
-@dataclass
-class CrossSignalResult:
-    consistencyScore: float | None = None
-    inconsistencies: list[str] = field(default_factory=list)
-    explanation: str = ""
+    reasonsToHire: list[str] = field(default_factory=list)
+    reasonsToReject: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -58,7 +54,5 @@ class InterviewerQualityResult:
 
 
 @dataclass
-class InconsistencyResult:
-    consistencyScore: float | None = None
-    evidence: list[str] = field(default_factory=list)
-    explanation: str = ""
+class LiveAssistResult:
+    followUpQuestions: list[str] = field(default_factory=list)

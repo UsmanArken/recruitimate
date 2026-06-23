@@ -44,11 +44,10 @@ export default async function ApplicationDetailPage({
       explanation: string | null;
     } | null;
     decision: {
-      hireConfidence: number | null;
       recommendation: string | null;
-      riskFactors: string[] | null;
       explanation: string | null;
-      signalBreakdown: Record<string, unknown> | null;
+      reasonsToHire: string[] | null;
+      reasonsToReject: string[] | null;
     } | null;
     interviews: Array<{
       id: string;
@@ -61,13 +60,19 @@ export default async function ApplicationDetailPage({
       candidateJoinUrl: string | null;
       agentStatus: string | null;
       analysis: {
-        hesitationScore: number | null;
         confidenceScore: number | null;
         clarityScore: number | null;
-        consistencyScore: number | null;
-        engagementScore: number | null;
-        cognitiveSignals: unknown;
-        behavioralMetrics: unknown;
+        pacingScore: number | null;
+        fillerScore: number | null;
+        energyLevel: number | null;
+        dominantTone: string | null;
+        emotionalVariance: number | null;
+        truthfulnessScore: number | null;
+        depthScore: number | null;
+        resumeConsistencyScore: number | null;
+        inconsistencies: string[] | null;
+        depthNotes: string[] | null;
+        workStyleNotes: string[] | null;
         riskFlags: string[] | null;
         interviewerQuality: unknown;
       } | null;
@@ -87,13 +92,19 @@ export default async function ApplicationDetailPage({
       analysis: {
         title: i.title ?? "Interview",
         transcript: i.transcript ?? null,
-        hesitationScore: i.analysis!.hesitationScore,
         confidenceScore: i.analysis!.confidenceScore,
         clarityScore: i.analysis!.clarityScore,
-        consistencyScore: i.analysis!.consistencyScore,
-        engagementScore: i.analysis!.engagementScore,
-        cognitiveSignals: i.analysis!.cognitiveSignals,
-        behavioralMetrics: i.analysis!.behavioralMetrics,
+        pacingScore: i.analysis!.pacingScore,
+        fillerScore: i.analysis!.fillerScore,
+        energyLevel: i.analysis!.energyLevel,
+        dominantTone: i.analysis!.dominantTone,
+        emotionalVariance: i.analysis!.emotionalVariance,
+        truthfulnessScore: i.analysis!.truthfulnessScore,
+        depthScore: i.analysis!.depthScore,
+        resumeConsistencyScore: i.analysis!.resumeConsistencyScore,
+        inconsistencies: i.analysis!.inconsistencies,
+        depthNotes: i.analysis!.depthNotes,
+        workStyleNotes: i.analysis!.workStyleNotes,
         riskFlags: i.analysis!.riskFlags,
         interviewerQuality: i.analysis!.interviewerQuality,
       } satisfies InterviewAnalysisData,
@@ -113,7 +124,8 @@ export default async function ApplicationDetailPage({
 
   const hasInterview = analysedInterviews.length > 0;
   const hiddenSignals = (tp?.hiddenSignals ?? []) as string[];
-  const riskFactors = (dec?.riskFactors ?? []) as string[];
+  const reasonsToHire = (dec?.reasonsToHire ?? []) as string[];
+  const reasonsToReject = (dec?.reasonsToReject ?? []) as string[];
 
   const talentContent = (
     <div className="space-y-5">
@@ -212,12 +224,11 @@ export default async function ApplicationDetailPage({
     <VerdictCard
       applicationId={application.id}
       stage={application.stage}
-      hireConfidence={dec?.hireConfidence ?? null}
       recommendation={dec?.recommendation ?? null}
       roleFitScore={tp?.roleFitScore ?? null}
-      riskFactors={riskFactors}
       explanation={dec?.explanation ?? null}
-      signalBreakdown={(dec?.signalBreakdown as Parameters<typeof VerdictCard>[0]["signalBreakdown"]) ?? null}
+      reasonsToHire={reasonsToHire}
+      reasonsToReject={reasonsToReject}
       hasInterview={hasInterview}
     />
   );
@@ -255,14 +266,9 @@ export default async function ApplicationDetailPage({
                 </span>
               )}
             </div>
-            {(tp?.roleFitScore != null || dec?.hireConfidence != null) && (
+            {tp?.roleFitScore != null && (
               <div className="flex items-center gap-3">
-                {tp?.roleFitScore != null && (
-                  <HeaderScore label="Role fit" value={tp.roleFitScore} />
-                )}
-                {dec?.hireConfidence != null && (
-                  <HeaderScore label="Hire confidence" value={dec.hireConfidence} />
-                )}
+                <HeaderScore label="Role fit" value={tp.roleFitScore} />
               </div>
             )}
           </div>

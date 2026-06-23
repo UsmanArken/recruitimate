@@ -317,15 +317,28 @@ class InterviewAnalysis(Base):
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
     interviewId: Mapped[str] = mapped_column(String, ForeignKey("Interview.id"), unique=True, nullable=False)
-    hesitationScore: Mapped[float | None] = mapped_column(Float)
+
+    # Audio analysis (Call 2 — Gemini multimodal)
     confidenceScore: Mapped[float | None] = mapped_column(Float)
     clarityScore: Mapped[float | None] = mapped_column(Float)
-    consistencyScore: Mapped[float | None] = mapped_column(Float)
-    engagementScore: Mapped[float | None] = mapped_column(Float)
-    cognitiveSignals: Mapped[dict | None] = mapped_column(JSON)
-    behavioralMetrics: Mapped[dict | None] = mapped_column(JSON)
+    pacingScore: Mapped[float | None] = mapped_column(Float)
+    fillerScore: Mapped[float | None] = mapped_column(Float)
+    energyLevel: Mapped[float | None] = mapped_column(Float)
+    dominantTone: Mapped[str | None] = mapped_column(String)
+    emotionalVariance: Mapped[float | None] = mapped_column(Float)
+
+    # Transcript + cross-signal analysis (Call 3)
+    truthfulnessScore: Mapped[float | None] = mapped_column(Float)
+    depthScore: Mapped[float | None] = mapped_column(Float)
+    resumeConsistencyScore: Mapped[float | None] = mapped_column(Float)
+    inconsistencies: Mapped[list | None] = mapped_column(JSON)
+    depthNotes: Mapped[list | None] = mapped_column(JSON)
+    workStyleNotes: Mapped[list | None] = mapped_column(JSON)
     riskFlags: Mapped[list | None] = mapped_column(JSON)
+
+    # Interviewer quality (Call 5)
     interviewerQuality: Mapped[dict | None] = mapped_column(JSON)
+
     createdAt: Mapped[datetime] = mapped_column(DateTime, default=_now)
     updatedAt: Mapped[datetime] = mapped_column(DateTime, default=_now, onupdate=_now)
 
@@ -350,12 +363,10 @@ class Decision(Base):
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
     applicationId: Mapped[str] = mapped_column(String, ForeignKey("JobApplication.id"), unique=True, nullable=False)
-    hireConfidence: Mapped[float | None] = mapped_column(Float)
-    recommendation: Mapped[str | None] = mapped_column(String)
-    riskFactors: Mapped[list | None] = mapped_column(JSON)
-    comparisonNotes: Mapped[str | None] = mapped_column(Text)
+    recommendation: Mapped[str | None] = mapped_column(String)  # HIRE|LEAN_HIRE|HOLD|LEAN_REJECT|REJECT
     explanation: Mapped[str | None] = mapped_column(Text)
-    signalBreakdown: Mapped[dict | None] = mapped_column(JSON)
+    reasonsToHire: Mapped[list | None] = mapped_column(JSON)
+    reasonsToReject: Mapped[list | None] = mapped_column(JSON)
     createdAt: Mapped[datetime] = mapped_column(DateTime, default=_now)
     updatedAt: Mapped[datetime] = mapped_column(DateTime, default=_now, onupdate=_now)
 

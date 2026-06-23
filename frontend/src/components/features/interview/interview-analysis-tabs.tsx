@@ -13,74 +13,27 @@ import { TranscriptDrawer } from "@/components/features/candidates/transcript-dr
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-interface AudioAggregate {
-  paceWpm?: number | null;
-  pauseFrequency?: number | null;
-  fillerDensity?: number | null;
-  energyLevel?: number | null;
-  dominantTone?: string | null;
-  emotionalVariance?: number | null;
-}
-
-interface AudioSentence {
-  text?: string | null;
-  speaker?: string | null;
-  paceWpm?: number | null;
-  energyLevel?: number | null;
-  dominantTone?: string | null;
-  fillerDensity?: number | null;
-  hesitation?: number | null;
-}
-
-interface AudioMetrics {
-  aggregate?: AudioAggregate | null;
-  sentences?: AudioSentence[] | null;
-  // legacy flat shape
-  paceWpm?: number | null;
-  pauseFrequency?: number | null;
-  fillerDensity?: number | null;
-  energyLevel?: number | null;
-  dominantTone?: string | null;
-  emotionalVariance?: number | null;
-}
-
 export interface InterviewAnalysisData {
   title: string;
   transcript: string | null;
-  hesitationScore: number | null;
+  // Audio scores (Call 2)
   confidenceScore: number | null;
   clarityScore: number | null;
-  consistencyScore: number | null;
-  engagementScore: number | null;
-  cognitiveSignals: unknown;
-  behavioralMetrics: unknown;
+  pacingScore: number | null;
+  fillerScore: number | null;
+  energyLevel: number | null;
+  dominantTone: string | null;
+  emotionalVariance: number | null;
+  // Transcript + cross-signal scores (Call 3)
+  truthfulnessScore: number | null;
+  depthScore: number | null;
+  resumeConsistencyScore: number | null;
+  inconsistencies: string[] | null;
+  depthNotes: string[] | null;
+  workStyleNotes: string[] | null;
   riskFlags: string[] | null;
+  // Interviewer quality (Call 5)
   interviewerQuality: unknown;
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function extractAudioMetrics(behavioralMetrics: unknown): AudioMetrics | null {
-  if (!behavioralMetrics || typeof behavioralMetrics !== "object") return null;
-  const bm = behavioralMetrics as Record<string, unknown>;
-  if (!bm.audioMetrics || typeof bm.audioMetrics !== "object") return null;
-  return bm.audioMetrics as AudioMetrics;
-}
-
-function getAggregate(audio: AudioMetrics): AudioAggregate {
-  if (audio.aggregate) return audio.aggregate;
-  return {
-    paceWpm: audio.paceWpm,
-    pauseFrequency: audio.pauseFrequency,
-    fillerDensity: audio.fillerDensity,
-    energyLevel: audio.energyLevel,
-    dominantTone: audio.dominantTone,
-    emotionalVariance: audio.emotionalVariance,
-  };
-}
-
-function getSentences(audio: AudioMetrics): AudioSentence[] {
-  return audio.sentences ?? [];
 }
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
@@ -93,6 +46,20 @@ function FlagList({ flags }: { flags: string[] }) {
         <li key={i} className="flex items-center gap-2 rounded-md border border-warning/20 bg-warning/5 px-3 py-2 text-sm">
           <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-warning" />
           <span className="capitalize text-foreground/90">{f.replace(/_/g, " ")}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function NoteList({ notes, color = "primary" }: { notes: string[]; color?: "primary" | "talent" }) {
+  if (!notes.length) return null;
+  return (
+    <ul className="space-y-1.5">
+      {notes.map((note, i) => (
+        <li key={i} className="flex items-start gap-2 rounded-md border border-border-subtle bg-background px-3 py-2 text-sm text-foreground/80">
+          <span className={cn("mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full", color === "talent" ? "bg-talent/50" : "bg-primary/50")} />
+          {note}
         </li>
       ))}
     </ul>
@@ -123,75 +90,59 @@ function Collapsible({ label, children, defaultOpen = false }: {
 // ── Main export ───────────────────────────────────────────────────────────────
 
 export function InterviewAnalysisTabs({ data }: { data: InterviewAnalysisData }) {
-  const audio = extractAudioMetrics(data.behavioralMetrics);
-  const agg = audio ? getAggregate(audio) : null;
-  const sentences = audio ? getSentences(audio) : [];
-
-  const bm = data.behavioralMetrics as Record<string, unknown> | null;
-  const cs = data.cognitiveSignals as Record<string, unknown> | null;
-  const cognitiveItems: string[] = Array.isArray(cs?.items) ? (cs.items as string[]) : [];
-  const workStyleNotes: string[] = Array.isArray(bm?.workStyleNotes) ? (bm.workStyleNotes as string[]) : [];
-
+  const depthNotes = data.depthNotes ?? [];
+  const workStyleNotes = data.workStyleNotes ?? [];
   const riskFlags = (data.riskFlags ?? []).map((f) => f.replace(/_/g, " "));
+  const inconsistencies = data.inconsistencies ?? [];
   const interviewerQuality = parseInterviewerQuality(data.interviewerQuality);
 
   const radarPoints = [
     { label: "Confidence", value: data.confidenceScore ?? 0 },
     { label: "Clarity", value: data.clarityScore ?? 0 },
-    { label: "Engagement", value: data.engagementScore ?? 0 },
-    { label: "Consistency", value: data.consistencyScore ?? 0 },
-    { label: "Hesitation", value: data.hesitationScore ?? 0, invert: true },
+    { label: "Truthfulness", value: data.truthfulnessScore ?? 0 },
+    { label: "Depth", value: data.depthScore ?? 0 },
+    { label: "Pacing", value: data.pacingScore ?? 0 },
   ];
-
-  const fillerScore = agg?.fillerDensity != null
-    ? Math.max(0, Math.min(100, Math.round((agg.fillerDensity / 20) * 100)))
-    : null;
 
   return (
     <div className="space-y-6">
 
       {/* ── Signal radar + scores ── */}
       <div className="rounded-lg border border-border-subtle bg-card shadow-sm">
-        {/* Radar centered above scores on all sizes */}
         <div className="flex justify-center border-b border-border-subtle px-4 pt-5 pb-3">
           <SignalRadar points={radarPoints} size={240} />
         </div>
         <div className="grid grid-cols-2 gap-2 p-4 sm:grid-cols-3">
           <ScoreBadge label="Confidence" score={data.confidenceScore} />
           <ScoreBadge label="Clarity" score={data.clarityScore} />
-          <ScoreBadge label="Engagement" score={data.engagementScore} />
-          <ScoreBadge label="Consistency" score={data.consistencyScore} />
-          <ScoreBadge label="Hesitation" score={data.hesitationScore} invertBar />
+          {/* energyLevel displayed as Engagement per design decision */}
+          <ScoreBadge label="Engagement" score={data.energyLevel != null ? data.energyLevel * 100 : null} />
+          <ScoreBadge label="Truthfulness" score={data.truthfulnessScore} />
+          <ScoreBadge label="Depth" score={data.depthScore} />
+          <ScoreBadge label="Pacing" score={data.pacingScore} />
+          <ScoreBadge label="Filler words" score={data.fillerScore} invertBar />
+          <ScoreBadge label="Resume match" score={data.resumeConsistencyScore} />
         </div>
       </div>
 
-      {/* ── Speech aggregate ── */}
-      {agg && (
+      {/* ── Tone + variance ── */}
+      {(data.dominantTone || data.emotionalVariance != null) && (
         <div className="rounded-lg border border-border-subtle bg-card p-4 shadow-sm">
-          <p className="mb-3 text-xs font-bold uppercase tracking-wide text-muted">Speech</p>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {agg.energyLevel != null && (
-              <ScoreBadge label="Energy" score={agg.energyLevel * 100} />
+          <p className="mb-3 text-xs font-bold uppercase tracking-wide text-muted">Voice signals</p>
+          <div className="flex flex-wrap gap-3">
+            {data.dominantTone && (
+              <div className="flex flex-col gap-1">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">Dominant tone</p>
+                <span className="inline-block rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold capitalize text-primary">
+                  {data.dominantTone}
+                </span>
+              </div>
             )}
-            {agg.emotionalVariance != null && (
-              <ScoreBadge label="Emotional range" score={agg.emotionalVariance * 100} />
-            )}
-            {fillerScore != null && (
-              <ScoreBadge label="Filler density" score={fillerScore} invertBar />
-            )}
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {agg.paceWpm != null && (
-              <StatTile label="Pace" value={`${Math.round(agg.paceWpm)}`} unit="wpm" />
-            )}
-            {agg.pauseFrequency != null && (
-              <StatTile label="Pauses" value={agg.pauseFrequency.toFixed(1)} unit="/ min" />
-            )}
-            {agg.dominantTone && (
-              <div className="flex flex-col justify-between rounded-lg border border-border-subtle bg-background p-3">
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">Tone</p>
-                <span className="mt-2 inline-block rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold capitalize text-primary">
-                  {agg.dominantTone}
+            {data.emotionalVariance != null && (
+              <div className="flex flex-col gap-1">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">Emotional range</p>
+                <span className="inline-block rounded-full bg-border-subtle px-2.5 py-1 text-xs font-semibold text-foreground/70">
+                  {Math.round(data.emotionalVariance * 100)}%
                 </span>
               </div>
             )}
@@ -199,33 +150,34 @@ export function InterviewAnalysisTabs({ data }: { data: InterviewAnalysisData })
         </div>
       )}
 
-      {/* ── Cognitive + Behavioral signals ── */}
-      {(cognitiveItems.length > 0 || workStyleNotes.length > 0) && (
+      {/* ── Inconsistencies ── */}
+      {inconsistencies.length > 0 && (
+        <div className="rounded-lg border border-warning/20 bg-warning/5 p-4">
+          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-warning">Resume / interview gaps</p>
+          <ul className="space-y-1.5">
+            {inconsistencies.map((item, i) => (
+              <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-warning" />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* ── Depth notes + work style ── */}
+      {(depthNotes.length > 0 || workStyleNotes.length > 0) && (
         <div className="space-y-3 rounded-lg border border-border-subtle bg-card p-4 shadow-sm">
-          {cognitiveItems.length > 0 && (
+          {depthNotes.length > 0 && (
             <div>
-              <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted">Cognitive signals</p>
-              <ul className="space-y-1.5">
-                {cognitiveItems.map((item, i) => (
-                  <li key={i} className="flex items-start gap-2 rounded-md border border-border-subtle bg-background px-3 py-2 text-sm text-foreground/80">
-                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/50" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
+              <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted">Depth of understanding</p>
+              <NoteList notes={depthNotes} color="primary" />
             </div>
           )}
           {workStyleNotes.length > 0 && (
             <div>
               <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted">Work style</p>
-              <ul className="space-y-1.5">
-                {workStyleNotes.map((note, i) => (
-                  <li key={i} className="flex items-start gap-2 rounded-md border border-border-subtle bg-background px-3 py-2 text-sm text-foreground/80">
-                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-talent/50" />
-                    {note}
-                  </li>
-                ))}
-              </ul>
+              <NoteList notes={workStyleNotes} color="talent" />
             </div>
           )}
         </div>
@@ -239,14 +191,13 @@ export function InterviewAnalysisTabs({ data }: { data: InterviewAnalysisData })
         </div>
       )}
 
-      {/* ── Transcript (with inline audio metrics when available) ── */}
+      {/* ── Transcript ── */}
       <TranscriptDrawer
         transcript={data.transcript}
         interviewTitle={data.title}
-        audioSentences={sentences.length > 0 ? sentences : null}
       />
 
-      {/* ── Interviewer quality (secondary / collapsible) ── */}
+      {/* ── Interviewer quality ── */}
       {interviewerQuality && (
         <Collapsible label="Interviewer assessment">
           <InterviewerQualityPanel quality={interviewerQuality} />
@@ -256,14 +207,3 @@ export function InterviewAnalysisTabs({ data }: { data: InterviewAnalysisData })
     </div>
   );
 }
-
-function StatTile({ label, value, unit }: { label: string; value: string; unit: string }) {
-  return (
-    <div className="rounded-lg border border-border-subtle bg-background p-3">
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">{label}</p>
-      <p className="mt-1 text-xl font-bold tabular-nums text-foreground">{value}</p>
-      <p className="text-[10px] text-muted">{unit}</p>
-    </div>
-  );
-}
-

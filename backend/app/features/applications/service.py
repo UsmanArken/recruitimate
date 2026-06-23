@@ -47,11 +47,10 @@ def _serialize_talent(tp: TalentProfile) -> dict:
 
 def _serialize_decision(d: Decision) -> dict:
     return {
-        "hireConfidence": d.hireConfidence,
         "recommendation": d.recommendation,
-        "riskFactors": d.riskFactors,
         "explanation": d.explanation,
-        "signalBreakdown": d.signalBreakdown,
+        "reasonsToHire": d.reasonsToHire,
+        "reasonsToReject": d.reasonsToReject,
     }
 
 
@@ -72,14 +71,23 @@ def _serialize_interview(i: Interview) -> dict:
 
 def _serialize_analysis(a: InterviewAnalysis) -> dict:
     return {
-        "hesitationScore": a.hesitationScore,
+        # Audio scores (Call 2)
         "confidenceScore": a.confidenceScore,
         "clarityScore": a.clarityScore,
-        "consistencyScore": a.consistencyScore,
-        "engagementScore": a.engagementScore,
-        "cognitiveSignals": a.cognitiveSignals,
-        "behavioralMetrics": a.behavioralMetrics,
+        "pacingScore": a.pacingScore,
+        "fillerScore": a.fillerScore,
+        "energyLevel": a.energyLevel,
+        "dominantTone": a.dominantTone,
+        "emotionalVariance": a.emotionalVariance,
+        # Transcript + cross-signal (Call 3)
+        "truthfulnessScore": a.truthfulnessScore,
+        "depthScore": a.depthScore,
+        "resumeConsistencyScore": a.resumeConsistencyScore,
+        "inconsistencies": a.inconsistencies,
+        "depthNotes": a.depthNotes,
+        "workStyleNotes": a.workStyleNotes,
         "riskFlags": a.riskFlags,
+        # Interviewer quality (Call 5)
         "interviewerQuality": a.interviewerQuality,
     }
 

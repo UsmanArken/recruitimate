@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 
 
 if celery is None:
-    # Celery not installed — provide stubs so callers can do .delay(...)
     class _Stub:
         def __init__(self, name: str):
             self._name = name
@@ -56,7 +55,6 @@ else:
                     existing.strengths = result.strengths
                     existing.gaps = result.gaps
                     existing.hiddenSignals = result.hiddenSignals
-                    existing.explanation = result.explanation
                     existing.updatedAt = datetime.utcnow()
                 else:
                     profile = TalentProfile(
@@ -70,7 +68,6 @@ else:
                         strengths=result.strengths,
                         gaps=result.gaps,
                         hiddenSignals=result.hiddenSignals,
-                        explanation=result.explanation,
                     )
                     db.add(profile)
 
@@ -107,8 +104,12 @@ else:
         from sqlalchemy.orm import selectinload
         from app.shared.models import Candidate, Decision, InterviewAnalysis, TalentProfile
         from app.core.config import get_settings
+        from app.features.intelligence.types import AudioResult
 
         settings = get_settings()
+        audio_path = None
+        s3 = None
+        r2_key = None
 
         try:
             Session = get_sync_session_factory()
@@ -122,18 +123,19 @@ else:
                     .where(JobApplication.id == interview.applicationId)
                     .options(
                         selectinload(JobApplication.candidate),
+                        selectinload(JobApplication.job),
                         selectinload(JobApplication.talent_profile),
                     )
                 )
                 app = app_result.scalar_one_or_none()
                 transcript = interview.transcript or ""
                 resume_text = (app.candidate.resumeText if app and app.candidate else "") or ""
+                job_requirements = ""
+                if app and app.job:
+                    job_requirements = (app.job.requirements or app.job.description or "") or ""
 
-                # Download audio from R2
-                audio_path = None
-                audio_metrics: dict = {}
-                s3 = None
-                r2_key = None
+                # ── Call 2: Audio analysis (Gemini multimodal) ──────────────────
+                audio_result: AudioResult | None = None
                 if audio_url and settings.R2_ENDPOINT_URL and settings.R2_ACCESS_KEY_ID:
                     try:
                         r2_key = audio_url.replace(f"r2://{settings.R2_BUCKET_NAME}/", "")
@@ -146,18 +148,25 @@ else:
                         )
                         tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
                         tmp_path = tmp.name
-                        tmp.close()  # must close before boto3 can write on Windows
+                        tmp.close()
                         s3.download_file(settings.R2_BUCKET_NAME, r2_key, tmp_path)
                         audio_path = tmp_path
-                        audio_metrics = _run_gemini_audio(audio_path, settings.GOOGLE_API_KEY, settings.GOOGLE_AUDIO_MODEL, transcript)
+                        audio_result = _run_gemini_audio(
+                            audio_path, settings.GOOGLE_API_KEY,
+                            settings.GOOGLE_AUDIO_MODEL, transcript,
+                        )
                     except Exception:
                         logger.exception("Audio download/analysis failed for interview %s", interview_id)
 
-                # Run text intelligence on transcript
-                from app.features.intelligence.engines import run_interview_intelligence
-                text_result = asyncio.run(run_interview_intelligence(transcript, resume_text))
+                # ── Call 3: Transcript + cross-signal ──────────────────────────
+                from app.features.intelligence.engines import run_transcript_analysis
+                transcript_result = asyncio.run(run_transcript_analysis(transcript, resume_text))
 
-                # Upsert InterviewAnalysis
+                # ── Call 5: Interviewer quality ────────────────────────────────
+                from app.features.intelligence.engines import run_interviewer_quality
+                iq_result = asyncio.run(run_interviewer_quality(transcript))
+
+                # ── Upsert InterviewAnalysis ───────────────────────────────────
                 analysis = db.execute(
                     select(InterviewAnalysis).where(InterviewAnalysis.interviewId == interview_id)
                 ).scalar_one_or_none()
@@ -165,32 +174,60 @@ else:
                     analysis = InterviewAnalysis(interviewId=interview_id)
                     db.add(analysis)
 
-                analysis.hesitationScore = text_result.hesitationScore
-                analysis.confidenceScore = text_result.confidenceScore
-                analysis.clarityScore = text_result.clarityScore
-                analysis.consistencyScore = text_result.consistencyScore
-                analysis.engagementScore = text_result.engagementScore
-                analysis.cognitiveSignals = text_result.cognitiveSignals
-                bm = dict(text_result.behavioralMetrics or {"workStyleNotes": []})
-                if audio_metrics:
-                    bm["audioMetrics"] = audio_metrics
-                analysis.behavioralMetrics = bm
-                analysis.riskFlags = text_result.riskFlags
+                # Audio scores
+                if audio_result:
+                    analysis.confidenceScore = audio_result.confidenceScore
+                    analysis.clarityScore = audio_result.clarityScore
+                    analysis.pacingScore = audio_result.pacingScore
+                    analysis.fillerScore = audio_result.fillerScore
+                    analysis.energyLevel = audio_result.energyLevel
+                    analysis.dominantTone = audio_result.dominantTone
+                    analysis.emotionalVariance = audio_result.emotionalVariance
+
+                # Transcript + cross-signal scores
+                analysis.truthfulnessScore = transcript_result.truthfulnessScore
+                analysis.depthScore = transcript_result.depthScore
+                analysis.resumeConsistencyScore = transcript_result.resumeConsistencyScore
+                analysis.inconsistencies = transcript_result.inconsistencies
+                analysis.depthNotes = transcript_result.depthNotes
+                analysis.workStyleNotes = transcript_result.workStyleNotes
+                analysis.riskFlags = transcript_result.riskFlags
+
+                # Interviewer quality
+                analysis.interviewerQuality = {
+                    "coverageScore": iq_result.coverageScore,
+                    "probingDepthScore": iq_result.probingDepthScore,
+                    "biasAdvisory": iq_result.biasAdvisory,
+                    "summary": iq_result.summary,
+                }
+
                 interview.status = InterviewStatus.ANALYZED
                 interview.updatedAt = datetime.utcnow()
 
-                # Cross-signal + decision if talent profile exists
+                # ── Call 4: Decision (requires talent profile) ─────────────────
                 if app and app.talent_profile:
-                    from app.features.intelligence.engines import run_cross_signal, run_decision_intelligence
+                    from app.features.intelligence.engines import run_decision_intelligence
                     from app.features.intelligence.types import TalentResult
                     tp = app.talent_profile
                     talent = TalentResult(
-                        skills=tp.skills or [], strengths=tp.strengths or [],
-                        gaps=tp.gaps or [], hiddenSignals=tp.hiddenSignals or [],
-                        explanation=tp.explanation or "",
+                        skills=tp.skills or [],
+                        matchedSkills=tp.matchedSkills or [],
+                        missingSkills=tp.missingSkills or [],
+                        extraSkills=tp.extraSkills or [],
+                        experienceYears=tp.experienceYears,
+                        roleFitScore=tp.roleFitScore,
+                        strengths=tp.strengths or [],
+                        gaps=tp.gaps or [],
+                        hiddenSignals=tp.hiddenSignals or [],
                     )
-                    cross = asyncio.run(run_cross_signal(talent, text_result))
-                    decision_result = asyncio.run(run_decision_intelligence(talent, text_result))
+                    decision_result = asyncio.run(run_decision_intelligence(
+                        resume_text=resume_text,
+                        transcript=transcript,
+                        job_requirements=job_requirements,
+                        talent=talent,
+                        transcript_result=transcript_result,
+                        audio=audio_result,
+                    ))
 
                     dec = db.execute(
                         select(Decision).where(Decision.applicationId == app.id)
@@ -198,16 +235,11 @@ else:
                     if not dec:
                         dec = Decision(applicationId=app.id)
                         db.add(dec)
-                    dec.hireConfidence = decision_result.hireConfidence
+
                     dec.recommendation = decision_result.recommendation
-                    dec.riskFactors = decision_result.riskFactors
                     dec.explanation = decision_result.explanation
-                    dec.signalBreakdown = {
-                        **decision_result.signalBreakdown,
-                        "crossSignalConsistency": cross.consistencyScore,
-                        "inconsistencies": cross.inconsistencies,
-                        "inconsistenciesExplanation": cross.explanation,
-                    }
+                    dec.reasonsToHire = decision_result.reasonsToHire
+                    dec.reasonsToReject = decision_result.reasonsToReject
 
                 if app:
                     app.stage = PipelineStage.INTERVIEWED
@@ -234,60 +266,56 @@ else:
             raise self.retry(exc=exc, countdown=60)
 
 
-    def _run_gemini_audio(audio_path: str, api_key: str, model_name: str = "gemini-2.0-flash", transcript: str = "") -> dict:
+    def _run_gemini_audio(
+        audio_path: str,
+        api_key: str,
+        model_name: str = "gemini-2.0-flash",
+        transcript: str = "",
+    ):
+        """Run Gemini multimodal audio analysis. Returns AudioResult or None on failure."""
         import json
         import google.generativeai as genai
+        from app.features.intelligence.types import AudioResult
 
         if not api_key:
             logger.warning("GOOGLE_API_KEY not set — skipping Gemini audio analysis")
-            return {}
+            return None
 
         try:
             genai.configure(api_key=api_key)
             model = genai.GenerativeModel(model_name)
             audio_file = genai.upload_file(audio_path, mime_type="audio/wav")
-            transcript_section = f"\n\nTRANSCRIPT (in order):\n{transcript}" if transcript else ""
+            transcript_section = f"\n\nTRANSCRIPT (for alignment):\n{transcript}" if transcript else ""
             prompt = (
-                "You are an expert speech analyst. Analyze this job interview audio recording."
+                "You are an expert speech analyst. Analyse this job interview audio recording "
+                "and return whole-interview scores for the candidate only (not the interviewer)."
                 + transcript_section
                 + "\n\nReturn ONLY valid JSON with exactly this structure:\n"
                 "{\n"
-                '  "sentences": [\n'
-                '    {"spk":"candidate|recruiter","wpm":<int>,"nrg":<0.0-1.0>,"tone":"<word>","fill":<0.0-10.0>,"hes":<0.0-1.0>}\n'
-                "  ],\n"
-                '  "aggregate": {"paceWpm":<int>,"pauseFreq":<float>,"fillerDensity":<float>,"energyLevel":<float>,"dominantTone":"<word>","emotionalVariance":<float>}\n'
+                '  "confidenceScore": <0-100>,\n'
+                '  "clarityScore": <0-100>,\n'
+                '  "pacingScore": <0-100, where 50 is ideal pace, too fast or too slow both score lower>,\n'
+                '  "fillerScore": <0-100, inverted: fewer filler words = higher score>,\n'
+                '  "energyLevel": <0.0-1.0, vocal energy and engagement level>,\n'
+                '  "dominantTone": "<single word describing overall candidate affect, e.g. confident/nervous/flat/enthusiastic>",\n'
+                '  "emotionalVariance": <0.0-1.0, range of emotional expression throughout the interview>\n'
                 "}\n"
-                "sentences[] must have exactly one entry per transcript line, in order. "
-                "Use short field names exactly as shown. No extra fields."
+                "Base all scores on audio signals — tone, pace, energy, filler words, hesitations. "
+                "No extra fields."
             )
-            generation_config = {"max_output_tokens": 32768}
+            generation_config = {"max_output_tokens": 1024}
             response = model.generate_content([prompt, audio_file], generation_config=generation_config)
             raw = response.text.strip().removeprefix("```json").removesuffix("```").strip()
             parsed = json.loads(raw)
-            # Expand short field names back to full names for frontend compatibility
-            expanded_sentences = []
-            for s in parsed.get("sentences", []):
-                expanded_sentences.append({
-                    "speaker": s.get("spk"),
-                    "paceWpm": s.get("wpm"),
-                    "energyLevel": s.get("nrg"),
-                    "dominantTone": s.get("tone"),
-                    "fillerDensity": s.get("fill"),
-                    "hesitation": s.get("hes"),
-                })
-            agg = parsed.get("aggregate", {})
-            # Normalize aggregate field names
-            return {
-                "sentences": expanded_sentences,
-                "aggregate": {
-                    "paceWpm": agg.get("paceWpm"),
-                    "pauseFrequency": agg.get("pauseFreq"),
-                    "fillerDensity": agg.get("fillerDensity"),
-                    "energyLevel": agg.get("energyLevel"),
-                    "dominantTone": agg.get("dominantTone"),
-                    "emotionalVariance": agg.get("emotionalVariance"),
-                },
-            }
+            return AudioResult(
+                confidenceScore=parsed.get("confidenceScore"),
+                clarityScore=parsed.get("clarityScore"),
+                pacingScore=parsed.get("pacingScore"),
+                fillerScore=parsed.get("fillerScore"),
+                energyLevel=parsed.get("energyLevel"),
+                dominantTone=parsed.get("dominantTone"),
+                emotionalVariance=parsed.get("emotionalVariance"),
+            )
         except Exception:
             logger.exception("Gemini audio analysis failed")
-            return {}
+            return None

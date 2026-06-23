@@ -4,16 +4,6 @@ import { useState, useEffect } from "react";
 import { X, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface AudioSentence {
-  text?: string | null;
-  speaker?: string | null;
-  paceWpm?: number | null;
-  energyLevel?: number | null;
-  dominantTone?: string | null;
-  fillerDensity?: number | null;
-  hesitation?: number | null;
-}
-
 function parseTranscript(raw: string | null): { speaker: string; text: string }[] {
   if (!raw?.trim()) return [];
   return raw
@@ -26,26 +16,14 @@ function parseTranscript(raw: string | null): { speaker: string; text: string }[
     .filter((s): s is { speaker: string; text: string } => s !== null && s.text.length > 0);
 }
 
-// Match audio sentences to transcript lines by index (Gemini produces one entry per line).
-// Falls back gracefully when lengths differ.
-function matchAudio(
-  segments: { speaker: string; text: string }[],
-  audioSentences: AudioSentence[],
-): (AudioSentence | null)[] {
-  return segments.map((_, i) => audioSentences[i] ?? null);
-}
-
 interface Props {
   transcript: string | null;
   interviewTitle?: string;
-  audioSentences?: AudioSentence[] | null;
 }
 
-export function TranscriptDrawer({ transcript, interviewTitle, audioSentences }: Props) {
+export function TranscriptDrawer({ transcript, interviewTitle }: Props) {
   const [open, setOpen] = useState(false);
   const segments = parseTranscript(transcript);
-  const matched = matchAudio(segments, audioSentences ?? []);
-  const hasAudio = (audioSentences ?? []).length > 0;
 
   useEffect(() => {
     if (open) document.body.style.overflow = "hidden";
@@ -72,11 +50,6 @@ export function TranscriptDrawer({ transcript, interviewTitle, audioSentences }:
         {segments.length > 0 && (
           <span className="ml-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
             {segments.length}
-          </span>
-        )}
-        {hasAudio && (
-          <span className="ml-0.5 rounded-full bg-talent/15 px-2 py-0.5 text-xs font-semibold text-talent">
-            audio
           </span>
         )}
       </button>
@@ -127,7 +100,6 @@ export function TranscriptDrawer({ transcript, interviewTitle, audioSentences }:
             <div className="space-y-4">
               {segments.map((seg, i) => {
                 const isCandidate = seg.speaker.toLowerCase() === "candidate";
-                const audio = matched[i];
                 return (
                   <div
                     key={i}
@@ -148,30 +120,6 @@ export function TranscriptDrawer({ transcript, interviewTitle, audioSentences }:
                       )}>
                         {seg.text}
                       </div>
-
-                      {/* Audio metrics inline below the bubble */}
-                      {audio && (
-                        <div className={cn(
-                          "flex flex-wrap gap-1 px-1",
-                          isCandidate ? "justify-end" : "justify-start"
-                        )}>
-                          {audio.paceWpm != null && (
-                            <AudioPill>{Math.round(audio.paceWpm)} wpm</AudioPill>
-                          )}
-                          {audio.energyLevel != null && (
-                            <AudioPill>{Math.round(audio.energyLevel * 100)}% energy</AudioPill>
-                          )}
-                          {audio.hesitation != null && audio.hesitation > 0.3 && (
-                            <AudioPill warn>hesitation {Math.round(audio.hesitation * 100)}%</AudioPill>
-                          )}
-                          {audio.dominantTone && (
-                            <AudioPill tone>{audio.dominantTone}</AudioPill>
-                          )}
-                          {audio.fillerDensity != null && audio.fillerDensity > 0 && (
-                            <AudioPill warn>{audio.fillerDensity.toFixed(1)} fillers/100w</AudioPill>
-                          )}
-                        </div>
-                      )}
                     </div>
                   </div>
                 );
@@ -181,28 +129,5 @@ export function TranscriptDrawer({ transcript, interviewTitle, audioSentences }:
         </div>
       </div>
     </>
-  );
-}
-
-function AudioPill({
-  children,
-  warn,
-  tone,
-}: {
-  children: React.ReactNode;
-  warn?: boolean;
-  tone?: boolean;
-}) {
-  return (
-    <span className={cn(
-      "rounded px-1.5 py-0.5 text-[10px] font-medium",
-      warn
-        ? "bg-warning/10 text-warning"
-        : tone
-        ? "bg-primary/10 text-primary capitalize"
-        : "bg-border-subtle text-muted-foreground"
-    )}>
-      {children}
-    </span>
   );
 }
