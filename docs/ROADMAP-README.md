@@ -27,8 +27,8 @@ Project setup, docs, HR UI shell — **complete**.
 ### MVP (Phase 1) — ship to first recruiters
 **Goal:** Talent + post-interview analysis + decision dashboard + ATS-lite.
 
-- **Done:** Core engines, auth/ACL, multi-position applications, PDF resume upload, phased intelligence, applicant intake picker, QA scripts, platform admin, operator workspace guard, notes, onboarding, multi-provider LLM, **production deploy** (MVP-035), **bulk resume screening** (MVP-041), demo UI polish (MVP-042), branding (MVP-043).
-- **Remaining:** GitHub/portfolio parsing (MVP-025) optional.
+- **Done:** Core engines, auth/ACL, multi-position applications, PDF resume upload, phased intelligence, applicant intake picker, QA scripts, platform admin, operator workspace guard, notes, onboarding, multi-provider LLM, **production deploy** (MVP-035), **bulk resume screening** (MVP-041), demo UI polish (MVP-042), branding (MVP-043), **product feedback chunks 1–3** (MVP-044–MVP-059), **tester guide** (MVP-060).
+- **Remaining:** GitHub/portfolio parsing (MVP-025) optional; integrations catalog wiring (MVP-057 Planned).
 
 **Production:** https://recruitimate.app (recruitimate.io redirects)
 
@@ -54,7 +54,9 @@ Use `|` in **Depends On** when a task has multiple prerequisites (e.g. `MVP-014|
 
 | Status | Count | Notes |
 |--------|------:|-------|
-| **Done** | 46 | All MVP-* except MVP-025 |
+| **Done** | 61 | All MVP-* except MVP-025 and MVP-057 |
+| **Partial** | 1 | MVP-056 RBAC UI (roles only, no per-feature ACL) |
+| **Planned** | 1 | MVP-057 integrations catalog (UI only) |
 | **Not Started** | 1 | MVP-025 GitHub/portfolio parsing |
 
 Foundation (F-001–F-009) and shipped Phase 3 items (P3-009, P3-010, CP-024) are **Done** as marked.
@@ -75,6 +77,6 @@ Key shipped items:
 - MVP-028 Authentication · MVP-029c Platform super admin · MVP-029d Operator workspace guard  
 - MVP-015b Multi-position applications · MVP-036 Phased intelligence  
 - MVP-023 Resume PDF upload · MVP-037 Applicant intake picker · MVP-041 Bulk screening  
-- MVP-034 QA test plan · MVP-035 Production deployment  
+- MVP-034 QA test plan · MVP-035 Production deployment · MVP-044–060 Product feedback + tester guide  
 - MVP-024 LinkedIn ingestion · MVP-027 Scheduling · MVP-030/031 Recording + Whisper  
 - MVP-033 Request logging · MVP-040 Multi-provider LLM · MVP-042/043 UI polish + branding  

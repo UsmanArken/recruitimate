@@ -1,6 +1,8 @@
 # Recruitimate QA
 
-Automated checks for local development and pre-demo validation. Use while finishing MVP; run again before customer demos once production is up.
+**Manual testing on production:** share **[TESTER-GUIDE.md](./TESTER-GUIDE.md)** with QA (demo login, checklist, out-of-scope list).
+
+Automated checks below are for local development and CI. Run again before customer demos once production is up.
 
 ## Quick commands
 
@@ -47,6 +49,9 @@ npm run db:seed
 
 ### Manual demo checklist (MVP-034)
 
+> Superseded for production QA by **[TESTER-GUIDE.md](./TESTER-GUIDE.md)** (full checklist + demo credentials).  
+> Keep this list for developer smoke tests and regression spot-checks.
+
 1. **Auth** — Login, logout, signup new org, reserved super-admin email blocked on signup.
 2. **Jobs** — Create role, open detail, assign hiring manager / interviewer.
 3. **Candidates** — Add with resume, role fit visible, change stage.
@@ -76,9 +81,6 @@ Suggested pipeline step:
 
 Run `qa:api` against a preview deployment URL after deploy.
 
-## Remaining MVP dev (while you set up production)
+## Roadmap
 
-| ID | Task | Priority | Status |
-|----|------|----------|--------|
-| MVP-035 | MVP deployment | P1 | Not Started |
-| MVP-025 | GitHub / portfolio parsing | P2 | Not Started |
+Product feedback chunks 1–3 are tracked as **MVP-044–MVP-060** in `recruitimate-roadmap.csv`. See **TESTER-GUIDE.md** for what to verify in production.

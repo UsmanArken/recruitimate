@@ -6,7 +6,7 @@ F-004,Foundation,Platform,—,Core data model,Candidate JobApplication Job Talen
 F-005,Foundation,Documentation,—,README and architecture docs,Developer onboarding STRUCTURE.md AUTH-ACL.md layer mapping,P1,Done,,
 F-006,Foundation,Documentation,—,Product and system design guide,HTML doc with Mermaid diagrams in docs/,P1,Done,,
 F-007,Foundation,UI,—,HR-themed design system,Navy sidebar teal primary pipeline badges trust banners,P1,Done,,
-F-008,Foundation,UI,—,App shell and navigation,Dashboard Candidates Open roles sidebar active states,P0,Done,,
+F-008,Foundation,UI,—,App shell and navigation,Dashboard Open roles Candidates sidebar; Settings section; navigation loaders,P0,Done,,
 F-009,Foundation,Platform,—,Layered application architecture,Thin API routes services validators feature components,P1,Done,,
 MVP-001,MVP,Talent Intelligence,Talent,Resume text ingestion,Paste or upload resume on intake; creates person + first JobApplication with talent analysis,P0,Done,MVP-015,
 MVP-002,MVP,Talent Intelligence,Talent,Talent intelligence engine,Skill extraction fit score strengths gaps hidden signals with evidence,P0,Done,MVP-001,
@@ -45,11 +45,28 @@ MVP-030,MVP,Interview Intelligence,Interview,Interview recording upload,Upload a
 MVP-031,MVP,Interview Intelligence,Interview,Whisper transcription,OpenAI Whisper transcript from recording; status TRANSCRIBED,P1,Done,MVP-030,/interviews/[id]/transcribe
 MVP-032,MVP,UI,—,Empty states and onboarding,Getting started checklist + EmptyState on dashboard jobs candidates,P2,Done,MVP-014,Dismissible localStorage banner
 MVP-033,MVP,Platform,—,Error handling and logging,Structured JSON errors + requestId middleware + runApiRoute completion logs,P1,Done,,JSON logs phase start/complete
-MVP-034,MVP,Platform,—,MVP QA and test plan,Automated npm run qa scripts + manual demo checklist in docs/QA.md,P1,Done,,resume-extract validators intelligence
+MVP-034,MVP,Platform,—,MVP QA and test plan,Automated npm run qa scripts + docs/QA.md + docs/TESTER-GUIDE.md manual checklist,P1,Done,,Share TESTER-GUIDE.md with QA on production
 MVP-035,MVP,Platform,—,MVP deployment,Production deploy on Linode PM2 nginx Docker Postgres HTTPS recruitimate.app,P1,Done,MVP-029c,migrate-domain.sh Let's Encrypt; recruitimate.io redirects
 MVP-041,MVP,Talent Intelligence,Talent,Bulk resume screening,Folder/file upload on job page dedup ranked pipeline per role,P1,Done,MVP-023|MVP-014,/api/jobs/[id]/bulk-resumes job pipeline table
 MVP-042,MVP,UI,—,Demo UI polish,Application tabs job pipeline drop zone typography section cards,P2,Done,MVP-019|MVP-014,ApplicationDetailTabs FileDropZone globals.css
 MVP-043,MVP,Platform,—,Brand identity,Recruitimate logo favicon sidebar and auth branding,P3,Done,F-007,Option B person+rise mark icon.svg
+MVP-044,Product Feedback,Talent Intelligence,Talent,Talent pool intake,Generic CV without job application; genericScreening on Candidate,P1,Done,MVP-015,Optional jobId on create; talent pool mode
+MVP-045,Product Feedback,Talent Intelligence,Talent,Bulk talent pool import,Candidates page bulk upload with top role suggestions per CV,P1,Done,MVP-044|MVP-041,/api/candidates/bulk-resumes CandidatesBulkIntakePanel
+MVP-046,Product Feedback,UI,—,Dashboard and nav polish,Open roles first on dashboard; sidebar Open roles before Candidates,P2,Done,MVP-014|MVP-018,
+MVP-047,Product Feedback,UI,—,Resume intake autofill,Parse name email LinkedIn GitHub portfolio on upload with summary,P2,Done,MVP-023,parse-contact resume-upload-field
+MVP-048,Product Feedback,Talent Intelligence,Talent,Role fit suggestions,Suggest other open roles on candidate person profile,P2,Done,MVP-003,role-suggestion.service RoleFitSuggestionsPanel
+MVP-049,Product Feedback,Platform,—,Hiring client companies,HiringClient model; settings clients; jobs link to client,P1,Done,MVP-014,/settings/clients /api/clients
+MVP-050,Product Feedback,Pipeline,—,Job post document and JD draft,Required jobPostDocument; generate JD from company profile,P1,Done,MVP-049,job-form /api/clients/[id]/job-draft
+MVP-051,Product Feedback,Pipeline,—,Edit and delete open roles,Job edit page PATCH API; delete from job detail,P1,Done,MVP-014,/jobs/[id]/edit JobDetailActions
+MVP-052,Product Feedback,Pipeline,—,Candidate profile markings,Archive on hold delete; CandidateMarking enum,P1,Done,MVP-015,CandidateProfileActions PATCH /api/candidates/[id]
+MVP-053,Product Feedback,UI,—,Pipeline filters and views,Candidates and open roles search filters; list/card and table views,P1,Done,MVP-015b,CandidatesPipelineView JobsListView
+MVP-054,Product Feedback,Pipeline,—,Calendar interview scheduling,Month grid date picker on schedule interview field,P2,Done,MVP-027,schedule-datetime-field.tsx
+MVP-055,Product Feedback,Decision Intelligence,Decision,Recruiter manual reviews,Pass/hold/fail talent screen and hire decision alongside Recruitimate AI,P1,Done,MVP-019,RecruiterReviewPanel /api/.../recruiter-review
+MVP-056,Product Feedback,Platform,—,Team members and RBAC UI,Members table invites role change permissions display on team page,P1,Partial,MVP-029,/settings/team /api/members; no per-feature ACL UI
+MVP-057,Product Feedback,Integrations,—,Integrations catalog,Settings page listing planned ATS and job board providers,P2,Planned,,/settings/integrations UI only no OAuth
+MVP-058,Product Feedback,Platform,—,Demo workspace,One-click demo login seed-demo workspace banner,P1,Done,MVP-028,/api/auth/demo npm run db:seed-demo
+MVP-059,Product Feedback,UI,—,Navigation loading states,Route loaders and top progress bar during slow navigation,P2,Done,F-008,loading.tsx NavigationProgress notifyNavigationStart
+MVP-060,Product Feedback,Documentation,—,Tester guide,docs/TESTER-GUIDE.md production QA handout for manual testing,P1,Done,MVP-034,Share with QA; complements QA.md automation
 MVP-036,MVP,Decision Intelligence,Decision,Phased hiring intelligence,Role fit and hire confidence only with campaign + interview; honest pending states,P1,Done,MVP-015b,candidate-context IntelligencePhasePanel
 MVP-037,MVP,UI,—,Applicant intake position picker,Server-loaded open roles; compact custom dropdown (scrollable menu),P1,Done,MVP-014|MVP-023,/candidates/new
 MVP-038,MVP,Platform,—,JobApplication DB migration,prisma/migrate-to-applications.ts for legacy Candidate.jobId upgrades,P2,Done,MVP-015b,npm run db:migrate-applications

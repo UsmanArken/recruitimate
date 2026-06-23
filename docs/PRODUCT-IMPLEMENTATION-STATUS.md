@@ -78,6 +78,7 @@ npm run db:seed-demo   # optional — refresh demo data with client company
 
 | Area | Path |
 |------|------|
+| **Tester guide** | `docs/TESTER-GUIDE.md` |
 | Client companies | `/settings/clients` |
 | Integrations (catalog) | `/settings/integrations` |
 | Edit role | `/jobs/[id]/edit` |
