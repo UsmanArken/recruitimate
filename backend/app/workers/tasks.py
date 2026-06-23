@@ -292,16 +292,28 @@ else:
                 + transcript_section
                 + "\n\nReturn ONLY valid JSON with exactly this structure:\n"
                 "{\n"
-                '  "confidenceScore": <0-100>,\n'
-                '  "clarityScore": <0-100>,\n'
-                '  "pacingScore": <0-100, where 50 is ideal pace, too fast or too slow both score lower>,\n'
-                '  "fillerScore": <0-100, inverted: fewer filler words = higher score>,\n'
-                '  "energyLevel": <0.0-1.0, vocal energy and engagement level>,\n'
-                '  "dominantTone": "<single word describing overall candidate affect, e.g. confident/nervous/flat/enthusiastic>",\n'
-                '  "emotionalVariance": <0.0-1.0, range of emotional expression throughout the interview>\n'
+                '  "confidenceScore": <0-100; anchor: 90+ = consistently assertive tone, minimal hedging, '
+                'direct answers; 50-70 = mix of confident and uncertain delivery; below 50 = frequent '
+                'hesitation, trailing off, upward inflection on statements>,\n'
+                '  "clarityScore": <0-100; anchor: 90+ = articulate, well-paced, easy to follow; '
+                '50-70 = mostly clear with some mumbling or run-on sentences; below 50 = frequently '
+                'unclear, hard to follow, poor articulation>,\n'
+                '  "pacingScore": <0-100; 50 is ideal conversational pace; score decreases symmetrically '
+                'as pace deviates — rushing through answers scores as low as speaking too slowly>,\n'
+                '  "fillerScore": <0-100; inverted — fewer filler words (um, uh, like, you know) = higher score; '
+                '100 = no fillers; 70 = occasional fillers; below 50 = frequent fillers that disrupt flow>,\n'
+                '  "energyLevel": <0.0-1.0; 0.8-1.0 = high vocal energy, enthusiastic and engaged; '
+                '0.4-0.7 = moderate energy, present but not animated; below 0.4 = flat, low energy, '
+                'monotone delivery>,\n'
+                '  "dominantTone": "<single word describing the overall emotional register of the candidate '
+                "throughout the interview; choose the most accurate from: confident, nervous, enthusiastic, "
+                'flat, defensive, engaged, hesitant, polished, or use another single word if none fit>",\n'
+                '  "emotionalVariance": <0.0-1.0; measures the range of emotional expression — '
+                '0.8-1.0 = wide range, candidate sounds very different across topics; '
+                '0.3-0.6 = moderate natural variation; below 0.3 = consistently flat with little variation>\n'
                 "}\n"
-                "Base all scores on audio signals — tone, pace, energy, filler words, hesitations. "
-                "No extra fields."
+                "Base all scores strictly on audio signals — tone, pace, energy, filler words, hesitations. "
+                "Do not infer from the content of what was said. No extra fields."
             )
             generation_config = {"max_output_tokens": 1024}
             response = model.generate_content([prompt, audio_file], generation_config=generation_config)
