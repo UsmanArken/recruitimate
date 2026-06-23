@@ -7,6 +7,10 @@ export function jsonOk<T>(data: T, status = 200) {
   return NextResponse.json(data, { status });
 }
 
+export function jsonAccepted<T>(data: T) {
+  return NextResponse.json(data, { status: 202 });
+}
+
 export function jsonCreated<T>(data: T) {
   return NextResponse.json(data, { status: 201 });
 }

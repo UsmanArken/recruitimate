@@ -1,4 +1,4 @@
-import { handleRouteError, jsonOk } from "@/lib/api/response";
+import { handleRouteError, jsonAccepted, jsonOk } from "@/lib/api/response";
 import { runApiRoute } from "@/lib/api/run-api-route";
 import { requireApiAuth } from "@/lib/api/context";
 import * as interviewService from "@/lib/services/interview.service";
@@ -13,12 +13,23 @@ export async function POST(
     try {
       const ctx = await requireApiAuth();
       const { applicationId, interviewId } = await params;
-      const interview = await interviewService.transcribeInterviewRecording(
+      const sync = new URL(req.url).searchParams.get("sync") === "true";
+
+      if (sync) {
+        const interview = await interviewService.transcribeInterviewRecording(
+          ctx,
+          applicationId,
+          interviewId
+        );
+        return jsonOk(interview);
+      }
+
+      const queued = await interviewService.queueTranscribeInterviewRecording(
         ctx,
         applicationId,
         interviewId
       );
-      return jsonOk(interview);
+      return jsonAccepted(queued);
     } catch (error) {
       return handleRouteError(error);
     }

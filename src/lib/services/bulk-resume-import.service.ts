@@ -133,6 +133,7 @@ export async function importResumesForJob(
   files: File[]
 ): Promise<BulkImportRowResult[]> {
   await getJobById(ctx, jobId);
+  const organizationId = ctx.actingOrganizationId ?? ctx.organizationId;
 
   const batchEmails = new Set<string>();
   const batchHashes = new Set<string>();
@@ -140,7 +141,7 @@ export async function importResumesForJob(
 
   for (const file of files) {
     try {
-      const parsed = await resumeParseService.parseResumeUpload(ctx, file);
+      const parsed = await resumeParseService.parseResumeFileInternal(organizationId, file);
       const email = extractEmailFromResume(parsed.text);
       const name = resolveCandidateDisplayName(parsed.text, file.name);
       const normalized = normalizeResumeText(parsed.text);
@@ -197,6 +198,7 @@ export async function importResumesForJob(
             where: { id: candidate.id },
             data: {
               resumeText: parsed.text,
+              resumeFilePath: parsed.storageKey ?? undefined,
               name: candidate.name || name,
               email: candidate.email ?? email ?? null,
               source: "BULK",
@@ -221,6 +223,7 @@ export async function importResumesForJob(
         email: email ?? undefined,
         jobId,
         resumeText: parsed.text,
+        resumeFilePath: parsed.storageKey ?? undefined,
         linkedInText: undefined,
         linkedInUrl: undefined,
         githubUrl: undefined,

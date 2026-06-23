@@ -1,27 +1,10 @@
 import { NextResponse } from "next/server";
-import { readFile } from "fs/promises";
-import path from "path";
 import { badRequest } from "@/lib/api/errors";
 import { handleRouteError, jsonOk } from "@/lib/api/response";
 import { runApiRoute } from "@/lib/api/run-api-route";
 import { requireApiAuth } from "@/lib/api/context";
-import { absoluteRecordingPath } from "@/lib/storage/interview-recordings";
+import { readInterviewRecording, mimeForPath } from "@/lib/storage/interview-recordings";
 import * as interviewService from "@/lib/services/interview.service";
-
-function mimeForPath(filePath: string): string {
-  const ext = path.extname(filePath).toLowerCase();
-  const map: Record<string, string> = {
-    ".mp3": "audio/mpeg",
-    ".wav": "audio/wav",
-    ".m4a": "audio/mp4",
-    ".webm": "video/webm",
-    ".mp4": "video/mp4",
-    ".mpeg": "audio/mpeg",
-    ".mpga": "audio/mpeg",
-  };
-  return map[ext] ?? "application/octet-stream";
-}
-
 export async function GET(
   _req: Request,
   {
@@ -40,9 +23,8 @@ export async function GET(
       if (!interview.recordingPath) {
         return handleRouteError(badRequest("No recording uploaded", "NO_RECORDING"));
       }
-      const absolute = absoluteRecordingPath(interview.recordingPath);
-      const buffer = await readFile(absolute);
-      return new NextResponse(buffer, {
+      const buffer = await readInterviewRecording(interview.recordingPath);
+      return new NextResponse(new Uint8Array(buffer), {
         headers: {
           "Content-Type": mimeForPath(interview.recordingPath),
           "Cache-Control": "private, no-store",

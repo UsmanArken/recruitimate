@@ -1,4 +1,3 @@
-import { readFile } from "fs/promises";
 import path from "path";
 import type {
   AudioPauseSignal,
@@ -6,7 +5,7 @@ import type {
   AudioToneShift,
   Signal,
 } from "../types";
-import { absoluteRecordingPath } from "@/lib/storage/interview-recordings";
+import { readInterviewRecording } from "@/lib/storage/interview-recordings";
 
 const WINDOW_MS = 50;
 const MIN_PAUSE_MS = 700;
@@ -270,12 +269,11 @@ function analyzeTranscriptFallback(transcript: string): Omit<AudioSignalResult, 
 }
 
 export async function extractAudioSignals(
-  relativePath: string,
+  storageKey: string,
   transcript?: string | null
 ): Promise<AudioSignalResult> {
-  const absolute = absoluteRecordingPath(relativePath);
-  const buffer = await readFile(absolute);
-  const ext = path.extname(relativePath).toLowerCase();
+  const buffer = await readInterviewRecording(storageKey);
+  const ext = path.extname(storageKey).toLowerCase();
 
   if (ext === ".wav") {
     const pcm = decodeWavPcm(buffer);

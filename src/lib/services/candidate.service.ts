@@ -75,6 +75,7 @@ export async function createCandidate(ctx: AuthContext, input: CreateCandidateIn
       email: input.email || null,
       organizationId,
       resumeText: input.resumeText,
+      resumeFilePath: input.resumeFilePath ?? null,
       linkedInText: input.linkedInText?.trim() || null,
       linkedInUrl: input.linkedInUrl || null,
       githubUrl: input.githubUrl || null,

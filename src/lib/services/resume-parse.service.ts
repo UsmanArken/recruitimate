@@ -7,9 +7,20 @@ import {
 import { assertPermission } from "@/lib/auth/permission.service";
 import type { AuthContext } from "@/lib/auth/types";
 
-export async function parseResumeUpload(ctx: AuthContext, file: File) {
-  await assertPermission(ctx, { resource: "candidates", action: "create" });
+import { saveResumeFile } from "@/lib/storage/resumes";
 
+export type ParsedResumeFile = {
+  text: string;
+  format: string;
+  fileName: string;
+  characterCount: number;
+  storageKey: string | null;
+};
+
+export async function parseResumeFileInternal(
+  organizationId: string,
+  file: File
+): Promise<ParsedResumeFile> {
   if (!file || file.size === 0) {
     throw badRequest("No file provided", "NO_FILE");
   }
@@ -39,11 +50,19 @@ export async function parseResumeUpload(ctx: AuthContext, file: File) {
   }
 
   const fileName = file.name.split(/[/\\]/).pop() ?? file.name;
+  const storageKey = await saveResumeFile(organizationId, buffer, fileName);
 
   return {
     text: extracted.text,
     format: extracted.format,
     fileName,
     characterCount: extracted.text.length,
+    storageKey,
   };
+}
+
+export async function parseResumeUpload(ctx: AuthContext, file: File) {
+  await assertPermission(ctx, { resource: "candidates", action: "create" });
+  const organizationId = ctx.actingOrganizationId ?? ctx.organizationId;
+  return parseResumeFileInternal(organizationId, file);
 }

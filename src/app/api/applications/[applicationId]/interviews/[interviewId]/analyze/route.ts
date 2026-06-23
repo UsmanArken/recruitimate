@@ -1,4 +1,4 @@
-import { handleRouteError, jsonOk } from "@/lib/api/response";
+import { handleRouteError, jsonAccepted, jsonOk } from "@/lib/api/response";
 import { runApiRoute } from "@/lib/api/run-api-route";
 import { requireApiAuth } from "@/lib/api/context";
 import * as interviewService from "@/lib/services/interview.service";
@@ -13,12 +13,23 @@ export async function POST(
     try {
       const ctx = await requireApiAuth();
       const { applicationId, interviewId } = await params;
-      const result = await interviewService.analyzeInterviewById(
+      const sync = new URL(req.url).searchParams.get("sync") === "true";
+
+      if (sync) {
+        const result = await interviewService.analyzeInterviewById(
+          ctx,
+          applicationId,
+          interviewId
+        );
+        return jsonOk(result);
+      }
+
+      const queued = await interviewService.queueAnalyzeInterviewById(
         ctx,
         applicationId,
         interviewId
       );
-      return jsonOk(result);
+      return jsonAccepted(queued);
     } catch (error) {
       return handleRouteError(error);
     }

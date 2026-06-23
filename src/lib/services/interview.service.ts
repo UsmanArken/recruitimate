@@ -12,6 +12,7 @@ import { analyzeInterviewerQuality } from "@/lib/intelligence/interview/intervie
 import { extractAudioSignals } from "@/lib/intelligence/audio/audio-signal-engine";
 import { transcribeRecordingFile } from "@/lib/intelligence/transcription/whisper";
 import { refreshApplicationIntelligence } from "@/lib/services/candidate-intelligence.service";
+import * as backgroundJobService from "@/lib/services/background-job.service";
 import {
   assertRecordingFile,
   saveInterviewRecording,
@@ -340,5 +341,44 @@ export async function analyzeInterviewById(
     title: interview.title,
     transcript: interview.transcript,
     interviewId: interview.id,
+  });
+}
+
+export async function queueTranscribeInterviewRecording(
+  ctx: AuthContext,
+  applicationId: string,
+  interviewId: string
+) {
+  assertTenantWorkspaceWrite(ctx);
+  await assertPermission(ctx, { resource: "interviews", action: "create" });
+  await assertApplicationAccess(ctx, applicationId);
+
+  const interview = await db.interview.findFirst({
+    where: { id: interviewId, applicationId },
+  });
+  if (!interview) throw notFound("Interview");
+  if (!interview.recordingPath) {
+    throw badRequest("Upload a recording first", "NO_RECORDING");
+  }
+
+  return backgroundJobService.enqueueBackgroundJob(ctx, "TRANSCRIBE_INTERVIEW", {
+    applicationId,
+    interviewId,
+  });
+}
+
+export async function queueAnalyzeInterviewById(
+  ctx: AuthContext,
+  applicationId: string,
+  interviewId: string
+) {
+  const interview = await getInterviewForApplication(ctx, applicationId, interviewId);
+  if (!interview.transcript || interview.transcript.length < 50) {
+    throw badRequest("Transcript too short — transcribe or paste first", "NO_TRANSCRIPT");
+  }
+
+  return backgroundJobService.enqueueBackgroundJob(ctx, "ANALYZE_INTERVIEW", {
+    applicationId,
+    interviewId,
   });
 }

@@ -79,6 +79,7 @@ model Organization {
   outreachTemplates OutreachTemplate[]
   outreachCampaigns OutreachCampaign[]
   assessmentTasks   AssessmentTask[]
+  backgroundJobs    BackgroundJob[]
   createdAt DateTime             @default(now())
   updatedAt DateTime             @updatedAt
 }
@@ -561,4 +562,37 @@ model AssessmentSubmission {
   @@index([organizationId])
   @@index([applicationId])
   @@index([taskId])
+}
+
+enum BackgroundJobType {
+  TRANSCRIBE_INTERVIEW
+  ANALYZE_INTERVIEW
+}
+
+enum BackgroundJobStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+model BackgroundJob {
+  id             String              @id @default(cuid())
+  organizationId String
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  type           BackgroundJobType
+  status         BackgroundJobStatus @default(QUEUED)
+  payload        Json
+  result         Json?
+  error          String?             @db.Text
+  attempts       Int                 @default(0)
+  maxAttempts    Int                 @default(3)
+  runAfter       DateTime            @default(now())
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@index([status, runAfter])
+  @@index([organizationId, createdAt])
 }

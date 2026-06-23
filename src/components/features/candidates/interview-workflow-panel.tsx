@@ -18,6 +18,7 @@ import {
 } from "@/components/features/interview/audio-signals-panel";
 import type { AudioSignalResult, VideoBehavioralResult } from "@/lib/intelligence/types";
 import { VideoBehavioralCapturePanel } from "@/components/features/candidates/video-behavioral-capture-panel";
+import { pollBackgroundJob } from "@/lib/jobs/poll-client";
 
 export type InterviewRow = {
   id: string;
@@ -111,19 +112,35 @@ export function InterviewWorkflowPanel({
     if (!activeId) return;
     setLoading(true);
     setError(null);
-    const res = await fetch(
-      `/api/applications/${applicationId}/interviews/${activeId}/transcribe`,
-      { method: "POST", credentials: "same-origin" }
-    );
-    setLoading(false);
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      setError(typeof data.error === "string" ? data.error : "Transcription failed");
-      return;
+    try {
+      const res = await fetch(
+        `/api/applications/${applicationId}/interviews/${activeId}/transcribe`,
+        { method: "POST", credentials: "same-origin" }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(typeof data.error === "string" ? data.error : "Transcription failed");
+        return;
+      }
+
+      if (res.status === 202 && data.jobId) {
+        const completed = await pollBackgroundJob(data.jobId);
+        const result = completed.result as {
+          transcript?: string;
+          audioSignals?: AudioSignalResult;
+        };
+        if (result?.transcript) setTranscript(result.transcript);
+        if (result?.audioSignals) setAudioSignals(parseAudioSignals(result.audioSignals));
+      } else {
+        if (data.transcript) setTranscript(data.transcript);
+        if (data.audioSignals) setAudioSignals(parseAudioSignals(data.audioSignals));
+      }
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Transcription failed");
+    } finally {
+      setLoading(false);
     }
-    if (data.transcript) setTranscript(data.transcript);
-    if (data.audioSignals) setAudioSignals(parseAudioSignals(data.audioSignals));
-    router.refresh();
   }
 
   async function extractAudio() {
@@ -147,24 +164,46 @@ export function InterviewWorkflowPanel({
   async function analyze(transcriptText: string) {
     setLoading(true);
     setError(null);
-    const res = await fetch(`/api/applications/${applicationId}/interviews`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "same-origin",
-      body: JSON.stringify({
-        action: "analyze",
-        title: scheduleTitle,
-        transcript: transcriptText,
-        interviewId: activeId || undefined,
-      }),
-    });
-    setLoading(false);
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      setError(typeof data.error === "string" ? data.error : "Analysis failed");
-      return;
+    try {
+      if (activeId) {
+        const res = await fetch(
+          `/api/applications/${applicationId}/interviews/${activeId}/analyze`,
+          { method: "POST", credentials: "same-origin" }
+        );
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setError(typeof data.error === "string" ? data.error : "Analysis failed");
+          return;
+        }
+        if (res.status === 202 && data.jobId) {
+          await pollBackgroundJob(data.jobId);
+        }
+        router.refresh();
+        return;
+      }
+
+      const res = await fetch(`/api/applications/${applicationId}/interviews`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({
+          action: "analyze",
+          title: scheduleTitle,
+          transcript: transcriptText,
+          interviewId: activeId || undefined,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(typeof data.error === "string" ? data.error : "Analysis failed");
+        return;
+      }
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Analysis failed");
+    } finally {
+      setLoading(false);
     }
-    router.refresh();
   }
 
   const active = interviews.find((i) => i.id === activeId);
