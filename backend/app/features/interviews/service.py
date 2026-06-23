@@ -120,12 +120,8 @@ async def get_interview_token(
 
 
 async def analyze_interview(interview_id: str, app_id: str, org_id: str, db: AsyncSession) -> dict:
-    from app.features.intelligence.engines import (
-        run_inconsistency_check,
-        run_interview_intelligence,
-        run_interviewer_quality,
-    )
-    from app.shared.models import TalentProfile
+    from app.features.intelligence.engines import run_transcript_analysis, run_interviewer_quality, run_decision_intelligence
+    from app.features.intelligence.types import TalentResult
 
     interview = await _load_interview(interview_id, app_id, org_id, db)
     if not interview.transcript:
@@ -136,13 +132,19 @@ async def analyze_interview(interview_id: str, app_id: str, org_id: str, db: Asy
         .where(JobApplication.id == app_id)
         .options(
             selectinload(JobApplication.candidate),
+            selectinload(JobApplication.job),
             selectinload(JobApplication.talent_profile),
         )
     )
     app = app_result.scalar_one_or_none()
-    resume_text = app.candidate.resumeText if app and app.candidate else ""
+    resume_text = (app.candidate.resumeText if app and app.candidate else "") or ""
+    job_requirements = ""
+    if app and app.job:
+        job_requirements = (app.job.requirements or app.job.description or "") or ""
 
-    result = await run_interview_intelligence(interview.transcript, resume_text)
+    # Call 3: transcript + cross-signal
+    transcript_result = await run_transcript_analysis(interview.transcript, resume_text)
+    # Call 5: interviewer quality
     iq = await run_interviewer_quality(interview.transcript)
 
     if interview.analysis:
@@ -151,14 +153,13 @@ async def analyze_interview(interview_id: str, app_id: str, org_id: str, db: Asy
         analysis = InterviewAnalysis(interviewId=interview.id)
         db.add(analysis)
 
-    analysis.hesitationScore = result.hesitationScore
-    analysis.confidenceScore = result.confidenceScore
-    analysis.clarityScore = result.clarityScore
-    analysis.consistencyScore = result.consistencyScore
-    analysis.engagementScore = result.engagementScore
-    analysis.cognitiveSignals = result.cognitiveSignals
-    analysis.behavioralMetrics = result.behavioralMetrics
-    analysis.riskFlags = result.riskFlags
+    analysis.truthfulnessScore = transcript_result.truthfulnessScore
+    analysis.depthScore = transcript_result.depthScore
+    analysis.resumeConsistencyScore = transcript_result.resumeConsistencyScore
+    analysis.inconsistencies = transcript_result.inconsistencies
+    analysis.depthNotes = transcript_result.depthNotes
+    analysis.workStyleNotes = transcript_result.workStyleNotes
+    analysis.riskFlags = transcript_result.riskFlags
     analysis.interviewerQuality = {
         "coverageScore": iq.coverageScore,
         "probingDepthScore": iq.probingDepthScore,
@@ -167,19 +168,28 @@ async def analyze_interview(interview_id: str, app_id: str, org_id: str, db: Asy
     }
     interview.status = InterviewStatus.ANALYZED
 
+    # Call 4: decision (requires talent profile)
     if app and app.talent_profile:
-        from app.features.intelligence.engines import run_cross_signal, run_decision_intelligence
-        from app.features.intelligence.types import TalentResult
         tp = app.talent_profile
         talent = TalentResult(
             skills=tp.skills or [],
+            matchedSkills=tp.matchedSkills or [],
+            missingSkills=tp.missingSkills or [],
+            extraSkills=tp.extraSkills or [],
+            experienceYears=tp.experienceYears,
+            roleFitScore=tp.roleFitScore,
             strengths=tp.strengths or [],
             gaps=tp.gaps or [],
             hiddenSignals=tp.hiddenSignals or [],
-            explanation=tp.explanation or "",
         )
-        cross = await run_cross_signal(talent, result)
-        decision_result = await run_decision_intelligence(talent, result)
+        decision_result = await run_decision_intelligence(
+            resume_text=resume_text,
+            transcript=interview.transcript,
+            job_requirements=job_requirements,
+            talent=talent,
+            transcript_result=transcript_result,
+            audio=None,
+        )
 
         from app.shared.models import Decision
         dec_q = await db.execute(select(Decision).where(Decision.applicationId == app_id))
@@ -187,23 +197,16 @@ async def analyze_interview(interview_id: str, app_id: str, org_id: str, db: Asy
         if not decision:
             decision = Decision(applicationId=app_id)
             db.add(decision)
-        decision.hireConfidence = decision_result.hireConfidence
         decision.recommendation = decision_result.recommendation
-        decision.riskFactors = decision_result.riskFactors
         decision.explanation = decision_result.explanation
-        decision.signalBreakdown = {
-            **decision_result.signalBreakdown,
-            "crossSignalConsistency": cross.consistencyScore,
-            "inconsistencies": cross.inconsistencies,
-            "inconsistenciesExplanation": cross.explanation,
-        }
+        decision.reasonsToHire = decision_result.reasonsToHire
+        decision.reasonsToReject = decision_result.reasonsToReject
 
     await db.flush()
     return {
-        "hesitationScore": analysis.hesitationScore,
-        "confidenceScore": analysis.confidenceScore,
-        "clarityScore": analysis.clarityScore,
-        "consistencyScore": analysis.consistencyScore,
+        "truthfulnessScore": analysis.truthfulnessScore,
+        "depthScore": analysis.depthScore,
+        "resumeConsistencyScore": analysis.resumeConsistencyScore,
         "riskFlags": analysis.riskFlags,
     }
 
