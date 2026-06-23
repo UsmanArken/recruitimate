@@ -53,5 +53,15 @@ export async function getDashboardData(ctx: AuthContext) {
       avgConfidence,
     },
     recentApplications,
+    openJobs: await db.job.findMany({
+      where: jobWhere,
+      orderBy: { updatedAt: "desc" },
+      take: 8,
+      select: {
+        id: true,
+        title: true,
+        _count: { select: { applications: true } },
+      },
+    }),
   };
 }

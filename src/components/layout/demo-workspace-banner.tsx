@@ -18,8 +18,7 @@ export function DemoWorkspaceBanner() {
           <span className="font-semibold">Demo workspace</span>
           <span className="text-muted">
             {" "}
-            — sample jobs, resumes, and interview intelligence. Data resets when you re-run{" "}
-            <code className="rounded bg-card px-1 py-0.5 text-xs">npm run db:seed-demo</code>.
+            — sample jobs, resumes, and interview intelligence for exploration.
           </span>
         </span>
       </p>

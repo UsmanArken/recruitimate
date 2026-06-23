@@ -14,7 +14,7 @@ import { isPlatformReadOnlyWorkspace } from "@/lib/auth/platform-admin";
 import { getDashboardData } from "@/lib/services/dashboard.service";
 import { getWorkspaceOnboarding } from "@/lib/services/onboarding.service";
 import { formatScore, scoreColor } from "@/lib/utils";
-import { ArrowRight, Users, Briefcase, Mic, TrendingUp, UserPlus } from "lucide-react";
+import { ArrowRight, Users, Briefcase, TrendingUp, UserPlus } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +36,7 @@ export default async function DashboardPage() {
     avgConfidence: null as number | null,
   };
   let recent: Awaited<ReturnType<typeof getDashboardData>>["recentApplications"] = [];
+  let openJobs: Awaited<ReturnType<typeof getDashboardData>>["openJobs"] = [];
   let onboarding: Awaited<ReturnType<typeof getWorkspaceOnboarding>> | null = null;
   let readOnly = false;
 
@@ -51,6 +52,7 @@ export default async function DashboardPage() {
     ]);
     stats = data.stats;
     recent = data.recentApplications;
+    openJobs = data.openJobs;
     onboarding = onboardingState;
   } catch {
     // DB not connected yet
@@ -67,9 +69,9 @@ export default async function DashboardPage() {
         }
       >
         {!readOnly && (
-          <ButtonLink href="/candidates/new">
-            <UserPlus className="h-4 w-4" />
-            Add candidate
+          <ButtonLink href="/jobs/new">
+            <Briefcase className="h-4 w-4" />
+            Post open role
           </ButtonLink>
         )}
       </PageHeader>
@@ -83,20 +85,65 @@ export default async function DashboardPage() {
           <LayerBadge layer="decision" size="sm" />
         </div>
 
+        <Card className="mb-8">
+          <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
+            <div>
+              <CardTitle>Open roles</CardTitle>
+              <CardDescription>
+                Start from your hiring campaigns — add applicants or bulk-upload CVs per role.
+              </CardDescription>
+            </div>
+            {!readOnly && (
+              <ButtonLink href="/jobs/new" className="shrink-0">
+                Post role
+              </ButtonLink>
+            )}
+          </CardHeader>
+          <CardContent className="p-0">
+            {openJobs.length === 0 ? (
+              <EmptyState
+                icon={Briefcase}
+                title="No open roles yet"
+                description="Post a requisition first. Role-fit scoring and pipeline views are organized by open position."
+                primaryAction={
+                  readOnly
+                    ? { href: "/admin", label: "Open Platform admin" }
+                    : { href: "/jobs/new", label: "Post your first role" }
+                }
+              />
+            ) : (
+              <ul>
+                {openJobs.map((job) => (
+                  <li key={job.id} className="border-t border-border-subtle first:border-t-0">
+                    <Link
+                      href={`/jobs/${job.id}`}
+                      className="flex items-center gap-4 px-6 py-4 transition hover:bg-teal-50/40"
+                    >
+                      <Briefcase className="h-5 w-5 text-brand" />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-foreground">{job.title}</p>
+                        <p className="text-sm text-muted">
+                          {job._count.applications} in pipeline
+                        </p>
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-muted" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+
         <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard label="Open roles" value={stats.jobs} icon={Briefcase} tone="navy" />
           <StatCard label="People in pipeline" value={stats.candidates} icon={Users} tone="teal" />
           <StatCard
             label="Position reviews"
             value={stats.applications}
-            icon={Briefcase}
-            tone="navy"
-            hint="Same person may appear on multiple roles"
-          />
-          <StatCard
-            label="Interviews completed"
-            value={stats.interviewed}
-            icon={Mic}
+            icon={Users}
             tone="sage"
+            hint="Same person may appear on multiple roles"
           />
           <StatCard
             label="Avg. hire confidence"

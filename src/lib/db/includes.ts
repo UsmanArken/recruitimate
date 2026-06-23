@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 
 export const applicationListInclude = {
-  candidate: { select: { id: true, name: true, email: true } },
+  candidate: { select: { id: true, name: true, email: true, marking: true } },
   job: { select: { id: true, title: true } },
   talentProfile: true,
   decision: true,
@@ -12,6 +12,8 @@ export const applicationDetailInclude = {
   job: true,
   talentProfile: true,
   decision: true,
+  talentReviewedBy: { select: { id: true, name: true, email: true } },
+  hireReviewedBy: { select: { id: true, name: true, email: true } },
   interviews: { include: { analysis: true }, orderBy: { createdAt: "desc" as const } },
 } satisfies Prisma.JobApplicationInclude;
 
@@ -33,5 +35,6 @@ export const candidatePersonInclude = {
 } satisfies Prisma.CandidateInclude;
 
 export const jobListInclude = {
+  hiringClient: { select: { id: true, name: true, website: true } },
   _count: { select: { applications: true } },
 } satisfies Prisma.JobInclude;

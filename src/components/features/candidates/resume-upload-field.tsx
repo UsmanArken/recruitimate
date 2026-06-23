@@ -9,15 +9,22 @@ type ParseResult = {
   format: string;
   fileName: string;
   characterCount: number;
+  suggestedName: string;
+  suggestedEmail?: string;
+  suggestedLinkedInUrl?: string;
+  suggestedGithubUrl?: string;
+  suggestedPortfolioUrl?: string;
 };
 
 export function ResumeUploadField({
   resumeText,
   onResumeTextChange,
+  onParsed,
   required = true,
 }: {
   resumeText: string;
   onResumeTextChange: (text: string) => void;
+  onParsed?: (result: ParseResult) => void;
   required?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -49,6 +56,7 @@ export function ResumeUploadField({
     const result: ParseResult = await res.json();
     setUploadedFile(result);
     onResumeTextChange(result.text);
+    onParsed?.(result);
   }
 
   function onInputChange(e: React.ChangeEvent<HTMLInputElement>) {

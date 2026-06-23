@@ -85,10 +85,10 @@ export function JobPipelineTable({
                 </td>
                 <td className="px-5 py-4">
                   <Link
-                    href={`/candidates/${app.candidate.id}/applications/${app.id}`}
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                    href={`/candidates/${app.candidate.id}/applications/${app.id}?tab=screen`}
+                    className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/15"
                   >
-                    Review
+                    Talent review
                     <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
                 </td>

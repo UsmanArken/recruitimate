@@ -56,14 +56,28 @@ async function seedDemoWorkspace() {
       },
     });
 
+    const hiringClient = await tx.hiringClient.create({
+      data: {
+        organizationId: organization.id,
+        name: "Acme Robotics",
+        slug: "acme-robotics",
+        website: "https://acme-robotics.example.com",
+        companyProfile:
+          "Acme Robotics builds autonomous warehouse systems for enterprise logistics. Known for strong engineering culture and Series C growth.",
+        webDataConsentAt: new Date(),
+      },
+    });
+
     const jobIds = new Map<string, string>();
     for (const job of DEMO_JOBS) {
       const created = await tx.job.create({
         data: {
           organizationId: organization.id,
+          hiringClientId: hiringClient.id,
           title: job.title,
           description: job.description,
           requirements: job.requirements,
+          jobPostDocument: `${job.title} at Acme Robotics\n\n${job.description}`,
           hiringManagerId: user.id,
         },
       });

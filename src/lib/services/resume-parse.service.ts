@@ -1,11 +1,12 @@
 import { badRequest } from "@/lib/api/errors";
+import { assertPermission } from "@/lib/auth/permission.service";
+import type { AuthContext } from "@/lib/auth/types";
 import {
   extractResumeText,
   isAllowedResumeFile,
   RESUME_UPLOAD,
 } from "@/lib/resume/extract-text";
-import { assertPermission } from "@/lib/auth/permission.service";
-import type { AuthContext } from "@/lib/auth/types";
+import { extractResumeContactHints } from "@/lib/resume/parse-contact";
 
 export async function parseResumeUpload(ctx: AuthContext, file: File) {
   await assertPermission(ctx, { resource: "candidates", action: "create" });
@@ -39,11 +40,13 @@ export async function parseResumeUpload(ctx: AuthContext, file: File) {
   }
 
   const fileName = file.name.split(/[/\\]/).pop() ?? file.name;
+  const contact = extractResumeContactHints(extracted.text, fileName);
 
   return {
     text: extracted.text,
     format: extracted.format,
     fileName,
     characterCount: extracted.text.length,
+    ...contact,
   };
 }

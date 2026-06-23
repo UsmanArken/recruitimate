@@ -9,12 +9,27 @@ import {
 } from "@/lib/auth/scope.service";
 import type { AuthContext } from "@/lib/auth/types";
 import type { CreateCandidateInput } from "@/lib/validators/candidate";
+import type { UpdateCandidateMarkingInput } from "@/lib/validators/candidate-profile";
 import { getJobById } from "@/lib/services/job.service";
 import { buildCandidateIntelligenceText } from "@/lib/candidate/intelligence-text";
 import {
   computeTalentAndDecision,
   talentForStorage,
 } from "@/lib/services/candidate-intelligence.service";
+import { analyzeTalent } from "@/lib/intelligence/talent/engine";
+import type { TalentIntelligenceResult } from "@/lib/intelligence/types";
+
+function genericScreeningForStorage(talent: TalentIntelligenceResult) {
+  return {
+    skills: talent.skills,
+    experienceYears: talent.experienceYears,
+    strengths: talent.strengths,
+    gaps: talent.gaps,
+    hiddenSignals: talent.hiddenSignals,
+    explanation: talent.explanation,
+    screenedAt: new Date().toISOString(),
+  };
+}
 export async function listCandidates(ctx: AuthContext) {
   await assertPermission(ctx, { resource: "candidates", action: "read" });
   const where = await candidatesWhereClause(ctx);
@@ -41,14 +56,40 @@ export async function createCandidate(ctx: AuthContext, input: CreateCandidateIn
   assertTenantWorkspaceWrite(ctx);
   await assertPermission(ctx, { resource: "candidates", action: "create" });
 
-  const job = await getJobById(ctx, input.jobId);
   const organizationId = ctx.actingOrganizationId ?? ctx.organizationId;
+  const jobId = input.jobId?.trim() || undefined;
 
   const intelligenceText = buildCandidateIntelligenceText({
     resumeText: input.resumeText,
     linkedInText: input.linkedInText,
     githubUrl: input.githubUrl,
   });
+
+  if (!jobId) {
+    const genericTalent = await analyzeTalent(intelligenceText);
+
+    const candidate = await db.candidate.create({
+      data: {
+        name: input.name,
+        email: input.email || null,
+        organizationId,
+        resumeText: input.resumeText,
+        sourceFileName: input.sourceFileName || null,
+        linkedInText: input.linkedInText?.trim() || null,
+        linkedInUrl: input.linkedInUrl || null,
+        githubUrl: input.githubUrl || null,
+        portfolioUrl: input.portfolioUrl || null,
+        genericScreening: genericScreeningForStorage(genericTalent),
+      },
+      include: {
+        applications: { include: applicationDetailInclude, take: 1 },
+      },
+    });
+
+    return candidate;
+  }
+
+  const job = await getJobById(ctx, jobId);
 
   const { talent, decision } = await computeTalentAndDecision({
     candidateName: input.name,
@@ -67,9 +108,11 @@ export async function createCandidate(ctx: AuthContext, input: CreateCandidateIn
       email: input.email || null,
       organizationId,
       resumeText: input.resumeText,
+      sourceFileName: input.sourceFileName || null,
       linkedInText: input.linkedInText?.trim() || null,
       linkedInUrl: input.linkedInUrl || null,
       githubUrl: input.githubUrl || null,
+      portfolioUrl: input.portfolioUrl || null,
       applications: {
         create: {
           organizationId,
@@ -94,4 +137,26 @@ export async function createCandidate(ctx: AuthContext, input: CreateCandidateIn
   });
 
   return candidate;
+}
+
+export async function updateCandidateMarking(
+  ctx: AuthContext,
+  id: string,
+  input: UpdateCandidateMarkingInput
+) {
+  assertTenantWorkspaceWrite(ctx);
+  await assertPermission(ctx, { resource: "candidates", action: "update" });
+  await assertCandidateAccess(ctx, id);
+
+  return db.candidate.update({
+    where: { id },
+    data: { marking: input.marking },
+  });
+}
+
+export async function deleteCandidate(ctx: AuthContext, id: string) {
+  assertTenantWorkspaceWrite(ctx);
+  await assertPermission(ctx, { resource: "candidates", action: "delete" });
+  await assertCandidateAccess(ctx, id);
+  await db.candidate.delete({ where: { id } });
 }

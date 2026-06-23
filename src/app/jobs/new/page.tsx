@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireAuthContext } from "@/lib/auth/session";
 import { isPlatformReadOnlyWorkspace } from "@/lib/auth/platform-admin";
-import { NewJobForm } from "@/app/jobs/new/new-job-form";
+import { JobFormShell } from "@/components/features/jobs/job-form-shell";
 
 export const dynamic = "force-dynamic";
 
@@ -10,5 +10,11 @@ export default async function NewJobPage() {
   if (isPlatformReadOnlyWorkspace(ctx)) {
     redirect("/admin");
   }
-  return <NewJobForm />;
+  return (
+    <JobFormShell
+      title="Post new role"
+      description="Create a requisition with a required job post document. Optionally link a client company."
+      submitLabel="Create role"
+    />
+  );
 }

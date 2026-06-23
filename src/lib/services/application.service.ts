@@ -19,11 +19,39 @@ import {
   talentForStorage,
 } from "@/lib/services/candidate-intelligence.service";
 
-export async function listApplications(ctx: AuthContext) {
+import type { PipelineStage, CandidateMarking } from "@prisma/client";
+
+export type ApplicationListFilters = {
+  jobId?: string;
+  stage?: PipelineStage;
+  marking?: CandidateMarking;
+  search?: string;
+};
+
+export async function listApplications(ctx: AuthContext, filters: ApplicationListFilters = {}) {
   await assertPermission(ctx, { resource: "candidates", action: "read" });
   const where = await applicationsWhereClause(ctx);
+
+  const marking = filters.marking ?? "ACTIVE";
+  const search = filters.search?.trim().toLowerCase();
+
   return db.jobApplication.findMany({
-    where,
+    where: {
+      ...where,
+      ...(filters.jobId ? { jobId: filters.jobId } : {}),
+      ...(filters.stage ? { stage: filters.stage } : {}),
+      candidate: {
+        marking,
+        ...(search
+          ? {
+              OR: [
+                { name: { contains: search, mode: "insensitive" } },
+                { email: { contains: search, mode: "insensitive" } },
+              ],
+            }
+          : {}),
+      },
+    },
     include: applicationListInclude,
     orderBy: { updatedAt: "desc" },
   });

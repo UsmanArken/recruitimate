@@ -11,6 +11,10 @@ import { Avatar } from "@/components/features/candidates/avatar";
 import { ApplyToPosition } from "@/components/features/candidates/apply-to-position";
 import { CandidateNotesPanel } from "@/components/features/candidates/candidate-notes-panel";
 import { LinkedInEnrichPanel } from "@/components/features/candidates/linkedin-enrich-panel";
+import { CandidateSourceProfile } from "@/components/features/candidates/candidate-source-profile";
+import { CandidateProfileActions } from "@/components/features/candidates/candidate-profile-actions";
+import { RoleFitSuggestionsPanel } from "@/components/features/candidates/role-fit-suggestions-panel";
+import { suggestRolesForCandidate } from "@/lib/services/role-suggestion.service";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronLeft, Mail, Briefcase } from "lucide-react";
 
@@ -34,6 +38,7 @@ export default async function CandidatePersonPage({
 
   let candidate: Awaited<ReturnType<typeof getCandidateById>> | null = null;
   let openJobs: { id: string; title: string }[] = [];
+  let roleSuggestions: Awaited<ReturnType<typeof suggestRolesForCandidate>> = [];
   let readOnly = false;
 
   try {
@@ -45,6 +50,9 @@ export default async function CandidatePersonPage({
     ]);
     candidate = candidateRow;
     openJobs = jobRows.map((j) => ({ id: j.id, title: j.title }));
+    if (candidateRow.resumeText && candidateRow.resumeText.length >= 20) {
+      roleSuggestions = await suggestRolesForCandidate(ctx, id, candidateRow.resumeText);
+    }
   } catch {
     notFound();
   }
@@ -84,11 +92,34 @@ export default async function CandidatePersonPage({
               One resume, multiple hiring campaigns. Each open position has its own role fit,
               interviews, and hire recommendation.
             </p>
+            <div className="mt-4">
+              <CandidateProfileActions
+                candidateId={candidate.id}
+                marking={candidate.marking}
+                readOnly={readOnly}
+              />
+            </div>
           </div>
         </div>
       </div>
 
       <PageBody>
+        <CandidateSourceProfile
+          name={candidate.name}
+          email={candidate.email}
+          linkedInUrl={candidate.linkedInUrl}
+          linkedInText={candidate.linkedInText}
+          githubUrl={candidate.githubUrl}
+          portfolioUrl={candidate.portfolioUrl}
+          resumeText={candidate.resumeText}
+          sourceFileName={candidate.sourceFileName}
+          genericScreening={
+            candidate.genericScreening as Record<string, unknown> | null
+          }
+        />
+
+        <RoleFitSuggestionsPanel candidateId={candidate.id} suggestions={roleSuggestions} />
+
         <section className="mb-8">
           <Card>
             <CardHeader>

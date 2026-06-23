@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAuthContext } from "@/lib/auth/session";
@@ -26,6 +27,7 @@ import {
   parseVideoBehavioralMetrics,
 } from "@/components/features/interview/video-behavioral-panel";
 import { ReanalyzeButton } from "@/components/features/candidates/reanalyze-button";
+import { RecruiterReviewPanel } from "@/components/features/candidates/recruiter-review-panel";
 import { PageBody } from "@/components/layout/page-header";
 import type { Signal } from "@/lib/intelligence/types";
 import { Briefcase, ChevronLeft, Mail, Mic2 } from "lucide-react";
@@ -69,17 +71,55 @@ export default async function ApplicationDetailPage({
   const audioSignals = parseAudioSignals(latestInterview?.audioSignals);
   const videoBehavioral = parseVideoBehavioralMetrics(latestInterview?.videoBehavioralMetrics);
 
+  const talentRecruiterReview = (
+    <RecruiterReviewPanel
+      applicationId={application.id}
+      kind="talent"
+      title="Recruiter screen review"
+      description="Your pass/fail verdict on this profile for this role — independent of Recruitimate AI screening."
+      readOnly={readOnly}
+      initial={{
+        verdict: application.talentReviewVerdict,
+        notes: application.talentReviewNotes,
+        reviewedAt: application.talentReviewedAt?.toISOString() ?? null,
+        reviewerName:
+          application.talentReviewedBy?.name ?? application.talentReviewedBy?.email ?? null,
+      }}
+    />
+  );
+
+  const hireRecruiterReview = (
+    <RecruiterReviewPanel
+      applicationId={application.id}
+      kind="hire"
+      title="Recruiter hire decision"
+      description="Your final pass/fail hire call — available anytime, even before interview analysis completes."
+      readOnly={readOnly}
+      initial={{
+        verdict: application.hireReviewVerdict,
+        notes: application.hireReviewNotes,
+        reviewedAt: application.hireReviewedAt?.toISOString() ?? null,
+        reviewerName:
+          application.hireReviewedBy?.name ?? application.hireReviewedBy?.email ?? null,
+      }}
+    />
+  );
+
   const talentCard = (
-    <section>
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <LayerBadge layer="talent" />
-        {!readOnly && <ReanalyzeButton applicationId={application.id} />}
-      </div>
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>Talent profile</CardTitle>
-          <CardDescription>Pre-interview signals vs {application.job.title}</CardDescription>
-        </CardHeader>
+    <section className="space-y-6">
+      <div>
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <LayerBadge layer="talent" />
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Recruitimate review
+          </span>
+          {!readOnly && <ReanalyzeButton applicationId={application.id} />}
+        </div>
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle>Talent profile</CardTitle>
+            <CardDescription>Pre-interview AI signals vs {application.job.title}</CardDescription>
+          </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <ScoreBadge label="Role fit" score={tp?.roleFitScore} />
@@ -138,6 +178,8 @@ export default async function ApplicationDetailPage({
           )}
         </CardContent>
       </Card>
+      </div>
+      {talentRecruiterReview}
     </section>
   );
 
@@ -226,9 +268,9 @@ export default async function ApplicationDetailPage({
     </Card>
   );
 
-  const decisionPanel =
+  const recruitimateDecisionCard =
     phase === "ready_for_decision" ? (
-      <div className="space-y-6">
+      <>
         {riskFactors.length > 0 && (
           <Card className="shadow-sm">
             <CardHeader>
@@ -242,10 +284,17 @@ export default async function ApplicationDetailPage({
         )}
         <Card className="border-decision/20 shadow-sm">
           <CardHeader>
-            <CardTitle>Advisory summary</CardTitle>
-            <CardDescription>
-              Combined talent + interview signals for {application.job.title}
-            </CardDescription>
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div>
+                <CardTitle>Advisory summary</CardTitle>
+                <CardDescription>
+                  Recruitimate combined talent + interview signals for {application.job.title}
+                </CardDescription>
+              </div>
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted">
+                Recruitimate review
+              </span>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
@@ -259,18 +308,37 @@ export default async function ApplicationDetailPage({
             )}
           </CardContent>
         </Card>
-      </div>
+      </>
     ) : (
       <Card className="shadow-sm">
-        <CardContent className="py-12 text-center">
-          <p className="font-semibold text-foreground">Decision not ready yet</p>
+        <CardHeader>
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <CardTitle>Recruitimate hire confidence</CardTitle>
+              <CardDescription>AI advisory unlocks after interview analysis</CardDescription>
+            </div>
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted">
+              Recruitimate review
+            </span>
+          </div>
+        </CardHeader>
+        <CardContent className="py-8 text-center">
+          <p className="font-semibold text-foreground">Interview analysis pending</p>
           <p className="mx-auto mt-2 max-w-md text-sm text-muted">
-            Complete an interview in the <span className="font-medium">Interview</span> tab to
-            unlock hire confidence and committee recommendations.
+            Complete an interview in the <span className="font-medium">Interview</span> tab to unlock
+            Recruitimate hire confidence and committee recommendations. You can still record your
+            recruiter hire decision below.
           </p>
         </CardContent>
       </Card>
     );
+
+  const decisionPanel = (
+    <div className="space-y-6">
+      {hireRecruiterReview}
+      {recruitimateDecisionCard}
+    </div>
+  );
 
   return (
     <>
@@ -313,12 +381,14 @@ export default async function ApplicationDetailPage({
           roleFitScore={tp?.roleFitScore}
         />
 
-        <ApplicationDetailTabs
-          phase={phase}
-          screen={talentCard}
-          interview={interviewPanel}
-          decision={decisionPanel}
-        />
+        <Suspense fallback={<p className="text-sm text-muted">Loading…</p>}>
+          <ApplicationDetailTabs
+            phase={phase}
+            screen={talentCard}
+            interview={interviewPanel}
+            decision={decisionPanel}
+          />
+        </Suspense>
       </PageBody>
     </>
   );

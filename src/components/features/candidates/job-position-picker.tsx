@@ -13,6 +13,8 @@ type JobPositionPickerProps = {
   onChange?: (jobId: string) => void;
   placeholder?: string;
   className?: string;
+  /** When true, adds a talent-pool option (empty jobId) for generic screening. */
+  allowTalentPool?: boolean;
 };
 
 /**
@@ -27,6 +29,7 @@ export function JobPositionPicker({
   onChange,
   placeholder = "Select requisition…",
   className,
+  allowTalentPool = false,
 }: JobPositionPickerProps) {
   const listboxId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -83,7 +86,11 @@ export function JobPositionPicker({
           !selectedJob && "text-muted"
         )}
       >
-        <span className="truncate">{selectedJob?.title ?? placeholder}</span>
+        <span className="truncate">
+          {selectedId === "" && allowTalentPool
+            ? "Talent pool — generic screening"
+            : (selectedJob?.title ?? placeholder)}
+        </span>
         <ChevronDown
           className={cn("h-4 w-4 shrink-0 text-muted transition", open && "rotate-180")}
           aria-hidden
@@ -97,6 +104,24 @@ export function JobPositionPicker({
           aria-labelledby={`${listboxId}-trigger`}
           className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-border bg-card py-1 shadow-lg"
         >
+          {allowTalentPool && (
+            <li role="presentation">
+              <button
+                type="button"
+                role="option"
+                aria-selected={selectedId === ""}
+                onClick={() => pick("")}
+                className={cn(
+                  "flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-sm transition",
+                  "hover:bg-primary/5",
+                  selectedId === "" && "bg-primary/8 font-semibold text-primary"
+                )}
+              >
+                <span className="truncate">Talent pool — generic screening</span>
+                {selectedId === "" ? <Check className="h-4 w-4 shrink-0" aria-hidden /> : null}
+              </button>
+            </li>
+          )}
           {jobs.map((job) => {
             const active = job.id === selectedId;
             return (

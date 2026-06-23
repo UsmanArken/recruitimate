@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import type { IntelligencePhase } from "@/lib/intelligence/candidate-context";
 import { Brain, Mic2, Scale } from "lucide-react";
@@ -10,6 +11,13 @@ const tabs = [
   { id: "interview" as const, label: "Interview", icon: Mic2, desc: "Live assist & transcript" },
   { id: "decision" as const, label: "Decision", icon: Scale, desc: "Hire recommendation" },
 ];
+
+type TabId = (typeof tabs)[number]["id"];
+
+function tabFromParam(value: string | null): TabId | null {
+  if (value === "screen" || value === "interview" || value === "decision") return value;
+  return null;
+}
 
 export function ApplicationDetailTabs({
   phase,
@@ -22,8 +30,15 @@ export function ApplicationDetailTabs({
   interview: React.ReactNode;
   decision: React.ReactNode;
 }) {
-  const defaultTab = phase === "ready_for_decision" ? "decision" : "screen";
-  const [active, setActive] = useState<(typeof tabs)[number]["id"]>(defaultTab);
+  const searchParams = useSearchParams();
+  const paramTab = tabFromParam(searchParams.get("tab"));
+  const defaultTab: TabId = paramTab ?? (phase === "ready_for_decision" ? "decision" : "screen");
+  const [active, setActive] = useState<TabId>(defaultTab);
+
+  useEffect(() => {
+    const next = tabFromParam(searchParams.get("tab"));
+    if (next) setActive(next);
+  }, [searchParams]);
 
   const panels = { screen, interview, decision };
 

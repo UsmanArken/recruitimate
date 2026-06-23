@@ -87,3 +87,48 @@ export function extractNameFromResume(text: string, fallback: string): string {
 export function resolveCandidateDisplayName(resumeText: string, uploadFileName: string): string {
   return extractNameFromResume(resumeText, uploadFileName);
 }
+
+export function extractLinkedInUrlFromResume(text: string): string | undefined {
+  const match = text.match(
+    /https?:\/\/(?:www\.)?linkedin\.com\/in\/[a-zA-Z0-9_-]+\/?/i
+  );
+  return match?.[0];
+}
+
+export function extractGithubUrlFromResume(text: string): string | undefined {
+  const match = text.match(/https?:\/\/(?:www\.)?github\.com\/[a-zA-Z0-9_-]+\/?/i);
+  return match?.[0];
+}
+
+export function extractPortfolioUrlFromResume(text: string): string | undefined {
+  const lines = text.split("\n").slice(0, 20);
+  for (const line of lines) {
+    const match = line.match(/https?:\/\/[^\s]+/i);
+    if (!match) continue;
+    const url = match[0].replace(/[),.;]+$/, "");
+    if (/linkedin\.com|github\.com|mailto:/i.test(url)) continue;
+    return url;
+  }
+  return undefined;
+}
+
+export type ResumeContactHints = {
+  suggestedName: string;
+  suggestedEmail?: string;
+  suggestedLinkedInUrl?: string;
+  suggestedGithubUrl?: string;
+  suggestedPortfolioUrl?: string;
+};
+
+export function extractResumeContactHints(
+  text: string,
+  fileName: string
+): ResumeContactHints {
+  return {
+    suggestedName: resolveCandidateDisplayName(text, fileName),
+    suggestedEmail: extractEmailFromResume(text),
+    suggestedLinkedInUrl: extractLinkedInUrlFromResume(text),
+    suggestedGithubUrl: extractGithubUrlFromResume(text),
+    suggestedPortfolioUrl: extractPortfolioUrlFromResume(text),
+  };
+}

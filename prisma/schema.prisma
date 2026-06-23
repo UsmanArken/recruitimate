@@ -25,6 +25,8 @@ model User {
   jobAssignments JobAssignment[]
   jobsManaged   Job[]     @relation("JobHiringManager")
   candidateNotes Note[]    @relation("NoteAuthor")
+  talentReviewsAuthored JobApplication[] @relation("TalentReviewedBy")
+  hireReviewsAuthored JobApplication[] @relation("HireReviewedBy")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -71,11 +73,32 @@ model Organization {
   slug      String               @unique
   members   OrganizationMember[]
   invites   Invite[]
+  hiringClients   HiringClient[]
   jobs            Job[]
   candidates      Candidate[]
   jobApplications JobApplication[]
   createdAt DateTime             @default(now())
   updatedAt DateTime             @updatedAt
+}
+
+/// Client company a recruiter hires for (multiple per workspace).
+model HiringClient {
+  id               String       @id @default(cuid())
+  organizationId   String
+  name             String
+  slug             String
+  website          String?
+  companyProfile   String?      @db.Text
+  /// Recruiter consent to fetch public web data for company research (future Glassdoor/search).
+  webDataConsentAt DateTime?
+  impressionNotes  String?      @db.Text
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  jobs             Job[]
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
 }
 
 model Role {
@@ -180,6 +203,19 @@ enum PipelineStage {
   REJECTED
 }
 
+enum CandidateMarking {
+  ACTIVE
+  ARCHIVED
+  ON_HOLD
+}
+
+enum RecruiterVerdict {
+  PENDING
+  PASS
+  FAIL
+  HOLD
+}
+
 enum InterviewStatus {
   SCHEDULED
   RECORDED
@@ -190,11 +226,15 @@ enum InterviewStatus {
 model Job {
   id               String          @id @default(cuid())
   organizationId   String
+  hiringClientId   String?
   title            String
   description      String          @db.Text
   requirements     String?         @db.Text
+  /// Public-facing job post copy (required for new roles).
+  jobPostDocument  String?         @db.Text
   hiringManagerId  String?
   organization     Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  hiringClient     HiringClient?   @relation(fields: [hiringClientId], references: [id], onDelete: SetNull)
   hiringManager    User?           @relation("JobHiringManager", fields: [hiringManagerId], references: [id], onDelete: SetNull)
   assignments   JobAssignment[]
   applications  JobApplication[]
@@ -202,6 +242,7 @@ model Job {
   updatedAt     DateTime        @updatedAt
 
   @@index([organizationId])
+  @@index([hiringClientId])
   @@index([hiringManagerId])
 }
 
@@ -216,6 +257,11 @@ model Candidate {
   portfolioUrl   String?
   resumeText     String?          @db.Text
   resumeFilePath String?
+  /// Original upload file name (PDF/DOCX) when imported via upload
+  sourceFileName String?
+  /// Generic talent screening when not yet linked to a specific open role
+  genericScreening Json?
+  marking        CandidateMarking @default(ACTIVE)
   organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   applications   JobApplication[]
   notes          Note[]
@@ -233,6 +279,18 @@ model JobApplication {
   candidateId    String
   jobId          String
   stage          PipelineStage   @default(NEW)
+  /// Recruiter manual screen verdict (talent review tab)
+  talentReviewVerdict   RecruiterVerdict @default(PENDING)
+  talentReviewNotes     String?          @db.Text
+  talentReviewedAt      DateTime?
+  talentReviewedById    String?
+  talentReviewedBy      User?            @relation("TalentReviewedBy", fields: [talentReviewedById], references: [id], onDelete: SetNull)
+  /// Recruiter manual hire verdict (decision tab)
+  hireReviewVerdict     RecruiterVerdict @default(PENDING)
+  hireReviewNotes       String?          @db.Text
+  hireReviewedAt        DateTime?
+  hireReviewedById      String?
+  hireReviewedBy        User?            @relation("HireReviewedBy", fields: [hireReviewedById], references: [id], onDelete: SetNull)
   organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   candidate      Candidate       @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   job            Job             @relation(fields: [jobId], references: [id], onDelete: Cascade)

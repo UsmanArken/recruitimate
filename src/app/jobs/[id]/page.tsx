@@ -11,6 +11,7 @@ import { JobAssignmentsPanel } from "@/components/features/jobs/job-assignments-
 import { BulkResumeUploadPanel } from "@/components/features/jobs/bulk-resume-upload-panel";
 import { JobPipelineTable } from "@/components/features/jobs/job-pipeline-table";
 import { InterviewQuestionBankPanel } from "@/components/features/jobs/interview-question-bank-panel";
+import { JobDetailActions } from "@/components/features/jobs/job-detail-actions";
 import { ChevronLeft, Users } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -53,7 +54,9 @@ export default async function JobDetailPage({
       <PageHeader
         title={job.title}
         description={job.description.slice(0, 200) + (job.description.length > 200 ? "…" : "")}
-      />
+      >
+        <JobDetailActions jobId={job.id} canEdit={canManageTeam} />
+      </PageHeader>
 
       <PageBody>
         <div className="mb-8 grid gap-4 sm:grid-cols-3">
@@ -87,6 +90,29 @@ export default async function JobDetailPage({
         <section id="job-pipeline" className="mb-8 scroll-mt-8">
           <JobPipelineTable applications={pipeline} />
         </section>
+
+        {job.hiringClient && (
+          <div className="mb-8 rounded-xl border border-border bg-card p-5 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted">Client company</p>
+            <p className="mt-2 font-semibold">{job.hiringClient.name}</p>
+            {job.hiringClient.website && (
+              <p className="text-sm text-muted">{job.hiringClient.website}</p>
+            )}
+          </div>
+        )}
+
+        {job.jobPostDocument && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Job post document</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted">
+                {job.jobPostDocument}
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         {job.requirements && (
           <Card className="mb-8">

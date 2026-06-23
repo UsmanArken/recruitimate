@@ -17,8 +17,8 @@ import { RecruitimateLogo } from "@/components/brand/recruitimate-logo";
 
 const workspaceNav = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { href: "/candidates", label: "Candidates", icon: Users },
   { href: "/jobs", label: "Open roles", icon: Briefcase },
+  { href: "/candidates", label: "Candidates", icon: Users },
 ];
 
 export function Sidebar() {

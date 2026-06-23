@@ -1,16 +1,18 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { LayerBadge } from "@/components/features/intelligence/layer-badge";
 import { ResumeUploadField } from "@/components/features/candidates/resume-upload-field";
-import { Button, ButtonLink } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { TrustBanner } from "@/components/features/intelligence/trust-banner";
-import { Briefcase } from "lucide-react";
+import { Briefcase, Sparkles } from "lucide-react";
 import type { JobOption } from "@/lib/api/jobs-client";
 import { JobPositionPicker } from "@/components/features/candidates/job-position-picker";
 import { LinkedInImportField } from "@/components/features/candidates/linkedin-import-field";
+import { useRouter } from "next/navigation";
+
+type AutofillField = "name" | "email" | "linkedInUrl" | "githubUrl" | "portfolioUrl";
 
 export function NewCandidateForm({
   jobs,
@@ -20,36 +22,75 @@ export function NewCandidateForm({
   loadError?: string | null;
 }) {
   const router = useRouter();
+  const [jobId, setJobId] = useState(jobs[0]?.id ?? "");
   const [resumeText, setResumeText] = useState("");
   const [linkedInText, setLinkedInText] = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [linkedInUrl, setLinkedInUrl] = useState("");
+  const [githubUrl, setGithubUrl] = useState("");
+  const [portfolioUrl, setPortfolioUrl] = useState("");
+  const [sourceFileName, setSourceFileName] = useState<string | undefined>();
+  const [autofilled, setAutofilled] = useState<Set<AutofillField>>(new Set());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function applyAutofill(
+    hints: {
+      suggestedName: string;
+      suggestedEmail?: string;
+      suggestedLinkedInUrl?: string;
+      suggestedGithubUrl?: string;
+      suggestedPortfolioUrl?: string;
+      fileName: string;
+    },
+    replace = false
+  ) {
+    const next = new Set(autofilled);
+    setSourceFileName(hints.fileName);
+
+    if ((replace || !name.trim()) && hints.suggestedName) {
+      setName(hints.suggestedName);
+      next.add("name");
+    }
+    if ((replace || !email.trim()) && hints.suggestedEmail) {
+      setEmail(hints.suggestedEmail);
+      next.add("email");
+    }
+    if ((replace || !linkedInUrl.trim()) && hints.suggestedLinkedInUrl) {
+      setLinkedInUrl(hints.suggestedLinkedInUrl);
+      next.add("linkedInUrl");
+    }
+    if ((replace || !githubUrl.trim()) && hints.suggestedGithubUrl) {
+      setGithubUrl(hints.suggestedGithubUrl);
+      next.add("githubUrl");
+    }
+    if ((replace || !portfolioUrl.trim()) && hints.suggestedPortfolioUrl) {
+      setPortfolioUrl(hints.suggestedPortfolioUrl);
+      next.add("portfolioUrl");
+    }
+    setAutofilled(next);
+  }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const fd = new FormData(e.currentTarget);
-    const jobId = fd.get("jobId") as string;
-
-    if (!jobId) {
-      setError("Select an open position — every applicant is evaluated against a hiring campaign.");
-      setLoading(false);
-      return;
-    }
 
     const res = await fetch("/api/candidates", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "same-origin",
       body: JSON.stringify({
-        name: fd.get("name"),
-        email: fd.get("email") || undefined,
-        jobId,
+        name: name.trim(),
+        email: email.trim() || undefined,
+        jobId: jobId || undefined,
         resumeText: resumeText.trim(),
         linkedInText: linkedInText.trim() || undefined,
-        linkedInUrl: fd.get("linkedInUrl") || undefined,
-        githubUrl: fd.get("githubUrl") || undefined,
+        linkedInUrl: linkedInUrl.trim() || undefined,
+        githubUrl: githubUrl.trim() || undefined,
+        portfolioUrl: portfolioUrl.trim() || undefined,
+        sourceFileName,
       }),
     });
 
@@ -69,6 +110,8 @@ export function NewCandidateForm({
     }
   }
 
+  const talentPool = !jobId;
+
   return (
     <>
       <LayerBadge layer="talent" />
@@ -79,9 +122,8 @@ export function NewCandidateForm({
             Applicant intake
           </CardTitle>
           <CardDescription>
-            Choose the open position first, then upload or paste the resume. Role fit and next
-            steps are scoped to that requisition — we do not show fake hire scores without
-            context.
+            Upload a CV first — we extract contact details and resume text. Choose a role for
+            role-fit screening, or add to the talent pool for generic evaluation.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -89,51 +131,105 @@ export function NewCandidateForm({
             <p className="mb-4 rounded-lg bg-risk-bg px-3 py-2 text-sm text-risk">{loadError}</p>
           )}
           {jobs.length === 0 ? (
-            <div className="rounded-xl border border-warning/30 bg-warning-bg/40 p-6 text-center">
-              <p className="font-medium text-foreground">Create an open position first</p>
-              <p className="mt-2 text-sm text-muted">
-                A hiring campaign defines the role, requirements, and interview team. Post a role
-                on Open Roles, then return here to add applicants.
-              </p>
-              <ButtonLink href="/jobs/new" className="mt-4 inline-flex">
-                Post new role
-              </ButtonLink>
-            </div>
-          ) : (
             <form onSubmit={onSubmit} className="space-y-4">
-              <label className="block">
-                <span className="text-sm font-semibold text-foreground">
-                  Open position (hiring campaign) <span className="text-risk">*</span>
-                </span>
-                <JobPositionPicker jobs={jobs} name="jobId" required className="mt-1.5" />
-                <p className="mt-1.5 text-xs text-muted">
-                  Role fit compares this resume to the position requirements.
-                </p>
-              </label>
-              <Field label="Full name" name="name" required />
-              <Field label="Email" name="email" type="email" />
-              <Field label="LinkedIn profile URL" name="linkedInUrl" />
-              <LinkedInImportField onProfileText={setLinkedInText} />
-              <Field label="GitHub / portfolio" name="githubUrl" />
+              <p className="rounded-lg border border-warning/30 bg-warning-bg/40 px-3 py-2 text-sm text-muted">
+                No open roles yet — candidates will be added to the talent pool. Post a role to
+                unlock role-fit scoring and matching.
+              </p>
               <ResumeUploadField
                 resumeText={resumeText}
                 onResumeTextChange={setResumeText}
+                onParsed={(result) => applyAutofill(result, true)}
                 required
               />
+              {autofilled.size > 0 && (
+                <div className="rounded-xl border border-success/25 bg-success-bg/50 px-4 py-3">
+                  <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <Sparkles className="h-4 w-4 text-success" />
+                    Auto-filled from resume
+                  </p>
+                  <ul className="mt-2 space-y-1 text-sm text-muted">
+                    {autofilled.has("name") && <li>Name: {name}</li>}
+                    {autofilled.has("email") && <li>Email: {email}</li>}
+                  </ul>
+                </div>
+              )}
+              <Field label="Full name" value={name} onChange={setName} required />
+              <Field label="Email" value={email} onChange={setEmail} type="email" />
+              <Button
+                type="submit"
+                disabled={loading || resumeText.trim().length < 20 || !name.trim()}
+              >
+                {loading ? "Screening resume…" : "Add to talent pool"}
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={onSubmit} className="space-y-4">
+              <ResumeUploadField
+                resumeText={resumeText}
+                onResumeTextChange={setResumeText}
+                onParsed={(result) => applyAutofill(result, true)}
+                required
+              />
+
+              {autofilled.size > 0 && (
+                <div className="rounded-xl border border-success/25 bg-success-bg/50 px-4 py-3">
+                  <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <Sparkles className="h-4 w-4 text-success" />
+                    Auto-filled from resume
+                  </p>
+                  <ul className="mt-2 space-y-1 text-sm text-muted">
+                    {autofilled.has("name") && <li>Name: {name}</li>}
+                    {autofilled.has("email") && <li>Email: {email}</li>}
+                    {autofilled.has("linkedInUrl") && <li>LinkedIn: {linkedInUrl}</li>}
+                    {autofilled.has("githubUrl") && <li>GitHub: {githubUrl}</li>}
+                    {autofilled.has("portfolioUrl") && <li>Portfolio: {portfolioUrl}</li>}
+                  </ul>
+                </div>
+              )}
+
+              <label className="block">
+                <span className="text-sm font-semibold text-foreground">Open position</span>
+                <JobPositionPicker
+                  jobs={jobs}
+                  value={jobId}
+                  onChange={setJobId}
+                  allowTalentPool
+                  required={false}
+                  className="mt-1.5"
+                />
+                <p className="mt-1.5 text-xs text-muted">
+                  {talentPool
+                    ? "Talent pool runs generic screening — apply to a role later for fit scores."
+                    : "Role fit compares this resume to the position requirements."}
+                </p>
+              </label>
+
+              <Field label="Full name" value={name} onChange={setName} required />
+              <Field label="Email" value={email} onChange={setEmail} type="email" />
+              <Field label="LinkedIn profile URL" value={linkedInUrl} onChange={setLinkedInUrl} />
+              <LinkedInImportField onProfileText={setLinkedInText} />
+              <Field label="GitHub" value={githubUrl} onChange={setGithubUrl} />
+              <Field label="Portfolio URL" value={portfolioUrl} onChange={setPortfolioUrl} />
+
               <TrustBanner>
-                Preliminary screening is advisory. Final hire recommendations require
-                interview signals — never from resume alone.
+                Screening is advisory. Role-fit scores require an open position; hire
+                recommendations require interview signals.
               </TrustBanner>
               {error && (
                 <p className="rounded-lg bg-risk-bg px-3 py-2 text-sm text-risk">{error}</p>
               )}
               <Button
                 type="submit"
-                disabled={
-                  loading || resumeText.trim().length + linkedInText.trim().length < 20
-                }
+                disabled={loading || resumeText.trim().length + linkedInText.trim().length < 20}
               >
-                {loading ? "Analyzing for this role…" : "Add & screen candidate"}
+                {loading
+                  ? talentPool
+                    ? "Screening resume…"
+                    : "Analyzing for this role…"
+                  : talentPool
+                    ? "Add to talent pool"
+                    : "Add & screen for role"}
               </Button>
             </form>
           )}
@@ -145,19 +241,27 @@ export function NewCandidateForm({
 
 function Field({
   label,
-  name,
+  value,
+  onChange,
   required,
   type = "text",
 }: {
   label: string;
-  name: string;
+  value: string;
+  onChange: (v: string) => void;
   required?: boolean;
   type?: string;
 }) {
   return (
     <label className="block">
       <span className="text-sm font-semibold text-foreground">{label}</span>
-      <input name={name} type={type} required={required} className="input-hr mt-1.5" />
+      <input
+        type={type}
+        required={required}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="input-hr mt-1.5"
+      />
     </label>
   );
 }

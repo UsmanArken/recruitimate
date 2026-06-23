@@ -88,3 +88,11 @@ ${resumeText.slice(0, 12000)}`;
 
   return chatJson<TalentIntelligenceResult>(SYSTEM_PROMPT, userPrompt, fallback);
 }
+
+/** Fast fit estimate for role matching UI (no LLM). */
+export function estimateRoleFitHeuristic(
+  resumeText: string,
+  jobRequirements?: string | null
+): number | null {
+  return heuristicAnalysis(resumeText, jobRequirements).roleFitScore;
+}

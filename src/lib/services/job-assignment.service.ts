@@ -7,6 +7,7 @@ import type { AuthContext } from "@/lib/auth/types";
 import type { CreateJobAssignmentInput } from "@/lib/validators/job-assignment";
 
 const jobDetailInclude = {
+  hiringClient: { select: { id: true, name: true, website: true, companyProfile: true } },
   hiringManager: { select: { id: true, name: true, email: true } },
   assignments: {
     include: {

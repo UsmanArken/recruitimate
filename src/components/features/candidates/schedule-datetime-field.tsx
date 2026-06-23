@@ -112,6 +112,13 @@ export function ScheduleDateTimeField({
 
   return (
     <div className="space-y-2">
+      <CalendarGrid
+        year={year}
+        month={month}
+        selectedDay={parsed.day}
+        minDate={`${today.year}-${today.month}-${today.day}`}
+        onPick={(day) => setParts({ year: parsed.year, month: parsed.month, day })}
+      />
       <div className="grid grid-cols-3 gap-2">
         <div>
           <span className="mb-1 block text-[11px] font-medium text-muted">Month</span>
@@ -195,6 +202,68 @@ export function ScheduleDateTimeField({
             : "—"}
         </span>
       </p>
+    </div>
+  );
+}
+
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function CalendarGrid({
+  year,
+  month,
+  selectedDay,
+  minDate,
+  onPick,
+}: {
+  year: number;
+  month: number;
+  selectedDay: string;
+  minDate: string;
+  onPick: (day: string) => void;
+}) {
+  const firstDow = new Date(year, month - 1, 1).getDay();
+  const days = daysInMonth(year, month);
+  const cells: (string | null)[] = [
+    ...Array.from({ length: firstDow }, () => null),
+    ...Array.from({ length: days }, (_, i) => pad2(i + 1)),
+  ];
+
+  return (
+    <div className="rounded-xl border border-border-subtle bg-card p-3">
+      <p className="mb-2 text-center text-xs font-semibold text-muted">
+        {MONTHS.find((m) => m.value === pad2(month))?.label} {year}
+      </p>
+      <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-medium text-muted">
+        {WEEKDAYS.map((d) => (
+          <span key={d}>{d}</span>
+        ))}
+      </div>
+      <div className="mt-1 grid grid-cols-7 gap-1">
+        {cells.map((day, i) => {
+          if (!day) return <span key={`e-${i}`} />;
+          const date = `${year}-${pad2(month)}-${day}`;
+          const disabled = date < minDate;
+          const selected = day === selectedDay;
+          return (
+            <button
+              key={date}
+              type="button"
+              disabled={disabled}
+              onClick={() => onPick(day)}
+              className={[
+                "rounded-md py-1.5 text-xs font-semibold transition",
+                selected
+                  ? "bg-primary text-primary-foreground"
+                  : disabled
+                    ? "text-muted/40"
+                    : "hover:bg-primary/10 text-foreground",
+              ].join(" ")}
+            >
+              {Number(day)}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
