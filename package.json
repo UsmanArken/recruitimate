@@ -17,7 +17,7 @@
     "typecheck": "tsc --noEmit",
     "qa": "tsx scripts/qa/run.ts",
     "qa:static": "tsx scripts/qa/run.ts --static-only",
-    "qa:unit": "tsx --test scripts/qa/intelligence.test.ts scripts/qa/validators.test.ts scripts/qa/resume-extract.test.ts scripts/qa/linkedin-parse.test.ts scripts/qa/llm-config.test.ts scripts/qa/live-assist.test.ts scripts/qa/cross-signal.test.ts scripts/qa/question-bank.test.ts scripts/qa/interviewer-quality.test.ts scripts/qa/audio-signal.test.ts scripts/qa/video-behavioral.test.ts scripts/qa/talent-discovery.test.ts scripts/qa/talent-search.test.ts scripts/qa/talent-suggest.test.ts scripts/qa/outreach-template.test.ts scripts/qa/outreach-personalize.test.ts scripts/qa/outreach-tracking.test.ts scripts/qa/assessment-engine.test.ts scripts/qa/assessment-evaluation.test.ts scripts/qa/assessment-decision.test.ts",
+    "qa:unit": "tsx --test scripts/qa/intelligence.test.ts scripts/qa/validators.test.ts scripts/qa/resume-extract.test.ts scripts/qa/linkedin-parse.test.ts scripts/qa/llm-config.test.ts scripts/qa/live-assist.test.ts scripts/qa/cross-signal.test.ts scripts/qa/question-bank.test.ts scripts/qa/interviewer-quality.test.ts scripts/qa/audio-signal.test.ts scripts/qa/video-behavioral.test.ts scripts/qa/talent-discovery.test.ts scripts/qa/talent-search.test.ts scripts/qa/talent-suggest.test.ts scripts/qa/outreach-template.test.ts scripts/qa/outreach-personalize.test.ts scripts/qa/outreach-tracking.test.ts scripts/qa/assessment-engine.test.ts scripts/qa/assessment-evaluation.test.ts scripts/qa/assessment-decision.test.ts scripts/qa/copilot.test.ts",
     "qa:db": "tsx scripts/qa/db-smoke.ts",
     "qa:api": "tsx scripts/qa/api-smoke.ts"
   },

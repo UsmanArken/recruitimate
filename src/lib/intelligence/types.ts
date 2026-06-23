@@ -320,6 +320,26 @@ export type AssessmentSignal = {
   overallScore: number;
 };
 
+export type CopilotIntent =
+  | "top_candidates"
+  | "compare_candidates"
+  | "interview_summary"
+  | "general";
+
+export type CopilotCitation = {
+  label: string;
+  href?: string;
+  detail?: string;
+};
+
+export type CopilotChatResult = {
+  intent: CopilotIntent;
+  reply: string;
+  citations: CopilotCitation[];
+  followUpSuggestions: string[];
+  explanation: string;
+};
+
 export type HireRecommendation =
   | "strong_yes"
   | "yes"

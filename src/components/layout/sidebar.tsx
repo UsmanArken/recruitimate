@@ -12,6 +12,7 @@ import {
   Eye,
   Search,
   Mail,
+  Bot,
 } from "lucide-react";
 import { AdminNavLink } from "@/components/layout/admin-nav-link";
 import { NavLink } from "@/components/layout/nav-link";
@@ -22,6 +23,7 @@ const workspaceNav = [
   { href: "/candidates", label: "Candidates", icon: Users },
   { href: "/talent", label: "Talent", icon: Search },
   { href: "/outreach", label: "Outreach", icon: Mail },
+  { href: "/copilot", label: "Copilot", icon: Bot },
   { href: "/jobs", label: "Open roles", icon: Briefcase },
 ];
 

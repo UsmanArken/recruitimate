@@ -69,9 +69,9 @@ P2-014,Phase 2,Outreach,—,Response tracking,Track opens replies campaign statu
 P2-015,Phase 2,Assessment,—,Assessment Engine,AI-generated real-world tasks scenarios,P1,Done,,assessment-engine + job page panel + task APIs
 P2-016,Phase 2,Assessment,—,Automated task evaluation,Code product ops scenario scoring,P1,Done,P2-015,evaluation-engine + submit/evaluate APIs + application panel
 P2-017,Phase 2,Assessment,Decision,Assessment in decision layer,Feed assessment results into hire confidence,P1,Done,P2-016,decision weights blend assessment into hire confidence
-P2-018,Phase 2,AI Copilot,—,Copilot chat interface,"""Show top candidates for this role""",P1,Not Started,,
-P2-019,Phase 2,AI Copilot,—,Candidate comparison copilot,"""Why is A better than B?""",P1,Not Started,P2-018,
-P2-020,Phase 2,AI Copilot,—,Interview summary copilot,"""Summarize this interview""",P2,Not Started,P2-018,
+P2-018,Phase 2,AI Copilot,—,Copilot chat interface,"""Show top candidates for this role""",P1,Done,,copilot chat API + /copilot page + top-candidates intent
+P2-019,Phase 2,AI Copilot,—,Candidate comparison copilot,"""Why is A better than B?""",P1,Done,P2-018,compare-handler + compare dropdowns in copilot UI
+P2-020,Phase 2,AI Copilot,—,Interview summary copilot,"""Summarize this interview""",P2,Done,P2-018,interview-summary-handler + interview context selector
 P2-021,Phase 2,Platform,—,Media storage pipeline,S3-compatible storage for recordings resumes,P1,Not Started,,
 P2-022,Phase 2,Platform,—,Async job queue,Background workers for transcription and analysis,P1,Not Started,P2-021,
 P2-023,Phase 2,UI,—,Kanban pipeline view,Drag-drop candidates across stages,P2,Not Started,MVP-016,
