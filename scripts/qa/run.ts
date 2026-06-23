@@ -57,6 +57,9 @@ async function main() {
       "scripts/qa/talent-discovery.test.ts",
       "scripts/qa/talent-search.test.ts",
       "scripts/qa/talent-suggest.test.ts",
+      "scripts/qa/outreach-template.test.ts",
+      "scripts/qa/outreach-personalize.test.ts",
+      "scripts/qa/outreach-tracking.test.ts",
     ])
   );
 

@@ -63,9 +63,9 @@ P2-008,Phase 2,Interview Intelligence,Interview,Video behavioral metrics,Engagem
 P2-009,Phase 2,Talent Intelligence,Talent,Talent Discovery Engine,AI search across talent pools multi-source ingestion,P1,Done,,talent pools + ingest API + discovery index on Candidate
 P2-010,Phase 2,Talent Intelligence,Talent,Ranked candidate search,"""Find backend engineers with distributed systems""",P1,Done,P2-009,NL search API + /talent ranked results panel
 P2-011,Phase 2,Talent Intelligence,Talent,Suggested candidates,Recommend from internal database,P2,Done,P2-009,suggest-engine + job page panel + API
-P2-012,Phase 2,Outreach,—,Outreach Engine foundation,Campaign model templates tracking,P1,Not Started,,
-P2-013,Phase 2,Outreach,—,AI personalized outreach,Generate tailored candidate messages,P1,Not Started,P2-012,
-P2-014,Phase 2,Outreach,—,Response tracking,Track opens replies campaign status,P2,Not Started,P2-012,
+P2-012,Phase 2,Outreach,—,Outreach Engine foundation,Campaign model templates tracking,P1,Done,,OutreachTemplate/Campaign/Message models + /outreach UI + APIs
+P2-013,Phase 2,Outreach,—,AI personalized outreach,Generate tailored candidate messages,P1,Done,P2-012,personalize-engine + generate API + campaign detail panel
+P2-014,Phase 2,Outreach,—,Response tracking,Track opens replies campaign status,P2,Done,P2-012,tracking-engine + webhook + send API + funnel stats
 P2-015,Phase 2,Assessment,—,Assessment Engine,AI-generated real-world tasks scenarios,P1,Not Started,,
 P2-016,Phase 2,Assessment,—,Automated task evaluation,Code product ops scenario scoring,P1,Not Started,P2-015,
 P2-017,Phase 2,Assessment,Decision,Assessment in decision layer,Feed assessment results into hire confidence,P1,Not Started,P2-016|MVP-011

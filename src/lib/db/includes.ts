@@ -35,3 +35,23 @@ export const candidatePersonInclude = {
 export const jobListInclude = {
   _count: { select: { applications: true } },
 } satisfies Prisma.JobInclude;
+
+export const outreachCampaignListInclude = {
+  job: { select: { id: true, title: true } },
+  talentPool: { select: { id: true, name: true } },
+  template: { select: { id: true, name: true, subject: true } },
+  _count: { select: { messages: true } },
+} satisfies Prisma.OutreachCampaignInclude;
+
+export const outreachCampaignDetailInclude = {
+  job: { select: { id: true, title: true, description: true, requirements: true } },
+  talentPool: { select: { id: true, name: true } },
+  template: true,
+  messages: {
+    include: {
+      candidate: { select: { id: true, name: true, email: true } },
+      events: { orderBy: { createdAt: "desc" as const }, take: 5 },
+    },
+    orderBy: { updatedAt: "desc" as const },
+  },
+} satisfies Prisma.OutreachCampaignInclude;

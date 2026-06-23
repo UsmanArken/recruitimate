@@ -25,6 +25,7 @@ model User {
   jobAssignments JobAssignment[]
   jobsManaged   Job[]     @relation("JobHiringManager")
   candidateNotes Note[]    @relation("NoteAuthor")
+  outreachCampaigns OutreachCampaign[] @relation("OutreachCampaignCreator")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -75,6 +76,8 @@ model Organization {
   candidates      Candidate[]
   jobApplications JobApplication[]
   talentPools     TalentPool[]
+  outreachTemplates OutreachTemplate[]
+  outreachCampaigns OutreachCampaign[]
   createdAt DateTime             @default(now())
   updatedAt DateTime             @updatedAt
 }
@@ -199,6 +202,7 @@ model Job {
   hiringManager    User?           @relation("JobHiringManager", fields: [hiringManagerId], references: [id], onDelete: SetNull)
   assignments   JobAssignment[]
   applications  JobApplication[]
+  outreachCampaigns OutreachCampaign[]
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
@@ -236,6 +240,7 @@ model Candidate {
   applications   JobApplication[]
   notes          Note[]
   poolMemberships TalentPoolMember[]
+  outreachMessages OutreachMessage[]
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
@@ -251,6 +256,7 @@ model TalentPool {
   description    String?
   organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   members        TalentPoolMember[]
+  outreachCampaigns OutreachCampaign[]
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 
@@ -379,4 +385,116 @@ model Note {
 
   @@index([candidateId])
   @@index([authorId])
+}
+
+// ─── P2-012 Outreach Engine ──────────────────────────────────────────────────
+
+enum OutreachCampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+enum OutreachMessageStatus {
+  DRAFT
+  GENERATED
+  SCHEDULED
+  SENT
+  DELIVERED
+  OPENED
+  REPLIED
+  BOUNCED
+  FAILED
+}
+
+enum OutreachEventType {
+  SENT
+  DELIVERED
+  OPENED
+  REPLIED
+  BOUNCED
+  FAILED
+}
+
+model OutreachTemplate {
+  id             String             @id @default(cuid())
+  organizationId String
+  name           String
+  subject        String
+  bodyMarkdown   String             @db.Text
+  variables      Json               @default("[]")
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  campaigns      OutreachCampaign[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model OutreachCampaign {
+  id              String                 @id @default(cuid())
+  organizationId  String
+  name            String
+  status          OutreachCampaignStatus @default(DRAFT)
+  jobId           String?
+  poolId          String?
+  templateId      String?
+  subjectOverride String?
+  createdById     String?
+  organization    Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  job             Job?               @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  talentPool      TalentPool?        @relation(fields: [poolId], references: [id], onDelete: SetNull)
+  template        OutreachTemplate?  @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  createdBy       User?              @relation("OutreachCampaignCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  messages        OutreachMessage[]
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([organizationId])
+  @@index([jobId])
+  @@index([status])
+}
+
+model OutreachMessage {
+  id              String                @id @default(cuid())
+  organizationId  String
+  campaignId      String
+  candidateId     String
+  status          OutreachMessageStatus @default(DRAFT)
+  subject         String
+  bodyText        String?               @db.Text
+  bodyHtml        String?               @db.Text
+  personalizedAt  DateTime?
+  personalization Json?
+  sentAt          DateTime?
+  openedAt        DateTime?
+  openCount       Int                   @default(0)
+  repliedAt       DateTime?
+  replySnippet    String?               @db.Text
+  externalId      String?
+  errorMessage    String?
+  campaign        OutreachCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  candidate       Candidate        @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  events          OutreachEvent[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@unique([campaignId, candidateId])
+  @@index([organizationId])
+  @@index([campaignId])
+  @@index([status])
+}
+
+model OutreachEvent {
+  id        String            @id @default(cuid())
+  messageId String
+  type      OutreachEventType
+  payload   Json?
+  message   OutreachMessage   @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  createdAt DateTime          @default(now())
+
+  @@index([messageId])
+  @@index([type])
 }

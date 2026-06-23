@@ -32,6 +32,10 @@ const PERMISSIONS: { code: string; resource: string; action: string; description
   { code: "interviews.read", resource: "interviews", action: "read", description: "View interviews" },
   { code: "intelligence.run", resource: "intelligence", action: "run", description: "Re-run AI analysis" },
   { code: "intelligence.read", resource: "intelligence", action: "read", description: "View talent and interview intelligence" },
+  { code: "outreach.read", resource: "outreach", action: "read", description: "View outreach campaigns and templates" },
+  { code: "outreach.create", resource: "outreach", action: "create", description: "Create outreach campaigns and templates" },
+  { code: "outreach.update", resource: "outreach", action: "update", description: "Update outreach campaigns and messages" },
+  { code: "outreach.send", resource: "outreach", action: "send", description: "Send outreach and record delivery events" },
   { code: "decisions.read", resource: "decisions", action: "read", description: "View decision layer and hire recommendations" },
 ];
 
@@ -54,6 +58,10 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "interviews.read",
     "intelligence.run",
     "intelligence.read",
+    "outreach.read",
+    "outreach.create",
+    "outreach.update",
+    "outreach.send",
     "decisions.read",
   ],
   HIRING_MANAGER: [
@@ -69,6 +77,9 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "interviews.create",
     "interviews.read",
     "intelligence.read",
+    "outreach.read",
+    "outreach.create",
+    "outreach.update",
     "decisions.read",
   ],
 };

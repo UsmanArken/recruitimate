@@ -229,6 +229,48 @@ export type TalentSuggestResult = {
   explanation: string;
 };
 
+export type OutreachTemplateVariables = {
+  candidateName: string;
+  candidateEmail?: string | null;
+  jobTitle?: string | null;
+  recruiterName?: string | null;
+  companyName?: string | null;
+};
+
+export type OutreachRenderedMessage = {
+  subject: string;
+  bodyText: string;
+  variablesUsed: string[];
+};
+
+export type OutreachPersonalizeResult = {
+  subject: string;
+  bodyText: string;
+  tone: string;
+  highlights: string[];
+  explanation: string;
+};
+
+export type OutreachCampaignStats = {
+  total: number;
+  draft: number;
+  generated: number;
+  sent: number;
+  opened: number;
+  replied: number;
+  bounced: number;
+  failed: number;
+  openRate: number | null;
+  replyRate: number | null;
+};
+
+export type OutreachTrackingEvent = {
+  type: "sent" | "delivered" | "opened" | "replied" | "bounced" | "failed";
+  at: string;
+  snippet?: string;
+  externalId?: string;
+};
+
 export type HireRecommendation =
   | "strong_yes"
   | "yes"
