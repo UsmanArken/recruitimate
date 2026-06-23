@@ -233,3 +233,12 @@ input[type="datetime-local"].input-hr::-webkit-calendar-picker-indicator {
     transform: translateY(0);
   }
 }
+
+@keyframes navigation-bar {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}

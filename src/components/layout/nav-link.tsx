@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
+import { notifyNavigationStart } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
 export function NavLink({
@@ -22,6 +23,8 @@ export function NavLink({
   return (
     <Link
       href={href}
+      prefetch
+      onClick={() => notifyNavigationStart()}
       className={cn(
         "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition",
         active

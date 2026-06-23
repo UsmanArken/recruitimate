@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { LayoutGrid, List } from "lucide-react";
+import { notifyNavigationStart } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, Briefcase } from "lucide-react";
@@ -80,8 +81,14 @@ export function JobsListView({ jobs }: { jobs: JobListRow[] }) {
       {view === "cards" ? (
         <div className="grid gap-4 md:grid-cols-2">
           {filtered.map((job) => (
-            <Link key={job.id} href={`/jobs/${job.id}`}>
-              <Card className="h-full transition hover:border-primary/30 hover:shadow-md">
+            <Link
+              key={job.id}
+              href={`/jobs/${job.id}`}
+              prefetch
+              onClick={() => notifyNavigationStart()}
+              className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <Card className="h-full cursor-pointer transition hover:border-primary/30 hover:shadow-md">
                 <CardHeader>
                   <CardTitle className="text-lg">{job.title}</CardTitle>
                   {job.hiringClient && (
@@ -105,7 +112,9 @@ export function JobsListView({ jobs }: { jobs: JobListRow[] }) {
               <li key={job.id} className="border-t border-border-subtle first:border-t-0">
                 <Link
                   href={`/jobs/${job.id}`}
-                  className="flex items-center gap-4 px-6 py-4 transition hover:bg-teal-50/40"
+                  prefetch
+                  onClick={() => notifyNavigationStart()}
+                  className="flex items-center gap-4 px-6 py-4 transition hover:bg-teal-50/40 focus-visible:bg-teal-50/40 focus-visible:outline-none"
                 >
                   <Briefcase className="h-5 w-5 text-brand" />
                   <div className="min-w-0 flex-1">

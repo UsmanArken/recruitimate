@@ -19,7 +19,7 @@ import {
   talentForStorage,
 } from "@/lib/services/candidate-intelligence.service";
 
-import type { PipelineStage, CandidateMarking } from "@prisma/client";
+import type { PipelineStage, CandidateMarking, Prisma } from "@prisma/client";
 
 export type ApplicationListFilters = {
   jobId?: string;
@@ -31,26 +31,26 @@ export type ApplicationListFilters = {
 export async function listApplications(ctx: AuthContext, filters: ApplicationListFilters = {}) {
   await assertPermission(ctx, { resource: "candidates", action: "read" });
   const where = await applicationsWhereClause(ctx);
-
-  const marking = filters.marking ?? "ACTIVE";
   const search = filters.search?.trim().toLowerCase();
+
+  const candidateWhere: Prisma.CandidateWhereInput = {};
+
+  if (filters.marking) {
+    candidateWhere.marking = filters.marking;
+  }
+  if (search) {
+    candidateWhere.OR = [
+      { name: { contains: search, mode: "insensitive" } },
+      { email: { contains: search, mode: "insensitive" } },
+    ];
+  }
 
   return db.jobApplication.findMany({
     where: {
       ...where,
       ...(filters.jobId ? { jobId: filters.jobId } : {}),
       ...(filters.stage ? { stage: filters.stage } : {}),
-      candidate: {
-        marking,
-        ...(search
-          ? {
-              OR: [
-                { name: { contains: search, mode: "insensitive" } },
-                { email: { contains: search, mode: "insensitive" } },
-              ],
-            }
-          : {}),
-      },
+      ...(Object.keys(candidateWhere).length > 0 ? { candidate: candidateWhere } : {}),
     },
     include: applicationListInclude,
     orderBy: { updatedAt: "desc" },

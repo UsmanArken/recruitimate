@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
+import { formatApiValidationError } from "@/lib/validators/job";
 
 export type HiringClientOption = {
   id: string;
@@ -79,6 +80,22 @@ export function JobForm({
     setLoading(true);
     setError(null);
 
+    const description = values.description.trim();
+    const jobPostDocument =
+      values.jobPostDocument.trim().length >= 20
+        ? values.jobPostDocument.trim()
+        : description.length >= 20
+          ? description
+          : values.jobPostDocument.trim();
+
+    if (jobPostDocument.length < 20) {
+      setLoading(false);
+      setError(
+        "Job post document is required (at least 20 characters). Fill the job post field or write a longer internal description."
+      );
+      return;
+    }
+
     const url = jobId ? `/api/jobs/${jobId}` : "/api/jobs";
     const method = jobId ? "PATCH" : "POST";
 
@@ -87,16 +104,18 @@ export function JobForm({
       headers: { "Content-Type": "application/json" },
       credentials: "same-origin",
       body: JSON.stringify({
-        ...values,
+        title: values.title.trim(),
+        description,
+        jobPostDocument,
         hiringClientId: values.hiringClientId || undefined,
-        requirements: values.requirements || undefined,
+        requirements: values.requirements.trim() || undefined,
       }),
     });
 
     setLoading(false);
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      setError(typeof data.error === "string" ? data.error : "Failed to save role");
+      setError(formatApiValidationError(data));
       return;
     }
 

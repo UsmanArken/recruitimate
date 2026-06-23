@@ -9,6 +9,8 @@ import {
   UserPlus,
   Shield,
   Eye,
+  Building2,
+  Plug,
 } from "lucide-react";
 import { AdminNavLink } from "@/components/layout/admin-nav-link";
 import { NavLink } from "@/components/layout/nav-link";
@@ -19,6 +21,12 @@ const workspaceNav = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/jobs", label: "Open roles", icon: Briefcase },
   { href: "/candidates", label: "Candidates", icon: Users },
+];
+
+const settingsNav = [
+  { href: "/settings/clients", label: "Client companies", icon: Building2 },
+  { href: "/settings/team", label: "Team & access", icon: Users },
+  { href: "/settings/integrations", label: "Integrations", icon: Plug },
 ];
 
 export function Sidebar() {
@@ -59,6 +67,15 @@ export function Sidebar() {
                 <NavLink key={item.href} {...item} />
               ))}
               <AdminNavLink href="/admin" label="Platform admin" icon={Shield} />
+            </nav>
+
+            <p className="mb-2 mt-8 px-3 text-[10px] font-semibold uppercase tracking-widest text-brand-foreground/45">
+              Settings
+            </p>
+            <nav className="flex flex-col gap-0.5">
+              {settingsNav.map((item) => (
+                <NavLink key={item.href} {...item} />
+              ))}
             </nav>
 
             <p className="mb-2 mt-8 px-3 text-[10px] font-semibold uppercase tracking-widest text-brand-foreground/45">

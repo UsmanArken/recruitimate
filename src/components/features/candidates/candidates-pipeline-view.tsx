@@ -50,7 +50,8 @@ export function CandidatesPipelineView({
     return applications.filter((app) => {
       if (jobId && app.job.id !== jobId) return false;
       if (stage && app.stage !== stage) return false;
-      if (marking && app.candidate.marking && app.candidate.marking !== marking) return false;
+      const candidateMarking = app.candidate.marking ?? "ACTIVE";
+      if (marking && candidateMarking !== marking) return false;
       if (q) {
         const hay = `${app.candidate.name} ${app.candidate.email ?? ""}`.toLowerCase();
         if (!hay.includes(q)) return false;
@@ -93,6 +94,7 @@ export function CandidatesPipelineView({
           ))}
         </FilterSelect>
         <FilterSelect label="Profile status" value={marking} onChange={setMarking}>
+          <option value="">All statuses</option>
           <option value="ACTIVE">Active</option>
           <option value="ON_HOLD">On hold</option>
           <option value="ARCHIVED">Archived</option>
