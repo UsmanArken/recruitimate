@@ -126,3 +126,13 @@ input[type="datetime-local"].input-hr::-webkit-calendar-picker-indicator {
   border-bottom: 1px solid var(--color-border-subtle);
   transition: background 0.12s;
 }
+
+@media print {
+  @page {
+    margin: 1.2cm;
+  }
+
+  body {
+    background: white !important;
+  }
+}

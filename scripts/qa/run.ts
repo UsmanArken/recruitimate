@@ -66,6 +66,7 @@ async function main() {
       "scripts/qa/copilot.test.ts",
       "scripts/qa/storage.test.ts",
       "scripts/qa/background-job.test.ts",
+      "scripts/qa/pipeline.test.ts",
     ])
   );
 

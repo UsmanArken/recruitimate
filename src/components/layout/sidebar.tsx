@@ -13,6 +13,7 @@ import {
   Search,
   Mail,
   Bot,
+  Columns3,
 } from "lucide-react";
 import { AdminNavLink } from "@/components/layout/admin-nav-link";
 import { NavLink } from "@/components/layout/nav-link";
@@ -20,6 +21,7 @@ import { UserMenu } from "@/components/layout/user-menu";
 
 const workspaceNav = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { href: "/pipeline", label: "Pipeline", icon: Columns3 },
   { href: "/candidates", label: "Candidates", icon: Users },
   { href: "/talent", label: "Talent", icon: Search },
   { href: "/outreach", label: "Outreach", icon: Mail },

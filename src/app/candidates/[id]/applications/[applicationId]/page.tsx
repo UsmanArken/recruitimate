@@ -26,6 +26,7 @@ import {
 } from "@/components/features/interview/video-behavioral-panel";
 import { ApplicationAssessmentPanel } from "@/components/features/assessment/application-assessment-panel";
 import { ReanalyzeButton } from "@/components/features/candidates/reanalyze-button";
+import { CandidateBriefExportButton } from "@/components/features/candidates/candidate-brief-document";
 import { PageBody } from "@/components/layout/page-header";
 import type { Signal } from "@/lib/intelligence/types";
 import { Briefcase, ChevronLeft, Mail } from "lucide-react";
@@ -112,6 +113,14 @@ export default async function ApplicationDetailPage({
                 ? `Screening for ${application.job.title}. Add an interview to produce hire confidence for this campaign.`
                 : `Full intelligence for ${application.job.title} — talent, interview, and advisory decision.`}
             </p>
+            {!readOnly && (
+              <div className="mt-4">
+                <CandidateBriefExportButton
+                  candidateId={candidateId}
+                  applicationId={applicationId}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

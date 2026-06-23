@@ -5,13 +5,17 @@ import { AppShell } from "@/components/layout/app-shell";
 
 const AUTH_PATHS = ["/login", "/signup", "/invite"];
 
+function isBriefPrintPage(pathname: string) {
+  return /\/applications\/[^/]+\/brief$/.test(pathname);
+}
+
 export function ConditionalShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAuthPage = AUTH_PATHS.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`)
   );
 
-  if (isAuthPage) {
+  if (isAuthPage || isBriefPrintPage(pathname)) {
     return <>{children}</>;
   }
 
