@@ -78,4 +78,4 @@ HTTP Request
 
 ## Authentication & ACL
 
-See [AUTH-ACL.md](./AUTH-ACL.md). Permissions live in `Role` + `Permission` + `RolePermission` tables (database rule engine). Enforced in `lib/auth/permission.service.ts` and `lib/services/*` via `AuthContext`.
+See **[AUTH-ACL.md](./AUTH-ACL.md)** for the full RBAC guide (roles, permission matrix, data scoping, team management). Permissions live in `Role` + `Permission` + `RolePermission` tables (database rule engine). Enforced in `lib/auth/permission.service.ts`, `lib/auth/scope.service.ts`, and `lib/services/*` via `AuthContext`.

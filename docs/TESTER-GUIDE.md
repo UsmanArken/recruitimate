@@ -206,7 +206,7 @@ For API errors, note the response body `error` and `code` fields.
 |-----|----------|
 | [QA.md](./QA.md) | Developers — automated `npm run qa` scripts |
 | [PRODUCT-IMPLEMENTATION-STATUS.md](./PRODUCT-IMPLEMENTATION-STATUS.md) | Product/engineering — feature scope |
-| [AUTH-ACL.md](./AUTH-ACL.md) | RBAC deep dive for role-matrix testing |
+| [AUTH-ACL.md](./AUTH-ACL.md) | **Full RBAC reference** — permission matrix, scoping, team rules |
 | [recruitimate-product-guide.html](./recruitimate-product-guide.html) | Product architecture background (optional) |
 
 ---
