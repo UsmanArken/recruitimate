@@ -1,35 +1,18 @@
-import Link from "next/link";
 import { serverFetch } from "@/lib/api-server";
-import { formatScore, scoreColor } from "@/lib/utils";
 import { PageHeader, PageBody } from "@/components/layout/page-header";
-import { StageBadge } from "@/components/features/candidates/stage-badge";
-import { Avatar } from "@/components/features/candidates/avatar";
-import { CandidateActionsCell } from "@/components/features/candidates/candidate-actions-cell";
 import { ButtonLink } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { CandidatesPipelineView } from "@/components/features/candidates/candidates-pipeline-view";
+import type { PipelineApplicationRow } from "@/components/features/candidates/candidates-pipeline-view";
 import { UserPlus, Users } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
-function decisionStatusLabel(recommendation: string | null | undefined): string {
-  if (recommendation === "pending_role") return "Needs open position";
-  if (recommendation === "pending_interview") return "Awaiting interview";
-  if (recommendation) return recommendation.replace(/_/g, " ");
-  return "—";
-}
-
 export default async function CandidatesPage() {
   const [applications, jobs] = await Promise.all([
-    serverFetch<Array<{
-      id: string;
-      stage: string;
-      candidate: { id: string; name: string; email: string | null; source: "portal" | "manual" };
-      job: { id: string; title: string };
-      talentProfile: { roleFitScore: number | null } | null;
-      decision: { recommendation: string | null } | null;
-    }>>("/api/applications"),
-    serverFetch<Array<{ id: string }>>("/api/jobs"),
+    serverFetch<PipelineApplicationRow[]>("/api/applications"),
+    serverFetch<Array<{ id: string; title: string }>>("/api/jobs"),
   ]);
 
   const hasRoles = jobs.length > 0;
@@ -38,7 +21,7 @@ export default async function CandidatesPage() {
     <>
       <PageHeader
         title="Candidates"
-        description="One applicant can be in review for multiple open positions — each row is a separate hiring campaign."
+        description="Talent pool and position reviews — upload CVs in bulk or add individuals to open roles."
       >
         <ButtonLink href={hasRoles ? "/candidates/new" : "/jobs/new"}>
           <UserPlus className="h-4 w-4" />
@@ -72,61 +55,7 @@ export default async function CandidatesPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-            <table className="table-hr w-full text-sm">
-              <thead>
-                <tr className="text-left text-xs font-semibold uppercase tracking-wide text-muted">
-                  <th className="px-5 py-3.5">Candidate</th>
-                  <th className="px-5 py-3.5">Open position</th>
-                  <th className="px-5 py-3.5">Pipeline stage</th>
-                  <th className="px-5 py-3.5">Role fit</th>
-                  <th className="px-5 py-3.5">Decision status</th>
-                  <th className="px-5 py-3.5">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {applications.map((app) => (
-                  <tr key={app.id}>
-                    <td className="px-5 py-4">
-                      <Link
-                        href={`/candidates/${app.candidate.id}`}
-                        className="flex items-center gap-3 font-semibold text-foreground hover:text-primary"
-                      >
-                        <Avatar name={app.candidate.name} size="sm" />
-                        {app.candidate.name}
-                      </Link>
-                    </td>
-                    <td className="px-5 py-4">
-                      <Link
-                        href={`/candidates/${app.candidate.id}/applications/${app.id}`}
-                        className="font-medium text-brand hover:underline"
-                      >
-                        {app.job.title}
-                      </Link>
-                    </td>
-                    <td className="px-5 py-4">
-                      <StageBadge stage={app.stage} />
-                    </td>
-                    <td
-                      className={`px-5 py-4 font-semibold tabular-nums ${scoreColor(app.talentProfile?.roleFitScore)}`}
-                    >
-                      {formatScore(app.talentProfile?.roleFitScore)}
-                    </td>
-                    <td className="px-5 py-4 text-sm text-muted">
-                      {decisionStatusLabel(app.decision?.recommendation)}
-                    </td>
-                    <td className="px-5 py-4">
-                      <CandidateActionsCell
-                        applicationId={app.id}
-                        currentStage={app.stage}
-                        source={app.candidate.source}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <CandidatesPipelineView applications={applications} jobs={jobs} />
         )}
       </PageBody>
     </>

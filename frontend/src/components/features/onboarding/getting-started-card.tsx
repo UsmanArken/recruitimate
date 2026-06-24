@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Briefcase, Check, ChevronRight, Mic2, UserPlus, X } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import type { WorkspaceOnboarding } from "@/lib/services/onboarding.service";
 
 const DISMISS_KEY = "recruitimate-onboarding-dismissed";
 
@@ -17,7 +16,15 @@ type Step = {
   icon: typeof Briefcase;
 };
 
-export function GettingStartedCard({ onboarding }: { onboarding: WorkspaceOnboarding }) {
+export function GettingStartedCard({
+  hasRole,
+  hasCandidate,
+  hasInterview,
+}: {
+  hasRole: boolean;
+  hasCandidate: boolean;
+  hasInterview: boolean;
+}) {
   const [dismissed, setDismissed] = useState(true);
 
   useEffect(() => {
@@ -30,7 +37,7 @@ export function GettingStartedCard({ onboarding }: { onboarding: WorkspaceOnboar
       label: "Post an open position",
       detail: "Define the role and requirements for role-fit scoring.",
       href: "/jobs/new",
-      done: onboarding.steps.postRole,
+      done: hasRole,
       icon: Briefcase,
     },
     {
@@ -38,15 +45,15 @@ export function GettingStartedCard({ onboarding }: { onboarding: WorkspaceOnboar
       label: "Add your first applicant",
       detail: "Upload a resume and link them to that hiring campaign.",
       href: "/candidates/new",
-      done: onboarding.steps.addCandidate,
+      done: hasCandidate,
       icon: UserPlus,
     },
     {
       id: "interview",
       label: "Record an interview",
-      detail: "Paste a transcript to unlock hire confidence for the committee.",
-      href: onboarding.steps.addCandidate ? "/candidates" : "/candidates/new",
-      done: onboarding.steps.completeInterview,
+      detail: "Paste a transcript to unlock hire intelligence for the committee.",
+      href: hasCandidate ? "/candidates" : "/candidates/new",
+      done: hasInterview,
       icon: Mic2,
     },
   ];
@@ -89,9 +96,7 @@ export function GettingStartedCard({ onboarding }: { onboarding: WorkspaceOnboar
             >
               <span
                 className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
-                  step.done
-                    ? "bg-success text-white"
-                    : "bg-brand/10 text-brand"
+                  step.done ? "bg-success text-white" : "bg-brand/10 text-brand"
                 }`}
               >
                 {step.done ? <Check className="h-4 w-4" /> : index + 1}

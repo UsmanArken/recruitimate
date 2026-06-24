@@ -11,6 +11,8 @@ import { InterviewSection } from "@/components/features/candidates/interview-sec
 import { VerdictCard } from "@/components/features/candidates/verdict-card";
 import { SkillMatchBar } from "@/components/features/candidates/skill-match-bar";
 import { ApplicationTabs } from "@/components/features/candidates/application-tabs";
+import { RecruiterReviewPanel } from "@/components/features/candidates/recruiter-review-panel";
+import { IntelligencePhasePanel } from "@/components/features/candidates/intelligence-phase-panel";
 import type { InterviewAnalysisData } from "@/components/features/interview/interview-analysis-tabs";
 import type { AnalysedInterview } from "@/components/features/candidates/interview-section";
 
@@ -30,6 +32,15 @@ export default async function ApplicationDetailPage({
     jobId: string;
     candidate: { id: string; name: string; email: string | null };
     job: { id: string; title: string } | null;
+    // Recruiter review fields
+    talentReviewVerdict: string;
+    talentReviewNotes: string | null;
+    talentReviewedAt: string | null;
+    talentReviewedBy: { id: string; name: string | null; email: string } | null;
+    hireReviewVerdict: string;
+    hireReviewNotes: string | null;
+    hireReviewedAt: string | null;
+    hireReviewedBy: { id: string; name: string | null; email: string } | null;
     talentProfile: {
       roleFitScore: number | null;
       experienceYears: number | null;
@@ -132,7 +143,10 @@ export default async function ApplicationDetailPage({
   const talentContent = (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <LayerBadge layer="talent" />
+        <div className="flex items-center gap-2">
+          <LayerBadge layer="talent" />
+          <span className="text-xs font-medium text-muted">Recruitimate review</span>
+        </div>
         <ReanalyzeButton applicationId={application.id} />
       </div>
 
@@ -258,16 +272,36 @@ export default async function ApplicationDetailPage({
     </div>
   );
 
-  const verdictPanel = (
-    <VerdictCard
-      applicationId={application.id}
-      stage={application.stage}
-      recommendation={dec?.recommendation ?? null}
-      explanation={dec?.explanation ?? null}
-      reasonsToHire={reasonsToHire}
-      reasonsToReject={reasonsToReject}
-      hasInterview={hasInterview}
-    />
+  // ── Decision tab ────────────────────────────────────────────────────────────
+  const decisionContent = (
+    <div className="space-y-4">
+      <LayerBadge layer="decision" />
+      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+        {/* Left — AI recommendation */}
+        <VerdictCard
+          applicationId={application.id}
+          stage={application.stage}
+          recommendation={dec?.recommendation ?? null}
+          explanation={dec?.explanation ?? null}
+          reasonsToHire={reasonsToHire}
+          reasonsToReject={reasonsToReject}
+          hasInterview={hasInterview}
+        />
+        {/* Right — recruiter hire decision */}
+        <RecruiterReviewPanel
+          applicationId={application.id}
+          kind="hire"
+          title="Recruiter hire decision"
+          description="Your final pass/fail hire call — independent of AI recommendation."
+          initial={{
+            verdict: application.hireReviewVerdict as "PENDING" | "PASS" | "HOLD" | "FAIL",
+            notes: application.hireReviewNotes,
+            reviewedAt: application.hireReviewedAt,
+            reviewerName: application.hireReviewedBy?.name ?? application.hireReviewedBy?.email ?? null,
+          }}
+        />
+      </div>
+    </div>
   );
 
   return (
@@ -281,20 +315,20 @@ export default async function ApplicationDetailPage({
           <div className="pt-3 pb-0">
             <Link
               href={`/candidates/${candidateId}`}
-              className="inline-flex items-center gap-1 text-xs font-medium text-muted transition hover:text-primary"
+              className="inline-flex items-center gap-1 text-sm font-medium text-muted transition hover:text-primary"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
-              {candidate.name}
+              Back to {candidate.name}
             </Link>
           </div>
 
           {/* Identity row */}
-          <div className="flex flex-wrap items-center gap-3 pt-2.5 pb-3">
-            <Avatar name={candidate.name} size="sm" />
+          <div className="flex flex-wrap items-center gap-4 pt-2.5 pb-3">
+            <Avatar name={candidate.name} size="lg" />
 
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm font-bold text-foreground">{candidate.name}</span>
+                <span className="text-2xl font-bold tracking-tight text-foreground">{candidate.name}</span>
                 <StageBadge stage={application.stage} />
               </div>
               <div className="flex flex-wrap items-center gap-3">
@@ -304,13 +338,15 @@ export default async function ApplicationDetailPage({
                     {candidate.email}
                   </span>
                 )}
-                {application.job?.title && (
-                  <span className="flex items-center gap-1 text-xs font-medium text-brand/80">
-                    <Briefcase className="h-3 w-3" />
+              </div>
+              {application.job?.title && (
+                <div className="mt-1">
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-brand/8 px-2.5 py-1 text-xs font-semibold text-brand">
+                    <Briefcase className="h-3.5 w-3.5" />
                     {application.job.title}
                   </span>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
           </div>
@@ -320,10 +356,20 @@ export default async function ApplicationDetailPage({
       {/* ── Tabs + content ──────────────────────────────────────────────────── */}
       <ApplicationTabs
         tabs={[
-          { id: "talent", label: "Talent", content: talentContent },
+          { id: "talent",    label: "Talent",    content: talentContent },
           { id: "interview", label: "Interview", content: interviewContent },
+          { id: "decision",  label: "Decision",  content: decisionContent },
         ]}
-        rightPanel={verdictPanel}
+        phaseBanner={
+          <IntelligencePhasePanel
+            jobTitle={application.job?.title}
+            recommendation={dec?.recommendation}
+            roleFitScore={tp?.roleFitScore}
+            explanation={dec?.explanation}
+            hasInterview={hasInterview}
+            hireReviewVerdict={application.hireReviewVerdict}
+          />
+        }
       />
 
     </div>

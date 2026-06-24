@@ -1,11 +1,20 @@
+from datetime import datetime
+from typing import Optional
+
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.shared.models import (
-    Candidate, Decision, Interview, InterviewAnalysis, Job, JobApplication, PipelineStage, TalentProfile
+    Candidate, Decision, Interview, InterviewAnalysis, Job, JobApplication, PipelineStage, TalentProfile, User
 )
+
+
+def _serialize_reviewer(user: "User | None") -> "dict | None":
+    if not user:
+        return None
+    return {"id": user.id, "name": user.name, "email": user.email}
 
 
 def _serialize_application(app: JobApplication) -> dict:
@@ -24,6 +33,15 @@ def _serialize_application(app: JobApplication) -> dict:
         "talentProfile": _serialize_talent(app.talent_profile) if app.talent_profile else None,
         "decision": _serialize_decision(app.decision) if app.decision else None,
         "interviews": [_serialize_interview(i) for i in (app.interviews or [])],
+        # Recruiter review fields
+        "talentReviewVerdict": app.talentReviewVerdict,
+        "talentReviewNotes": app.talentReviewNotes,
+        "talentReviewedAt": app.talentReviewedAt.isoformat() if app.talentReviewedAt else None,
+        "talentReviewedBy": _serialize_reviewer(app.talent_reviewed_by),
+        "hireReviewVerdict": app.hireReviewVerdict,
+        "hireReviewNotes": app.hireReviewNotes,
+        "hireReviewedAt": app.hireReviewedAt.isoformat() if app.hireReviewedAt else None,
+        "hireReviewedBy": _serialize_reviewer(app.hire_reviewed_by),
         "createdAt": app.createdAt,
         "updatedAt": app.updatedAt,
     }
@@ -104,6 +122,8 @@ async def _load_application(app_id: str, org_id: str, db: AsyncSession) -> JobAp
             selectinload(JobApplication.talent_profile),
             selectinload(JobApplication.decision),
             selectinload(JobApplication.interviews).selectinload(Interview.analysis),
+            selectinload(JobApplication.talent_reviewed_by),
+            selectinload(JobApplication.hire_reviewed_by),
         )
     )
     app = result.scalar_one_or_none()
@@ -138,6 +158,7 @@ async def list_applications(org_id: str, db: AsyncSession) -> list:
         "decision": {
             "recommendation": a.decision.recommendation,
         } if a.decision else None,
+        "hireReviewVerdict": a.hireReviewVerdict,
     } for a in apps]
 
 
@@ -157,6 +178,75 @@ async def run_talent(app_id: str, org_id: str, db: AsyncSession) -> dict:
 
     score_application.delay(app_id)
     return {"status": "queued"}
+
+
+async def update_recruiter_review(
+    app_id: str,
+    org_id: str,
+    reviewer_id: str,
+    kind: str,
+    verdict: str,
+    notes: Optional[str],
+    db: AsyncSession,
+) -> dict:
+    valid_verdicts = {"PENDING", "PASS", "HOLD", "FAIL"}
+    if verdict not in valid_verdicts:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid verdict: {verdict}")
+    if kind not in ("talent", "hire"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="kind must be 'talent' or 'hire'")
+
+    result = await db.execute(
+        select(JobApplication)
+        .where(JobApplication.id == app_id, JobApplication.organizationId == org_id)
+        .options(
+            selectinload(JobApplication.talent_reviewed_by),
+            selectinload(JobApplication.hire_reviewed_by),
+        )
+    )
+    app = result.scalar_one_or_none()
+    if not app:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Application not found")
+
+    now = datetime.utcnow()
+    reviewer_id_or_none = reviewer_id if verdict != "PENDING" else None
+    reviewed_at_or_none = now if verdict != "PENDING" else None
+
+    if kind == "talent":
+        app.talentReviewVerdict = verdict
+        app.talentReviewNotes = notes
+        app.talentReviewedAt = reviewed_at_or_none
+        app.talentReviewedById = reviewer_id_or_none
+    else:
+        app.hireReviewVerdict = verdict
+        app.hireReviewNotes = notes
+        app.hireReviewedAt = reviewed_at_or_none
+        app.hireReviewedById = reviewer_id_or_none
+
+    await db.commit()
+    await db.refresh(app)
+
+    # Re-load reviewer for serialization
+    result2 = await db.execute(
+        select(JobApplication)
+        .where(JobApplication.id == app_id)
+        .options(
+            selectinload(JobApplication.talent_reviewed_by),
+            selectinload(JobApplication.hire_reviewed_by),
+        )
+    )
+    app = result2.scalar_one()
+
+    return {
+        "id": app.id,
+        "talentReviewVerdict": app.talentReviewVerdict,
+        "talentReviewNotes": app.talentReviewNotes,
+        "talentReviewedAt": app.talentReviewedAt.isoformat() if app.talentReviewedAt else None,
+        "talentReviewedBy": _serialize_reviewer(app.talent_reviewed_by),
+        "hireReviewVerdict": app.hireReviewVerdict,
+        "hireReviewNotes": app.hireReviewNotes,
+        "hireReviewedAt": app.hireReviewedAt.isoformat() if app.hireReviewedAt else None,
+        "hireReviewedBy": _serialize_reviewer(app.hire_reviewed_by),
+    }
 
 
 async def update_application_stage(app_id: str, org_id: str, stage: str, db: AsyncSession) -> dict:

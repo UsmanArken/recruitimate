@@ -1,5 +1,6 @@
 from fastapi import APIRouter, status as http_status
 from pydantic import BaseModel
+from typing import Optional
 
 from app.core.dependencies import CurrentUser, DB
 from app.features.applications import service
@@ -10,6 +11,12 @@ router = APIRouter(prefix="/api/applications", tags=["applications"])
 
 class UpdateStageRequest(BaseModel):
     stage: str
+
+
+class RecruiterReviewRequest(BaseModel):
+    kind: str  # "talent" | "hire"
+    verdict: str  # "PENDING" | "PASS" | "HOLD" | "FAIL"
+    notes: Optional[str] = None
 
 
 @router.get("")
@@ -36,4 +43,11 @@ async def update_status(application_id: str, body: UpdateStageRequest, auth: Cur
 async def live_assist(application_id: str, body: LiveAssistRequest, auth: CurrentUser, db: DB):
     return await service.run_live_assist(
         application_id, auth.organization_id, body.currentQuestion, body.currentAnswer, db
+    )
+
+
+@router.patch("/{application_id}/recruiter-review")
+async def recruiter_review(application_id: str, body: RecruiterReviewRequest, auth: CurrentUser, db: DB):
+    return await service.update_recruiter_review(
+        application_id, auth.organization_id, auth.user_id, body.kind, body.verdict, body.notes, db
     )

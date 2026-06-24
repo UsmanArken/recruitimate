@@ -40,6 +40,7 @@ export default async function JobDetailPage({
       job: { id: string; title: string };
       talentProfile: { roleFitScore: number | null } | null;
       decision: { recommendation: string | null } | null;
+      hireReviewVerdict: string | null;
     }>>(`/api/applications`).then(apps => apps.filter(a => a.job.id === id)).catch(() => []),
   ]);
 

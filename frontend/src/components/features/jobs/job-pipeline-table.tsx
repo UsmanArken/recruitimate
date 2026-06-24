@@ -11,13 +11,22 @@ export type JobPipelineRow = {
   candidate: { id: string; name: string; email: string | null };
   talentProfile: { roleFitScore: number | null } | null;
   decision: { recommendation: string | null } | null;
+  hireReviewVerdict: string | null;
 };
 
-function decisionLabel(recommendation: string | null | undefined): string {
-  if (recommendation === "pending_interview") return "Awaiting interview";
-  if (recommendation) return recommendation.replace(/_/g, " ");
-  return "—";
-}
+const AI_REC_LABELS: Record<string, { label: string; cls: string }> = {
+  HIRE:        { label: "Hire",        cls: "bg-success-bg text-success" },
+  LEAN_HIRE:   { label: "Lean hire",   cls: "bg-success-bg text-success" },
+  HOLD:        { label: "Hold",        cls: "bg-warning-bg text-warning" },
+  LEAN_REJECT: { label: "Lean reject", cls: "bg-risk-bg text-risk" },
+  REJECT:      { label: "Reject",      cls: "bg-risk-bg text-risk" },
+};
+
+const RECRUITER_VERDICT_LABELS: Record<string, { label: string; cls: string }> = {
+  PASS: { label: "Pass", cls: "bg-success-bg text-success" },
+  HOLD: { label: "Hold", cls: "bg-warning-bg text-warning" },
+  FAIL: { label: "Fail", cls: "bg-risk-bg text-risk" },
+};
 
 export function JobPipelineTable({
   applications,
@@ -49,7 +58,8 @@ export function JobPipelineTable({
               <th className="px-5 py-3.5">Candidate</th>
               <th className="px-5 py-3.5">Stage</th>
               <th className="px-5 py-3.5">Role fit</th>
-              <th className="px-5 py-3.5">Decision</th>
+              <th className="px-5 py-3.5">AI recommendation</th>
+              <th className="px-5 py-3.5">Recruiter decision</th>
               <th className="px-5 py-3.5" />
             </tr>
           </thead>
@@ -74,8 +84,23 @@ export function JobPipelineTable({
                 >
                   {formatScore(app.talentProfile?.roleFitScore)}
                 </td>
-                <td className="px-5 py-4 text-sm text-muted">
-                  {decisionLabel(app.decision?.recommendation)}
+                <td className="px-5 py-4">
+                  {app.decision?.recommendation && AI_REC_LABELS[app.decision.recommendation] ? (
+                    <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold ${AI_REC_LABELS[app.decision.recommendation].cls}`}>
+                      {AI_REC_LABELS[app.decision.recommendation].label}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-muted">—</span>
+                  )}
+                </td>
+                <td className="px-5 py-4">
+                  {app.hireReviewVerdict && RECRUITER_VERDICT_LABELS[app.hireReviewVerdict] ? (
+                    <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold ${RECRUITER_VERDICT_LABELS[app.hireReviewVerdict].cls}`}>
+                      {RECRUITER_VERDICT_LABELS[app.hireReviewVerdict].label}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-muted">—</span>
+                  )}
                 </td>
                 <td className="px-5 py-4">
                   <Link

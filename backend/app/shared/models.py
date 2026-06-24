@@ -252,6 +252,19 @@ class JobApplication(Base):
     candidateId: Mapped[str] = mapped_column(String, ForeignKey("Candidate.id"), nullable=False)
     jobId: Mapped[str] = mapped_column(String, ForeignKey("Job.id"), nullable=False)
     stage: Mapped[PipelineStage] = mapped_column(Enum(PipelineStage), default=PipelineStage.NEW)
+
+    # Recruiter talent-screen verdict
+    talentReviewVerdict: Mapped[str] = mapped_column(String, default="PENDING")  # PENDING|PASS|HOLD|FAIL
+    talentReviewNotes: Mapped[str | None] = mapped_column(Text)
+    talentReviewedAt: Mapped[datetime | None] = mapped_column(DateTime)
+    talentReviewedById: Mapped[str | None] = mapped_column(String, ForeignKey("User.id"))
+
+    # Recruiter final hire verdict
+    hireReviewVerdict: Mapped[str] = mapped_column(String, default="PENDING")  # PENDING|PASS|HOLD|FAIL
+    hireReviewNotes: Mapped[str | None] = mapped_column(Text)
+    hireReviewedAt: Mapped[datetime | None] = mapped_column(DateTime)
+    hireReviewedById: Mapped[str | None] = mapped_column(String, ForeignKey("User.id"))
+
     createdAt: Mapped[datetime] = mapped_column(DateTime, default=_now)
     updatedAt: Mapped[datetime] = mapped_column(DateTime, default=_now, onupdate=_now)
 
@@ -261,6 +274,8 @@ class JobApplication(Base):
     talent_profile: Mapped["TalentProfile | None"] = relationship(back_populates="application", uselist=False, cascade="all, delete-orphan")
     interviews: Mapped[list["Interview"]] = relationship(back_populates="application", cascade="all, delete-orphan", order_by="Interview.createdAt.desc()")
     decision: Mapped["Decision | None"] = relationship(back_populates="application", uselist=False, cascade="all, delete-orphan")
+    talent_reviewed_by: Mapped["User | None"] = relationship(foreign_keys=[talentReviewedById])
+    hire_reviewed_by: Mapped["User | None"] = relationship(foreign_keys=[hireReviewedById])
 
 
 # ---------------------------------------------------------------------------

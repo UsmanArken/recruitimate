@@ -10,15 +10,24 @@ import { CandidateNotesPanel } from "@/components/features/candidates/candidate-
 import { LinkedInEnrichPanel } from "@/components/features/candidates/linkedin-enrich-panel";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DeleteCandidateButton } from "@/components/features/candidates/delete-candidate-button";
+import { CandidateSourceProfile } from "@/components/features/candidates/candidate-source-profile";
 import { ChevronLeft, Mail, Briefcase } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
-function decisionStatusLabel(recommendation: string | null | undefined): string {
-  if (recommendation === "pending_interview") return "Awaiting interview";
-  if (recommendation) return recommendation.replace(/_/g, " ");
-  return "—";
-}
+const AI_REC_LABELS: Record<string, { label: string; cls: string }> = {
+  HIRE:        { label: "Hire",        cls: "bg-success-bg text-success" },
+  LEAN_HIRE:   { label: "Lean hire",   cls: "bg-success-bg text-success" },
+  HOLD:        { label: "Hold",        cls: "bg-warning-bg text-warning" },
+  LEAN_REJECT: { label: "Lean reject", cls: "bg-risk-bg text-risk" },
+  REJECT:      { label: "Reject",      cls: "bg-risk-bg text-risk" },
+};
+
+const RECRUITER_VERDICT_LABELS: Record<string, { label: string; cls: string }> = {
+  PASS: { label: "Pass", cls: "bg-success-bg text-success" },
+  HOLD: { label: "Hold", cls: "bg-warning-bg text-warning" },
+  FAIL: { label: "Fail", cls: "bg-risk-bg text-risk" },
+};
 
 export default async function CandidatePersonPage({
   params,
@@ -33,6 +42,9 @@ export default async function CandidatePersonPage({
       name: string;
       email: string | null;
       linkedInUrl: string | null;
+      githubUrl: string | null;
+      portfolioUrl: string | null;
+      resumeText: string | null;
       applications: Array<{
         id: string;
         stage: string;
@@ -40,6 +52,7 @@ export default async function CandidatePersonPage({
         job: { id: string; title: string } | null;
         talentProfile: { roleFitScore: number | null } | null;
         decision: { recommendation: string | null } | null;
+        hireReviewVerdict: string | null;
       }>;
       notes: Array<{
         id: string;
@@ -90,6 +103,17 @@ export default async function CandidatePersonPage({
 
       <PageBody>
         <section className="mb-8">
+          <CandidateSourceProfile
+            name={candidate.name}
+            email={candidate.email}
+            linkedInUrl={candidate.linkedInUrl}
+            githubUrl={candidate.githubUrl}
+            portfolioUrl={candidate.portfolioUrl}
+            resumeText={candidate.resumeText}
+          />
+        </section>
+
+        <section className="mb-8">
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Open position reviews</CardTitle>
@@ -117,16 +141,25 @@ export default async function CandidatePersonPage({
                         <Briefcase className="h-5 w-5 text-brand" />
                         <div className="min-w-0 flex-1">
                           <p className="font-semibold text-foreground">{app.job?.title ?? "Unknown role"}</p>
-                          <p className="text-sm text-muted">
-                            {decisionStatusLabel(app.decision?.recommendation)}
-                          </p>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-sm font-bold tabular-nums ${scoreColor(app.talentProfile?.roleFitScore)}`}>
+                            {formatScore(app.talentProfile?.roleFitScore)}
+                          </span>
+                          {app.decision?.recommendation && AI_REC_LABELS[app.decision.recommendation] ? (
+                            <span className={`rounded-md px-2 py-0.5 text-xs font-semibold ${AI_REC_LABELS[app.decision.recommendation].cls}`}>
+                              {AI_REC_LABELS[app.decision.recommendation].label}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted">Awaiting analysis</span>
+                          )}
+                          {app.hireReviewVerdict && RECRUITER_VERDICT_LABELS[app.hireReviewVerdict] && (
+                            <span className={`rounded-md px-2 py-0.5 text-xs font-semibold ${RECRUITER_VERDICT_LABELS[app.hireReviewVerdict].cls}`}>
+                              {RECRUITER_VERDICT_LABELS[app.hireReviewVerdict].label}
+                            </span>
+                          )}
                         </div>
                         <StageBadge stage={app.stage} />
-                        <span
-                          className={`text-sm font-bold tabular-nums ${scoreColor(app.talentProfile?.roleFitScore)}`}
-                        >
-                          {formatScore(app.talentProfile?.roleFitScore)}
-                        </span>
                       </Link>
                     </li>
                   ))}

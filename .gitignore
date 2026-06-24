@@ -46,3 +46,6 @@ next-env.d.ts
 # uploads
 /uploads
 .deploy-ssh-askpass.sh
+
+# local scratch files
+runningCommands.txt

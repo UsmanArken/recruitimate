@@ -32,6 +32,7 @@ def _serialize_application(app: JobApplication) -> dict:
         "job": {"id": app.job.id, "title": app.job.title} if app.job else None,
         "talentProfile": _serialize_talent(app.talent_profile) if app.talent_profile else None,
         "decision": _serialize_decision(app.decision) if app.decision else None,
+        "hireReviewVerdict": app.hireReviewVerdict,
         "createdAt": app.createdAt,
         "updatedAt": app.updatedAt,
     }
