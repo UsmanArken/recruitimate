@@ -2,6 +2,12 @@ from datetime import datetime, timezone
 from pydantic import BaseModel, field_validator
 
 
+class SegmentRequest(BaseModel):
+    speaker: str      # "candidate" | "recruiter"
+    text: str
+    timestampMs: int
+
+
 class CreateInterviewRequest(BaseModel):
     title: str
     scheduledAt: datetime | None = None

@@ -14,6 +14,7 @@ from app.features.applications.router import router as applications_router
 from app.features.auth.router import router as auth_router
 from app.features.candidates.router import router as candidates_router
 from app.features.interviews.router import router as interviews_router
+from app.features.interviews.internal_router import internal_router
 from app.features.invites.router import router as invites_router
 from app.features.jobs.router import router as jobs_router
 from app.features.linkedin.router import router as linkedin_router
@@ -90,6 +91,7 @@ app.include_router(llm_router)
 app.include_router(admin_router)
 app.include_router(roles_router)
 app.include_router(candidate_portal_router)
+app.include_router(internal_router)
 
 
 @app.get("/api/health")

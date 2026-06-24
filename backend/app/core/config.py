@@ -34,12 +34,16 @@ class Settings(BaseSettings):
     ANTHROPIC_CHAT_MODEL: str = "claude-3-5-haiku-latest"
     GOOGLE_API_KEY: str = ""
     GOOGLE_CHAT_MODEL: str = "gemini-1.5-flash"
+    GOOGLE_AUDIO_MODEL: str = "gemini-2.0-flash"
 
     # Storage
     UPLOAD_DIR: str = "./uploads"
 
     # Celery / Redis
     REDIS_URL: str = "redis://localhost:6379/0"
+
+    # Deepgram
+    DEEPGRAM_API_KEY: str = ""
 
     # LiveKit
     LIVEKIT_URL: str = "wss://your-project.livekit.cloud"

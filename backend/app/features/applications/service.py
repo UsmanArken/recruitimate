@@ -65,6 +65,8 @@ def _serialize_interview(i: Interview) -> dict:
         "livekitRoomName": i.livekitRoomName,
         "candidateJoinUrl": i.candidateJoinUrl,
         "agentStatus": i.agentStatus,
+        "durationMinutes": i.durationMinutes,
+        "audioUrl": i.audioUrl,
         "analysis": _serialize_analysis(i.analysis) if i.analysis else None,
     }
 

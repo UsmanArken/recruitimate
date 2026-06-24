@@ -118,6 +118,8 @@ export function InterviewWorkflowPanel({
       );
       const url = new URL(data.joinUrl, window.location.origin);
       url.searchParams.set("returnTo", window.location.pathname);
+      url.searchParams.set("interviewId", activeId);
+      url.searchParams.set("applicationId", applicationId);
       window.open(url.toString(), "_blank");
     } catch (e) {
       setJoinError(e instanceof ApiError ? e.message : "Could not get join token");

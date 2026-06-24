@@ -274,7 +274,8 @@ else:
     ):
         """Run Gemini multimodal audio analysis. Returns AudioResult or None on failure."""
         import json
-        import google.generativeai as genai
+        import google.genai as genai
+        import google.genai.types as genai_types
         from app.features.intelligence.types import AudioResult
 
         if not api_key:
@@ -282,9 +283,15 @@ else:
             return None
 
         try:
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel(model_name)
-            audio_file = genai.upload_file(audio_path, mime_type="audio/wav")
+            client = genai.Client(api_key=api_key)
+
+            # Upload audio file via new Files API
+            with open(audio_path, "rb") as f:
+                audio_file = client.files.upload(
+                    file=f,
+                    config=genai_types.UploadFileConfig(mime_type="audio/wav"),
+                )
+
             transcript_section = f"\n\nTRANSCRIPT (for alignment):\n{transcript}" if transcript else ""
             prompt = (
                 "You are an expert speech analyst. Analyse this job interview audio recording "
@@ -315,8 +322,19 @@ else:
                 "Base all scores strictly on audio signals — tone, pace, energy, filler words, hesitations. "
                 "Do not infer from the content of what was said. No extra fields."
             )
-            generation_config = {"max_output_tokens": 1024}
-            response = model.generate_content([prompt, audio_file], generation_config=generation_config)
+
+            response = client.models.generate_content(
+                model=model_name,
+                contents=[prompt, audio_file],
+                config=genai_types.GenerateContentConfig(max_output_tokens=1024),
+            )
+
+            # Clean up uploaded file from Gemini (best-effort)
+            try:
+                client.files.delete(name=audio_file.name)
+            except Exception:
+                pass
+
             raw = response.text.strip().removeprefix("```json").removesuffix("```").strip()
             parsed = json.loads(raw)
             return AudioResult(

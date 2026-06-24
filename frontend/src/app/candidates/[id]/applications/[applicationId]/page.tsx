@@ -5,7 +5,6 @@ import { ChevronLeft, Briefcase, Mail } from "lucide-react";
 import { Avatar } from "@/components/features/candidates/avatar";
 import { StageBadge } from "@/components/features/candidates/stage-badge";
 import { LayerBadge } from "@/components/features/intelligence/layer-badge";
-import { ScoreBadge } from "@/components/features/intelligence/score-badge";
 import { ReanalyzeButton } from "@/components/features/candidates/reanalyze-button";
 import { TalentPoller } from "@/components/features/candidates/talent-poller";
 import { InterviewSection } from "@/components/features/candidates/interview-section";
@@ -59,6 +58,8 @@ export default async function ApplicationDetailPage({
       livekitRoomName: string | null;
       candidateJoinUrl: string | null;
       agentStatus: string | null;
+      durationMinutes: number | null;
+      audioUrl: string | null;
       analysis: {
         confidenceScore: number | null;
         clarityScore: number | null;
@@ -127,29 +128,46 @@ export default async function ApplicationDetailPage({
   const reasonsToHire = (dec?.reasonsToHire ?? []) as string[];
   const reasonsToReject = (dec?.reasonsToReject ?? []) as string[];
 
+  // ── Talent tab ──────────────────────────────────────────────────────────────
   const talentContent = (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between gap-2">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
         <LayerBadge layer="talent" />
         <ReanalyzeButton applicationId={application.id} />
       </div>
 
       <TalentPoller active={!tp} />
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <ScoreBadge label="Role fit" score={tp?.roleFitScore} />
-        <div className="rounded-lg border border-border-subtle bg-card p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Experience</p>
-          <p className="mt-1 text-2xl font-bold tabular-nums">
-            {tp?.experienceYears != null ? `${tp.experienceYears} yrs` : "—"}
-          </p>
+      {/* Stats row — resume fit + experience in one card */}
+      <div className="rounded-xl border border-border-subtle bg-card shadow-sm [border-left-width:3px] border-l-talent">
+        <div className="grid grid-cols-2 divide-x divide-border-subtle">
+          <div className="p-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted/60">Resume fit</p>
+            <FitMeter score={tp?.roleFitScore ?? null} />
+          </div>
+          <div className="p-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted/60">Experience</p>
+            <p className="mt-2 text-2xl font-bold tabular-nums text-foreground">
+              {tp?.experienceYears != null ? (
+                <>
+                  {tp.experienceYears}
+                  <span className="ml-1 text-base font-medium text-muted">yrs</span>
+                </>
+              ) : (
+                <span className="text-muted">—</span>
+              )}
+            </p>
+          </div>
         </div>
       </div>
 
+      {/* Skills */}
       {tp && (
-        <div className="rounded-lg border border-border-subtle bg-card p-4 shadow-sm">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted">Skills</p>
-          {((tp.matchedSkills ?? []).length > 0 || (tp.missingSkills ?? []).length > 0 || (tp.extraSkills ?? []).length > 0) ? (
+        <div className="rounded-xl border border-border-subtle bg-card p-4 shadow-sm [border-left-width:3px] border-l-talent">
+          <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-muted/60">Skills</p>
+          {((tp.matchedSkills ?? []).length > 0 ||
+            (tp.missingSkills ?? []).length > 0 ||
+            (tp.extraSkills ?? []).length > 0) ? (
             <SkillMatchBar
               matched={tp.matchedSkills ?? []}
               missing={tp.missingSkills ?? []}
@@ -158,7 +176,10 @@ export default async function ApplicationDetailPage({
           ) : (tp.skills ?? []).length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
               {(tp.skills ?? []).map((s) => (
-                <span key={s} className="rounded-md bg-muted/40 px-2.5 py-1 text-xs font-medium text-foreground/70">
+                <span
+                  key={s}
+                  className="rounded-md bg-talent-bg px-2.5 py-1 text-xs font-medium text-talent"
+                >
                   {s}
                 </span>
               ))}
@@ -167,49 +188,66 @@ export default async function ApplicationDetailPage({
         </div>
       )}
 
+      {/* Strengths + Gaps */}
       {((tp?.strengths ?? []).length > 0 || (tp?.gaps ?? []).length > 0) && (
         <div className="grid gap-3 sm:grid-cols-2">
           {(tp?.strengths ?? []).length > 0 && (
-            <div className="rounded-lg border border-success/20 bg-success-bg/40 p-4">
-              <p className="mb-2 text-xs font-bold uppercase tracking-wide text-success">Strengths</p>
-              <ul className="space-y-1 text-sm text-foreground/90">
-                {(tp?.strengths ?? []).map((s) => <li key={s}>· {s}</li>)}
+            <div className="rounded-xl border border-success/20 bg-success-bg/40 p-4 [border-left-width:3px] border-l-success">
+              <p className="mb-2.5 text-[10px] font-bold uppercase tracking-widest text-success">Strengths</p>
+              <ul className="space-y-1.5">
+                {(tp?.strengths ?? []).map((s) => (
+                  <li key={s} className="flex items-start gap-2 text-sm text-foreground/85">
+                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-success/60" />
+                    {s}
+                  </li>
+                ))}
               </ul>
             </div>
           )}
           {(tp?.gaps ?? []).length > 0 && (
-            <div className="rounded-lg border border-warning/20 bg-warning-bg/40 p-4">
-              <p className="mb-2 text-xs font-bold uppercase tracking-wide text-warning">Gaps</p>
-              <ul className="space-y-1 text-sm text-foreground/90">
-                {(tp?.gaps ?? []).map((g) => <li key={g}>· {g}</li>)}
+            <div className="rounded-xl border border-warning/20 bg-warning-bg/40 p-4 [border-left-width:3px] border-l-warning">
+              <p className="mb-2.5 text-[10px] font-bold uppercase tracking-widest text-warning">Gaps</p>
+              <ul className="space-y-1.5">
+                {(tp?.gaps ?? []).map((g) => (
+                  <li key={g} className="flex items-start gap-2 text-sm text-foreground/85">
+                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-warning/60" />
+                    {g}
+                  </li>
+                ))}
               </ul>
             </div>
           )}
         </div>
       )}
 
+      {/* Hidden signals */}
       {hiddenSignals.length > 0 && (
-        <div className="rounded-lg border border-border-subtle bg-card p-4 shadow-sm">
-          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted">Signals</p>
-          <ul className="space-y-1 text-sm text-foreground/90">
-            {hiddenSignals.map((s) => <li key={s}>· {s}</li>)}
+        <div className="rounded-xl border border-border-subtle bg-card p-4 shadow-sm [border-left-width:3px] border-l-primary">
+          <p className="mb-2.5 text-[10px] font-bold uppercase tracking-widest text-muted/60">Hidden signals</p>
+          <ul className="space-y-1.5">
+            {hiddenSignals.map((s) => (
+              <li key={s} className="flex items-start gap-2 text-sm text-foreground/80">
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/40" />
+                {s}
+              </li>
+            ))}
           </ul>
         </div>
       )}
 
+      {/* AI explanation */}
       {tp?.explanation && (
-        <p className="rounded-lg border border-border-subtle bg-background px-4 py-3 text-sm leading-relaxed text-muted italic">
+        <p className="rounded-xl border border-border-subtle bg-background px-4 py-3 text-sm italic leading-relaxed text-muted">
           {tp.explanation}
         </p>
       )}
     </div>
   );
 
+  // ── Interview tab ───────────────────────────────────────────────────────────
   const interviewContent = (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-2">
-        <LayerBadge layer="interview" />
-      </div>
+      <LayerBadge layer="interview" />
       <InterviewSection
         analysedInterviews={analysedInterviews}
         applicationId={application.id}
@@ -225,7 +263,6 @@ export default async function ApplicationDetailPage({
       applicationId={application.id}
       stage={application.stage}
       recommendation={dec?.recommendation ?? null}
-      roleFitScore={tp?.roleFitScore ?? null}
       explanation={dec?.explanation ?? null}
       reasonsToHire={reasonsToHire}
       reasonsToReject={reasonsToReject}
@@ -236,9 +273,11 @@ export default async function ApplicationDetailPage({
   return (
     <div className="flex min-h-screen flex-col">
 
-      {/* ── Compact sticky header ─────────────────────────── */}
+      {/* ── Header ──────────────────────────────────────────────────────────── */}
       <div className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="mx-auto max-w-7xl px-6">
+
+          {/* Back link */}
           <div className="pt-3 pb-0">
             <Link
               href={`/candidates/${candidateId}`}
@@ -248,34 +287,37 @@ export default async function ApplicationDetailPage({
               {candidate.name}
             </Link>
           </div>
+
+          {/* Identity row */}
           <div className="flex flex-wrap items-center gap-3 pt-2.5 pb-3">
             <Avatar name={candidate.name} size="sm" />
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-              <span className="text-sm font-bold text-foreground">{candidate.name}</span>
-              {candidate.email && (
-                <span className="flex items-center gap-1 text-xs text-muted">
-                  <Mail className="h-3 w-3" />
-                  {candidate.email}
-                </span>
-              )}
-              <StageBadge stage={application.stage} />
-              {application.job?.title && (
-                <span className="inline-flex items-center gap-1 rounded-md bg-brand/8 px-2 py-0.5 text-xs font-medium text-brand">
-                  <Briefcase className="h-3 w-3" />
-                  {application.job.title}
-                </span>
-              )}
-            </div>
-            {tp?.roleFitScore != null && (
-              <div className="flex items-center gap-3">
-                <HeaderScore label="Role fit" value={tp.roleFitScore} />
+
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-bold text-foreground">{candidate.name}</span>
+                <StageBadge stage={application.stage} />
               </div>
-            )}
+              <div className="flex flex-wrap items-center gap-3">
+                {candidate.email && (
+                  <span className="flex items-center gap-1 text-xs text-muted">
+                    <Mail className="h-3 w-3" />
+                    {candidate.email}
+                  </span>
+                )}
+                {application.job?.title && (
+                  <span className="flex items-center gap-1 text-xs font-medium text-brand/80">
+                    <Briefcase className="h-3 w-3" />
+                    {application.job.title}
+                  </span>
+                )}
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
 
-      {/* ── Tabs + content ────────────────────────────────── */}
+      {/* ── Tabs + content ──────────────────────────────────────────────────── */}
       <ApplicationTabs
         tabs={[
           { id: "talent", label: "Talent", content: talentContent },
@@ -288,13 +330,26 @@ export default async function ApplicationDetailPage({
   );
 }
 
-function HeaderScore({ label, value }: { label: string; value: number }) {
-  const pct = Math.round(Math.min(100, Math.max(0, value)));
+// ── Resume fit meter (talent tab) ─────────────────────────────────────────────
+
+function FitMeter({ score }: { score: number | null }) {
+  if (score == null) {
+    return <p className="mt-2 text-2xl font-bold text-muted">—</p>;
+  }
+  const pct = Math.round(Math.min(100, Math.max(0, score)));
   const color = pct >= 70 ? "text-success" : pct >= 40 ? "text-warning" : "text-risk";
+  const barColor =
+    pct >= 70 ? "bg-success" : pct >= 40 ? "bg-warning" : "bg-risk";
+
   return (
-    <div className="text-right">
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">{label}</p>
-      <p className={`text-sm font-bold tabular-nums ${color}`}>{pct}%</p>
+    <div>
+      <p className={`mt-2 text-2xl font-bold tabular-nums ${color}`}>{pct}%</p>
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-border-subtle">
+        <div
+          className={`h-full rounded-full transition-all ${barColor}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
     </div>
   );
 }

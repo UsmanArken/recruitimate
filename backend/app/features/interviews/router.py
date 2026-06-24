@@ -41,3 +41,13 @@ async def analyze(application_id: str, interview_id: str, auth: CurrentUser, db:
 async def calendar(application_id: str, interview_id: str, auth: CurrentUser, db: DB):
     ics_data = await service.generate_calendar(interview_id, application_id, auth.organization_id, db)
     return Response(content=ics_data, media_type="text/calendar")
+
+
+@router.get("/{interview_id}/transcript-live")
+async def transcript_live(application_id: str, interview_id: str, auth: CurrentUser, db: DB):
+    return await service.get_live_transcript(interview_id, application_id, auth.organization_id, db)
+
+
+@router.post("/{interview_id}/suggest")
+async def suggest(application_id: str, interview_id: str, auth: CurrentUser, db: DB):
+    return await service.suggest_followup(interview_id, application_id, auth.organization_id, db)
