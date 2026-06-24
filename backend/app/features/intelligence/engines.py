@@ -276,7 +276,7 @@ async def extract_resume_identity(resume_text: str) -> dict:
         "name (string|null) and email (string|null). "
         "Return null for either field if it cannot be found. Do not infer or guess."
     )
-    user = resume_text[:500]
+    user = resume_text
     return await chat_json(system, user, _IDENTITY_FALLBACK)
 
 
@@ -298,3 +298,29 @@ async def generate_interview_questions(
     user = f"JOB TITLE: {job_title}\n\nREQUIREMENTS:\n{requirements}"
     raw = await chat_json(system, user, _QB_FALLBACK)
     return raw.get("questions", [])
+
+
+# ---------------------------------------------------------------------------
+# Job Draft Generation
+# ---------------------------------------------------------------------------
+
+_JOB_DRAFT_FALLBACK = {"description": "", "requirements": "", "jobPostDocument": ""}
+
+
+async def run_job_draft_intelligence(client, title: str) -> dict:
+    system = (
+        "You are a recruiting copywriter. Generate a job requisition draft. "
+        "Return a JSON object with exactly these keys:\n"
+        "- description: string — internal role summary for recruiters (2-3 sentences on the role's purpose and team context)\n"
+        "- requirements: string — bullet-style must-haves for fit scoring, one requirement per line starting with '- '\n"
+        "- jobPostDocument: string — polished public-facing job post copy that candidates would read; "
+        "include a compelling intro, responsibilities section, and what you're looking for; "
+        "professional but engaging tone"
+    )
+    user = (
+        f"Company: {client.name}\n"
+        f"Website: {client.website or 'n/a'}\n"
+        f"Company profile:\n{client.companyProfile or 'Not provided'}\n\n"
+        f"Role title: {title}"
+    )
+    return await chat_json(system, user, _JOB_DRAFT_FALLBACK)

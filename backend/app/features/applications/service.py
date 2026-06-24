@@ -249,6 +249,20 @@ async def update_recruiter_review(
     }
 
 
+async def delete_application(app_id: str, org_id: str, db: AsyncSession) -> None:
+    result = await db.execute(
+        select(JobApplication).where(
+            JobApplication.id == app_id,
+            JobApplication.organizationId == org_id,
+        )
+    )
+    app = result.scalar_one_or_none()
+    if not app:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Application not found")
+    await db.delete(app)
+    await db.commit()
+
+
 async def update_application_stage(app_id: str, org_id: str, stage: str, db: AsyncSession) -> dict:
     valid_stages = {s.value for s in PipelineStage}
     if stage not in valid_stages:

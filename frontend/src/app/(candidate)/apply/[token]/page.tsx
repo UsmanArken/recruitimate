@@ -6,6 +6,7 @@ const API_BASE = process.env.FASTAPI_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "
 interface ApplyInfo {
   jobTitle: string;
   jobDescription: string | null;
+  jobPostDocument: string | null;
   orgName: string;
 }
 
@@ -34,8 +35,10 @@ export default async function ApplyPage({ params }: { params: Promise<{ token: s
         <div className="mb-8">
           <p className="text-sm font-medium text-muted">{info.orgName}</p>
           <h1 className="mt-1 text-3xl font-bold tracking-tight text-foreground">{info.jobTitle}</h1>
-          {info.jobDescription && (
-            <p className="mt-3 text-sm leading-relaxed text-muted">{info.jobDescription}</p>
+          {(info.jobPostDocument || info.jobDescription) && (
+            <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-muted">
+              {info.jobPostDocument ?? info.jobDescription}
+            </p>
           )}
         </div>
 

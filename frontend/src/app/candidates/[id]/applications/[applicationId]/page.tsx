@@ -13,6 +13,7 @@ import { SkillMatchBar } from "@/components/features/candidates/skill-match-bar"
 import { ApplicationTabs } from "@/components/features/candidates/application-tabs";
 import { RecruiterReviewPanel } from "@/components/features/candidates/recruiter-review-panel";
 import { IntelligencePhasePanel } from "@/components/features/candidates/intelligence-phase-panel";
+import { DeleteApplicationButton } from "@/components/features/candidates/delete-application-button";
 import type { InterviewAnalysisData } from "@/components/features/interview/interview-analysis-tabs";
 import type { AnalysedInterview } from "@/components/features/candidates/interview-section";
 
@@ -311,8 +312,8 @@ export default async function ApplicationDetailPage({
       <div className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="mx-auto max-w-7xl px-6">
 
-          {/* Back link */}
-          <div className="pt-3 pb-0">
+          {/* Back link + delete */}
+          <div className="flex items-center justify-between pt-3 pb-0">
             <Link
               href={`/candidates/${candidateId}`}
               className="inline-flex items-center gap-1 text-sm font-medium text-muted transition hover:text-primary"
@@ -320,6 +321,11 @@ export default async function ApplicationDetailPage({
               <ChevronLeft className="h-3.5 w-3.5" />
               Back to {candidate.name}
             </Link>
+            <DeleteApplicationButton
+              applicationId={application.id}
+              candidateId={candidateId}
+              jobTitle={application.job?.title ?? "this role"}
+            />
           </div>
 
           {/* Identity row */}

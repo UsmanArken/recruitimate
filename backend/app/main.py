@@ -13,6 +13,7 @@ from app.features.candidate_portal.router import router as candidate_portal_rout
 from app.features.applications.router import router as applications_router
 from app.features.auth.router import router as auth_router
 from app.features.candidates.router import router as candidates_router
+from app.features.clients.router import router as clients_router
 from app.features.interviews.router import router as interviews_router
 from app.features.interviews.internal_router import internal_router
 from app.features.invites.router import router as invites_router
@@ -80,6 +81,7 @@ async def generic_exception_handler(request: Request, exc: Exception):
 
 
 app.include_router(auth_router)
+app.include_router(clients_router)
 app.include_router(invites_router)
 app.include_router(candidates_router)
 app.include_router(jobs_router)

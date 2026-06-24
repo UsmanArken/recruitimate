@@ -46,6 +46,11 @@ async def live_assist(application_id: str, body: LiveAssistRequest, auth: Curren
     )
 
 
+@router.delete("/{application_id}", status_code=204)
+async def delete_application(application_id: str, auth: CurrentUser, db: DB):
+    await service.delete_application(application_id, auth.organization_id, db)
+
+
 @router.patch("/{application_id}/recruiter-review")
 async def recruiter_review(application_id: str, body: RecruiterReviewRequest, auth: CurrentUser, db: DB):
     return await service.update_recruiter_review(

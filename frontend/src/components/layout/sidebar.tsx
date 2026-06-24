@@ -10,6 +10,7 @@ import {
   Shield,
   Eye,
   Settings,
+  Building2,
 } from "lucide-react";
 import { AdminNavLink } from "@/components/layout/admin-nav-link";
 import { NavLink } from "@/components/layout/nav-link";
@@ -24,6 +25,7 @@ const workspaceNav = [
 
 const settingsNav = [
   { href: "/settings/team", label: "Team & access", icon: Settings },
+  { href: "/settings/clients", label: "Client companies", icon: Building2 },
 ];
 
 export function Sidebar() {

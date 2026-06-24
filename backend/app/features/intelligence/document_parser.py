@@ -12,7 +12,7 @@ def extract_text_from_pdf(data: bytes) -> str:
         return "\n".join(page.extract_text() or "" for page in reader.pages).strip()
     except Exception as exc:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=422,
             detail=f"Failed to parse PDF: {exc}",
         )
 
@@ -25,7 +25,7 @@ def extract_text_from_docx(data: bytes) -> str:
         return "\n".join(p.text for p in doc.paragraphs).strip()
     except Exception as exc:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=422,
             detail=f"Failed to parse DOCX: {exc}",
         )
 

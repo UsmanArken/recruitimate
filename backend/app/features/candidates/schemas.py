@@ -19,6 +19,7 @@ class UpdateCandidateRequest(BaseModel):
     githubUrl: str | None = None
     portfolioUrl: str | None = None
     resumeText: str | None = None
+    marking: str | None = None  # ACTIVE|ON_HOLD|ARCHIVED
 
 
 class CreateNoteRequest(BaseModel):

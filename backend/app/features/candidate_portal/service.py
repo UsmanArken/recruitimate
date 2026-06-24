@@ -84,6 +84,7 @@ async def get_apply_info(token: str, db: AsyncSession) -> dict:
         "jobId": job.id,
         "jobTitle": job.title,
         "jobDescription": job.description,
+        "jobPostDocument": job.jobPostDocument,
         "orgName": job.organization.name,
         "interviewMode": job.interviewMode,
     }

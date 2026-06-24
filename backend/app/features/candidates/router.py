@@ -7,6 +7,7 @@ from app.features.candidates.schemas import (
     CreateCandidateRequest,
     CreateNoteRequest,
     LinkedInRequest,
+    UpdateCandidateRequest,
     UpdateNoteRequest,
 )
 
@@ -26,6 +27,11 @@ async def create_candidate(body: CreateCandidateRequest, auth: CurrentUser, db: 
 @router.get("/{candidate_id}")
 async def get_candidate(candidate_id: str, auth: CurrentUser, db: DB):
     return await service.get_candidate(candidate_id, auth.organization_id, db)
+
+
+@router.patch("/{candidate_id}")
+async def update_candidate(candidate_id: str, body: UpdateCandidateRequest, auth: CurrentUser, db: DB):
+    return await service.update_candidate(candidate_id, auth.organization_id, body.model_dump(exclude_none=True), db)
 
 
 @router.delete("/{candidate_id}", status_code=204)

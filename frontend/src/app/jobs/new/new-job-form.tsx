@@ -1,12 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { Copy, CheckCheck } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Copy, CheckCheck, Wand2, Loader2 } from "lucide-react";
 import { apiFetch, ApiError } from "@/lib/api-fetch";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { PageHeader, PageBody } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
+
+type Client = { id: string; name: string };
 
 interface CreatedJob {
   id: string;
@@ -21,6 +23,45 @@ export function NewJobForm() {
   const [copied, setCopied] = useState(false);
   const [interviewMode, setInterviewMode] = useState<"live" | "automated">("live");
 
+  // Client + JD generation
+  const [clients, setClients] = useState<Client[]>([]);
+  const [selectedClientId, setSelectedClientId] = useState<string>("");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [requirements, setRequirements] = useState("");
+  const [jobPostDocument, setJobPostDocument] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [genError, setGenError] = useState<string | null>(null);
+
+  useEffect(() => {
+    apiFetch<Client[]>("/api/clients")
+      .then(setClients)
+      .catch(() => {});
+  }, []);
+
+  async function generateJD() {
+    if (!selectedClientId || !title.trim()) return;
+    setGenerating(true);
+    setGenError(null);
+    try {
+      const draft = await apiFetch<{
+        description: string;
+        requirements: string;
+        jobPostDocument: string;
+      }>(`/api/clients/${selectedClientId}/job-draft`, {
+        method: "POST",
+        body: JSON.stringify({ title: title.trim() }),
+      });
+      setDescription(draft.description);
+      setRequirements(draft.requirements);
+      setJobPostDocument(draft.jobPostDocument);
+    } catch (err) {
+      setGenError(err instanceof ApiError ? err.message : "Failed to generate job description.");
+    } finally {
+      setGenerating(false);
+    }
+  }
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
@@ -31,9 +72,11 @@ export function NewJobForm() {
       const job = await apiFetch<CreatedJob>("/api/jobs", {
         method: "POST",
         body: JSON.stringify({
-          title: fd.get("title"),
-          description: fd.get("description"),
-          requirements: fd.get("requirements") || undefined,
+          title: title.trim() || fd.get("title"),
+          description: description || (fd.get("description") as string) || undefined,
+          requirements: requirements || (fd.get("requirements") as string) || undefined,
+          jobPostDocument: jobPostDocument || undefined,
+          hiringClientId: selectedClientId || undefined,
           interviewMode,
           autoInterviewThreshold: interviewMode === "automated"
             ? Number(fd.get("autoInterviewThreshold") ?? 60)
@@ -88,6 +131,8 @@ export function NewJobForm() {
     );
   }
 
+  const canGenerate = Boolean(selectedClientId && title.trim());
+
   return (
     <>
       <PageHeader
@@ -99,19 +144,108 @@ export function NewJobForm() {
           <CardHeader>
             <CardTitle>Role details</CardTitle>
             <CardDescription>
-              Include requirements to improve role-fit scoring accuracy.
+              Select a client and enter the role title, then use AI to generate the full job description.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={onSubmit} className="space-y-4">
-              <Field label="Job title" name="title" required placeholder="e.g. Senior Backend Engineer" />
-              <Field label="Description" name="description" required multiline />
-              <Field
-                label="Requirements (for fit scoring)"
-                name="requirements"
-                multiline
-                placeholder="Skills, years of experience, must-haves…"
-              />
+
+              {/* Client selector */}
+              <label className="block">
+                <span className="text-sm font-semibold text-foreground">Client company</span>
+                <p className="mt-0.5 text-xs text-muted">
+                  Required for AI job description generation.{" "}
+                  <a href="/settings/clients" className="text-primary hover:underline">Manage clients →</a>
+                </p>
+                <select
+                  value={selectedClientId}
+                  onChange={(e) => setSelectedClientId(e.target.value)}
+                  className="input-hr mt-1.5"
+                >
+                  <option value="">No client</option>
+                  {clients.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </label>
+
+              {/* Title + Generate button */}
+              <div>
+                <label className="block">
+                  <span className="text-sm font-semibold text-foreground">
+                    Job title <span className="text-risk">*</span>
+                  </span>
+                  <input
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    required
+                    placeholder="e.g. Senior Backend Engineer"
+                    className="input-hr mt-1.5"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={generateJD}
+                  disabled={!canGenerate || generating}
+                  className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {generating ? (
+                    <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Generating…</>
+                  ) : (
+                    <><Wand2 className="h-3.5 w-3.5" /> Generate JD from client profile</>
+                  )}
+                </button>
+                {genError && (
+                  <p className="mt-1.5 text-xs text-risk">{genError}</p>
+                )}
+                {!canGenerate && (
+                  <p className="mt-1 text-xs text-muted">Select a client and enter a title to enable generation.</p>
+                )}
+              </div>
+
+              {/* Description */}
+              <label className="block">
+                <span className="text-sm font-semibold text-foreground">
+                  Description <span className="text-risk">*</span>
+                </span>
+                <textarea
+                  name="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  required
+                  rows={4}
+                  className="input-hr mt-1.5"
+                />
+              </label>
+
+              {/* Requirements */}
+              <label className="block">
+                <span className="text-sm font-semibold text-foreground">Requirements (for fit scoring)</span>
+                <textarea
+                  name="requirements"
+                  value={requirements}
+                  onChange={(e) => setRequirements(e.target.value)}
+                  rows={4}
+                  placeholder="Skills, years of experience, must-haves…"
+                  className="input-hr mt-1.5"
+                />
+              </label>
+
+              {/* Public job post */}
+              <label className="block">
+                <span className="text-sm font-semibold text-foreground">Public job post</span>
+                <p className="mt-0.5 text-xs text-muted">
+                  This is what candidates read when they visit the apply link.
+                </p>
+                <textarea
+                  name="jobPostDocument"
+                  value={jobPostDocument}
+                  onChange={(e) => setJobPostDocument(e.target.value)}
+                  rows={6}
+                  placeholder="Write a compelling job post for candidates…"
+                  className="input-hr mt-1.5"
+                />
+              </label>
 
               {/* Interview mode */}
               <div>
@@ -170,35 +304,5 @@ export function NewJobForm() {
         </Card>
       </PageBody>
     </>
-  );
-}
-
-function Field({
-  label,
-  name,
-  required,
-  multiline,
-  placeholder,
-}: {
-  label: string;
-  name: string;
-  required?: boolean;
-  multiline?: boolean;
-  placeholder?: string;
-}) {
-  return (
-    <label className="block">
-      <span className="text-sm font-semibold text-foreground">{label}</span>
-      {multiline ? (
-        <textarea name={name} required={required} rows={4} className="input-hr mt-1.5" />
-      ) : (
-        <input
-          name={name}
-          required={required}
-          placeholder={placeholder}
-          className="input-hr mt-1.5"
-        />
-      )}
-    </label>
   );
 }

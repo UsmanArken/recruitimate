@@ -100,6 +100,7 @@ class Organization(Base):
     updatedAt: Mapped[datetime] = mapped_column(DateTime, default=_now, onupdate=_now)
 
     members: Mapped[list["OrganizationMember"]] = relationship(back_populates="organization")
+    hiring_clients: Mapped[list["HiringClient"]] = relationship(back_populates="organization")
     jobs: Mapped[list["Job"]] = relationship(back_populates="organization")
     candidates: Mapped[list["Candidate"]] = relationship(back_populates="organization")
     invites: Mapped[list["Invite"]] = relationship(back_populates="organization")
@@ -199,14 +200,35 @@ class JobAssignment(Base):
 # ---------------------------------------------------------------------------
 
 
+class HiringClient(Base):
+    __tablename__ = "HiringClient"
+    __table_args__ = (UniqueConstraint("organizationId", "slug"),)
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    organizationId: Mapped[str] = mapped_column(String, ForeignKey("Organization.id"), nullable=False)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    slug: Mapped[str] = mapped_column(String, nullable=False)
+    website: Mapped[str | None] = mapped_column(String)
+    companyProfile: Mapped[str | None] = mapped_column(Text)
+    impressionNotes: Mapped[str | None] = mapped_column(Text)
+    webDataConsentAt: Mapped[datetime | None] = mapped_column(DateTime)
+    createdAt: Mapped[datetime] = mapped_column(DateTime, default=_now)
+    updatedAt: Mapped[datetime] = mapped_column(DateTime, default=_now, onupdate=_now)
+
+    organization: Mapped["Organization"] = relationship(back_populates="hiring_clients")
+    jobs: Mapped[list["Job"]] = relationship(back_populates="hiring_client")
+
+
 class Job(Base):
     __tablename__ = "Job"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
     organizationId: Mapped[str] = mapped_column(String, ForeignKey("Organization.id"), nullable=False)
+    hiringClientId: Mapped[str | None] = mapped_column(String, ForeignKey("HiringClient.id"))
     title: Mapped[str] = mapped_column(String, nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
     requirements: Mapped[str | None] = mapped_column(Text)
+    jobPostDocument: Mapped[str | None] = mapped_column(Text)
     hiringManagerId: Mapped[str | None] = mapped_column(String, ForeignKey("User.id"))
     signupToken: Mapped[str] = mapped_column(String, unique=True, default=_uuid)
     interviewMode: Mapped[str] = mapped_column(String, default="live")
@@ -215,6 +237,7 @@ class Job(Base):
     updatedAt: Mapped[datetime] = mapped_column(DateTime, default=_now, onupdate=_now)
 
     organization: Mapped["Organization"] = relationship(back_populates="jobs")
+    hiring_client: Mapped["HiringClient | None"] = relationship(back_populates="jobs")
     hiring_manager: Mapped["User | None"] = relationship(foreign_keys=[hiringManagerId])
     assignments: Mapped[list["JobAssignment"]] = relationship(back_populates="job")
     applications: Mapped[list["JobApplication"]] = relationship(back_populates="job")
@@ -233,6 +256,7 @@ class Candidate(Base):
     portfolioUrl: Mapped[str | None] = mapped_column(String)
     resumeText: Mapped[str | None] = mapped_column(Text)
     resumeFilePath: Mapped[str | None] = mapped_column(String)
+    marking: Mapped[str] = mapped_column(String, nullable=False, default="ACTIVE")  # ACTIVE|ON_HOLD|ARCHIVED
     passwordHash: Mapped[str | None] = mapped_column(String)
     portalCreatedAt: Mapped[datetime | None] = mapped_column(DateTime)
     createdAt: Mapped[datetime] = mapped_column(DateTime, default=_now)

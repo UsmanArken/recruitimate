@@ -1,9 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { serverFetch } from "@/lib/api-server";
-import { formatScore, scoreColor } from "@/lib/utils";
 import { PageBody } from "@/components/layout/page-header";
-import { StageBadge } from "@/components/features/candidates/stage-badge";
 import { Avatar } from "@/components/features/candidates/avatar";
 import { ApplyToPosition } from "@/components/features/candidates/apply-to-position";
 import { CandidateNotesPanel } from "@/components/features/candidates/candidate-notes-panel";
@@ -11,23 +9,11 @@ import { LinkedInEnrichPanel } from "@/components/features/candidates/linkedin-e
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DeleteCandidateButton } from "@/components/features/candidates/delete-candidate-button";
 import { CandidateSourceProfile } from "@/components/features/candidates/candidate-source-profile";
-import { ChevronLeft, Mail, Briefcase } from "lucide-react";
+import { CandidateMarkingControl } from "@/components/features/candidates/candidate-marking-control";
+import { CandidateApplicationsList } from "@/components/features/candidates/candidate-applications-list";
+import { ChevronLeft, Mail } from "lucide-react";
 
 export const dynamic = "force-dynamic";
-
-const AI_REC_LABELS: Record<string, { label: string; cls: string }> = {
-  HIRE:        { label: "Hire",        cls: "bg-success-bg text-success" },
-  LEAN_HIRE:   { label: "Lean hire",   cls: "bg-success-bg text-success" },
-  HOLD:        { label: "Hold",        cls: "bg-warning-bg text-warning" },
-  LEAN_REJECT: { label: "Lean reject", cls: "bg-risk-bg text-risk" },
-  REJECT:      { label: "Reject",      cls: "bg-risk-bg text-risk" },
-};
-
-const RECRUITER_VERDICT_LABELS: Record<string, { label: string; cls: string }> = {
-  PASS: { label: "Pass", cls: "bg-success-bg text-success" },
-  HOLD: { label: "Hold", cls: "bg-warning-bg text-warning" },
-  FAIL: { label: "Fail", cls: "bg-risk-bg text-risk" },
-};
 
 export default async function CandidatePersonPage({
   params,
@@ -45,6 +31,7 @@ export default async function CandidatePersonPage({
       githubUrl: string | null;
       portfolioUrl: string | null;
       resumeText: string | null;
+      marking: string;
       applications: Array<{
         id: string;
         stage: string;
@@ -83,8 +70,12 @@ export default async function CandidatePersonPage({
         <div className="flex flex-wrap items-start gap-5">
           <Avatar name={candidate.name} size="lg" />
           <div className="min-w-0 flex-1">
-            <div className="mb-1 flex items-center gap-3">
+            <div className="mb-1 flex flex-wrap items-center gap-3">
               <h1 className="text-2xl font-bold tracking-tight">{candidate.name}</h1>
+              <CandidateMarkingControl
+                candidateId={candidate.id}
+                initialMarking={candidate.marking}
+              />
               <DeleteCandidateButton candidateId={candidate.id} candidateName={candidate.name} />
             </div>
             {candidate.email && (
@@ -123,48 +114,10 @@ export default async function CandidatePersonPage({
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0">
-              {candidate.applications.length === 0 ? (
-                <p className="px-6 py-8 text-sm text-muted">
-                  No positions linked yet. Apply this person to an open position below.
-                </p>
-              ) : (
-                <ul>
-                  {candidate.applications.map((app) => (
-                    <li
-                      key={app.id}
-                      className="border-t border-border-subtle first:border-t-0"
-                    >
-                      <Link
-                        href={`/candidates/${candidate.id}/applications/${app.id}`}
-                        className="flex flex-wrap items-center gap-4 px-6 py-4 transition hover:bg-teal-50/40"
-                      >
-                        <Briefcase className="h-5 w-5 text-brand" />
-                        <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-foreground">{app.job?.title ?? "Unknown role"}</p>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className={`text-sm font-bold tabular-nums ${scoreColor(app.talentProfile?.roleFitScore)}`}>
-                            {formatScore(app.talentProfile?.roleFitScore)}
-                          </span>
-                          {app.decision?.recommendation && AI_REC_LABELS[app.decision.recommendation] ? (
-                            <span className={`rounded-md px-2 py-0.5 text-xs font-semibold ${AI_REC_LABELS[app.decision.recommendation].cls}`}>
-                              {AI_REC_LABELS[app.decision.recommendation].label}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-muted">Awaiting analysis</span>
-                          )}
-                          {app.hireReviewVerdict && RECRUITER_VERDICT_LABELS[app.hireReviewVerdict] && (
-                            <span className={`rounded-md px-2 py-0.5 text-xs font-semibold ${RECRUITER_VERDICT_LABELS[app.hireReviewVerdict].cls}`}>
-                              {RECRUITER_VERDICT_LABELS[app.hireReviewVerdict].label}
-                            </span>
-                          )}
-                        </div>
-                        <StageBadge stage={app.stage} />
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <CandidateApplicationsList
+                candidateId={candidate.id}
+                initialApplications={candidate.applications}
+              />
             </CardContent>
           </Card>
         </section>

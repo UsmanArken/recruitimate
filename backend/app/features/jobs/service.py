@@ -3,7 +3,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.shared.models import AssignmentRole, Candidate, Job, JobApplication, JobAssignment, User
+from app.shared.models import AssignmentRole, Candidate, HiringClient, Job, JobApplication, JobAssignment, User
 
 
 def _serialize_job(job: Job, application_count: int = 0) -> dict:
@@ -12,6 +12,12 @@ def _serialize_job(job: Job, application_count: int = 0) -> dict:
         "title": job.title,
         "description": job.description,
         "requirements": job.requirements,
+        "jobPostDocument": job.jobPostDocument,
+        "hiringClientId": job.hiringClientId,
+        "hiringClient": (
+            {"id": job.hiring_client.id, "name": job.hiring_client.name, "website": job.hiring_client.website}
+            if job.hiring_client else None
+        ),
         "hiringManagerId": job.hiringManagerId,
         "organizationId": job.organizationId,
         "signupToken": job.signupToken,
@@ -24,7 +30,9 @@ def _serialize_job(job: Job, application_count: int = 0) -> dict:
 
 
 async def list_jobs(org_id: str, db: AsyncSession) -> list:
-    result = await db.execute(select(Job).where(Job.organizationId == org_id))
+    result = await db.execute(
+        select(Job).where(Job.organizationId == org_id).options(selectinload(Job.hiring_client))
+    )
     jobs = result.scalars().all()
     out = []
     for job in jobs:
@@ -37,6 +45,11 @@ async def create_job(org_id: str, data: dict, db: AsyncSession) -> dict:
     job = Job(organizationId=org_id, **data)
     db.add(job)
     await db.flush()
+    # Re-query with hiring_client loaded so serializer can access it
+    result = await db.execute(
+        select(Job).where(Job.id == job.id).options(selectinload(Job.hiring_client))
+    )
+    job = result.scalar_one()
     return _serialize_job(job)
 
 
@@ -44,7 +57,10 @@ async def get_job(job_id: str, org_id: str, db: AsyncSession) -> dict:
     result = await db.execute(
         select(Job)
         .where(Job.id == job_id, Job.organizationId == org_id)
-        .options(selectinload(Job.assignments).selectinload(JobAssignment.user))
+        .options(
+            selectinload(Job.assignments).selectinload(JobAssignment.user),
+            selectinload(Job.hiring_client),
+        )
     )
     job = result.scalar_one_or_none()
     if not job:
@@ -63,13 +79,20 @@ async def get_job(job_id: str, org_id: str, db: AsyncSession) -> dict:
 
 
 async def update_job(job_id: str, org_id: str, data: dict, db: AsyncSession) -> dict:
-    result = await db.execute(select(Job).where(Job.id == job_id, Job.organizationId == org_id))
+    result = await db.execute(
+        select(Job).where(Job.id == job_id, Job.organizationId == org_id).options(selectinload(Job.hiring_client))
+    )
     job = result.scalar_one_or_none()
     if not job:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
     for k, v in data.items():
         setattr(job, k, v)
     await db.flush()
+    # Re-query so hiring_client reflects any hiringClientId change
+    result = await db.execute(
+        select(Job).where(Job.id == job_id).options(selectinload(Job.hiring_client))
+    )
+    job = result.scalar_one()
     return _serialize_job(job)
 
 

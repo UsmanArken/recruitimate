@@ -17,6 +17,7 @@ def _serialize_candidate(c: Candidate) -> dict:
         "githubUrl": c.githubUrl,
         "portfolioUrl": c.portfolioUrl,
         "resumeText": c.resumeText,
+        "marking": c.marking,
         "source": "portal" if c.passwordHash else "manual",
         "createdAt": c.createdAt,
         "updatedAt": c.updatedAt,
@@ -140,6 +141,22 @@ async def delete_candidate(candidate_id: str, org_id: str, db: AsyncSession) -> 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Candidate not found")
     await db.delete(candidate)
     await db.commit()
+
+
+async def update_candidate(candidate_id: str, org_id: str, data: dict, db: AsyncSession) -> dict:
+    ALLOWED_FIELDS = {"marking", "name", "email", "linkedInUrl", "githubUrl", "portfolioUrl"}
+    result = await db.execute(
+        select(Candidate).where(Candidate.id == candidate_id, Candidate.organizationId == org_id)
+    )
+    candidate = result.scalar_one_or_none()
+    if not candidate:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Candidate not found")
+    for k, v in data.items():
+        if k in ALLOWED_FIELDS:
+            setattr(candidate, k, v)
+    await db.flush()
+    await db.commit()
+    return _serialize_candidate(candidate)
 
 
 async def get_candidate(candidate_id: str, org_id: str, db: AsyncSession) -> dict:
@@ -284,6 +301,7 @@ async def delete_note(note_id: str, candidate_id: str, org_id: str, db: AsyncSes
     note = result.scalar_one_or_none()
     if not note:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")
-    db.delete(note)
+    await db.delete(note)
+    await db.flush()
 
 

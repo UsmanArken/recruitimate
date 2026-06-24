@@ -9,7 +9,7 @@ import { JobPipelineTable } from "@/components/features/jobs/job-pipeline-table"
 import { InterviewQuestionBankPanel } from "@/components/features/jobs/interview-question-bank-panel";
 import { SignupLinkCard } from "@/components/features/jobs/signup-link-card";
 import { DeleteJobButton } from "@/components/features/jobs/delete-job-button";
-import { ChevronLeft, Users } from "lucide-react";
+import { Building2, ChevronLeft, Globe, Users } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -27,10 +27,12 @@ export default async function JobDetailPage({
       title: string;
       description: string | null;
       requirements: string | null;
+      jobPostDocument: string | null;
       applicationCount: number;
       hiringManagerId: string | null;
       signupToken: string;
       interviewMode: string;
+      hiringClient: { id: string; name: string; website: string | null } | null;
       assignments: Array<{ id: string; assignmentRole: string; user: { id: string; name: string | null; email: string } }>;
     }>(`/api/jobs/${id}`).catch(() => null),
     serverFetch<Array<{
@@ -84,6 +86,32 @@ export default async function JobDetailPage({
 
         <SignupLinkCard signupToken={job.signupToken} interviewMode={job.interviewMode} />
 
+        {/* Client company card */}
+        {job.hiringClient && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-brand" />
+                Client company
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="font-semibold text-foreground">{job.hiringClient.name}</p>
+              {job.hiringClient.website && (
+                <a
+                  href={job.hiringClient.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1 flex items-center gap-1.5 text-sm text-primary hover:underline"
+                >
+                  <Globe className="h-3.5 w-3.5" />
+                  {job.hiringClient.website}
+                </a>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {canManageTeam && (
           <Card className="mb-8 border-primary/15 shadow-md shadow-primary/5">
             <CardHeader>
@@ -110,6 +138,18 @@ export default async function JobDetailPage({
             </CardHeader>
             <CardContent>
               <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted">{job.requirements}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {job.jobPostDocument && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Public job post</CardTitle>
+              <CardDescription>The candidate-facing description shown on the apply page.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted">{job.jobPostDocument}</p>
             </CardContent>
           </Card>
         )}
