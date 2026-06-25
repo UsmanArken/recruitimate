@@ -275,7 +275,7 @@ export function ApplyForm({ token }: Props) {
           <div className="flex gap-3">
             <Button
               type="button"
-              variant="outline"
+              variant="secondary"
               className="h-11 flex-1"
               onClick={() => { setStep("credentials"); setError(null); }}
             >

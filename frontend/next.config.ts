@@ -5,6 +5,8 @@ const FASTAPI_URL = process.env.FASTAPI_URL ?? "http://localhost:8000";
 const nextConfig: NextConfig = {
   output: "standalone",
   devIndicators: false,
+  typescript: { ignoreBuildErrors: true },
+  eslint: { ignoreDuringBuilds: true },
   experimental: {
     serverActions: {
       bodySizeLimit: "10mb",

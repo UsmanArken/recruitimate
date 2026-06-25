@@ -1,0 +1,20 @@
+# Local testing override — no SSL, nginx uses HTTP-only config.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
+services:
+  nginx:
+    volumes:
+      - ./nginx/nginx-http-only.conf:/etc/nginx/conf.d/default.conf:ro
+
+  # Expose postgres and redis ports locally for debugging
+  postgres:
+    ports:
+      - "5432:5432"
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  # Expose api directly for debugging (bypassing nginx)
+  api:
+    ports:
+      - "8000:8000"
