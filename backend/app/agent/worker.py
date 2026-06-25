@@ -94,7 +94,7 @@ async def _process_track(track, speaker: str, state: dict):
                         try:
                             async with httpx.AsyncClient() as client:
                                 await client.post(
-                                    f"http://localhost:8000/internal/interviews/{interview_id}/segment",
+                                    f"{settings.INTERNAL_API_URL}/internal/interviews/{interview_id}/segment",
                                     json={"speaker": speaker, "text": sentence, "timestampMs": elapsed_ms},
                                     timeout=5.0,
                                 )

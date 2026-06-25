@@ -1,15 +1,139 @@
 services:
+
+  # ── Infrastructure ──────────────────────────────────────────────────────────
+
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
-    ports:
-      - "5432:5432"
     environment:
       POSTGRES_USER: recruitimate
       POSTGRES_PASSWORD: recruitimate
       POSTGRES_DB: recruitimate
     volumes:
       - recruitimate_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U recruitimate"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - recruitimate_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Backend ─────────────────────────────────────────────────────────────────
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
+    env_file: ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://recruitimate:recruitimate@postgres:5432/recruitimate
+      REDIS_URL: redis://redis:6379/0
+      INTERNAL_API_URL: http://api:8000
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  celery:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: celery -A app.workers.celery_app worker --loglevel=info --concurrency=2
+    env_file: ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://recruitimate:recruitimate@postgres:5432/recruitimate
+      REDIS_URL: redis://redis:6379/0
+      INTERNAL_API_URL: http://api:8000
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  agent:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: python -m app.agent.worker
+    env_file: ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://recruitimate:recruitimate@postgres:5432/recruitimate
+      REDIS_URL: redis://redis:6379/0
+      INTERNAL_API_URL: http://api:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ── Frontend ────────────────────────────────────────────────────────────────
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        FASTAPI_URL: http://api:8000
+    restart: unless-stopped
+    env_file: ./frontend/.env.local
+    environment:
+      NODE_ENV: production
+    depends_on:
+      - api
+
+  # ── Reverse proxy ───────────────────────────────────────────────────────────
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - certbot_www:/var/www/certbot:ro
+      - certbot_conf:/etc/letsencrypt:ro
+    depends_on:
+      - frontend
+      - api
+
+  # Certbot — run manually to issue/renew certificates:
+  #   docker compose run --rm certbot certonly --webroot \
+  #     -w /var/www/certbot -d recruitimate.app -d www.recruitimate.app
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - certbot_www:/var/www/certbot
+      - certbot_conf:/etc/letsencrypt
+    entrypoint: /bin/sh -c "trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done"
 
 volumes:
   recruitimate_pg:
+  recruitimate_redis:
+  uploads:
+  certbot_www:
+  certbot_conf:

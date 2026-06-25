@@ -57,6 +57,10 @@ class Settings(BaseSettings):
     R2_BUCKET_NAME: str = "recruitimate-audio"
     R2_ENDPOINT_URL: str = ""  # https://<account_id>.r2.cloudflarestorage.com
 
+    # Internal API URL — used by the LiveKit agent to post transcript segments.
+    # In Docker Compose this should be http://api:8000; on a single host it stays localhost.
+    INTERNAL_API_URL: str = "http://localhost:8000"
+
     # Frontend URL (used for building join links)
     APP_URL: str = "http://localhost:3000"
 
