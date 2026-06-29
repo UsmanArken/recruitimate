@@ -69,6 +69,7 @@ async function main() {
       "scripts/qa/pipeline.test.ts",
       "scripts/qa/email-notifications.test.ts",
       "scripts/qa/learning.test.ts",
+      "scripts/qa/analytics.test.ts",
     ])
   );
 

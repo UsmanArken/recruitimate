@@ -14,6 +14,7 @@ import {
   Mail,
   Bot,
   Columns3,
+  BarChart3,
 } from "lucide-react";
 import { AdminNavLink } from "@/components/layout/admin-nav-link";
 import { NavLink } from "@/components/layout/nav-link";
@@ -26,6 +27,7 @@ const workspaceNav = [
   { href: "/talent", label: "Talent", icon: Search },
   { href: "/outreach", label: "Outreach", icon: Mail },
   { href: "/copilot", label: "Copilot", icon: Bot },
+  { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/jobs", label: "Open roles", icon: Briefcase },
 ];
 

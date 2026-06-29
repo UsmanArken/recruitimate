@@ -29,6 +29,7 @@ import { ReanalyzeButton } from "@/components/features/candidates/reanalyze-butt
 import { CandidateBriefExportButton } from "@/components/features/candidates/candidate-brief-document";
 import { OutcomePanel } from "@/components/features/learning/outcome-panel";
 import { RecommendationFeedbackPanel } from "@/components/features/learning/recommendation-feedback";
+import { SuccessPredictionPanel } from "@/components/features/learning/success-prediction-panel";
 import { PageBody } from "@/components/layout/page-header";
 import type { Signal } from "@/lib/intelligence/types";
 import { Briefcase, ChevronLeft, Mail } from "lucide-react";
@@ -165,6 +166,28 @@ export default async function ApplicationDetailPage({
               </CardHeader>
               <CardContent>
                 <SignalList signals={riskFactors} />
+              </CardContent>
+            </Card>
+          </section>
+        )}
+
+        {phase === "ready_for_decision" && dec?.hireConfidence != null && (
+          <section className="mb-8">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  Predictive hiring success
+                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase text-primary">
+                    P3-004
+                  </span>
+                </CardTitle>
+                <CardDescription>
+                  Likelihood this candidate succeeds in role, calibrated from your past hiring
+                  outcomes.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <SuccessPredictionPanel applicationId={application.id} />
               </CardContent>
             </Card>
           </section>
