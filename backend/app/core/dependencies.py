@@ -54,38 +54,34 @@ def require_platform_admin(auth: Annotated[AuthContext, Depends(get_current_user
 # ---------------------------------------------------------------------------
 # Role-based guards
 # These check role_code from the JWT — no DB round-trip needed.
-# Platform admins always pass regardless of role_code.
+# Platform admins must have an org to use these endpoints (they have no org context).
 # ---------------------------------------------------------------------------
 
 _ADMIN_ONLY = {"ORG_ADMIN"}
 _ADMIN_OR_RECRUITER = {"ORG_ADMIN", "RECRUITER"}
 
 
-def _role_dep(allowed_roles: set[str], detail: str):
-    """Return a FastAPI dependency that enforces role membership."""
-    def _guard(auth: Annotated[AuthContext, Depends(get_current_user)]) -> AuthContext:
-        if auth.is_platform_admin:
-            return auth
-        if auth.role_code not in allowed_roles:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=detail)
-        return auth
-    return _guard
+def _require_org(auth: AuthContext) -> None:
+    """Raise 403 if the user has no org membership (e.g. platform admins)."""
+    if not auth.organization_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This endpoint requires org membership",
+        )
 
 
 def require_admin(auth: Annotated[AuthContext, Depends(get_current_user)]) -> AuthContext:
-    """ORG_ADMIN only."""
-    if auth.is_platform_admin:
-        return auth
-    if auth.role_code not in _ADMIN_ONLY:
+    """ORG_ADMIN only. Platform admins are rejected — they have no org context."""
+    _require_org(auth)
+    if not auth.is_platform_admin and auth.role_code not in _ADMIN_ONLY:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin role required")
     return auth
 
 
 def require_admin_or_recruiter(auth: Annotated[AuthContext, Depends(get_current_user)]) -> AuthContext:
-    """ORG_ADMIN or RECRUITER."""
-    if auth.is_platform_admin:
-        return auth
-    if auth.role_code not in _ADMIN_OR_RECRUITER:
+    """ORG_ADMIN or RECRUITER. Platform admins are rejected — they have no org context."""
+    _require_org(auth)
+    if not auth.is_platform_admin and auth.role_code not in _ADMIN_OR_RECRUITER:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Recruiter or Admin role required")
     return auth
 
