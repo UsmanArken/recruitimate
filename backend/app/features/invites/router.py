@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.core.dependencies import CurrentUser, DB
+from app.core.dependencies import CurrentUser, DB, OrgAdmin
 from app.features.invites import service
 from app.features.invites.schemas import AcceptInviteRequest, CreateInviteRequest
 
@@ -8,12 +8,12 @@ router = APIRouter(prefix="/api/invites", tags=["invites"])
 
 
 @router.get("")
-async def list_invites(auth: CurrentUser, db: DB):
+async def list_invites(auth: OrgAdmin, db: DB):
     return await service.list_invites(auth.organization_id, db)
 
 
 @router.post("", status_code=201)
-async def create_invite(body: CreateInviteRequest, auth: CurrentUser, db: DB):
+async def create_invite(body: CreateInviteRequest, auth: OrgAdmin, db: DB):
     return await service.create_invite(auth.organization_id, auth.user_id, body.email, body.roleId, db)
 
 

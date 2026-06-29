@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.core.dependencies import CurrentUser, DB
+from app.core.dependencies import CurrentUser, DB, OrgAdmin
 from app.features.candidates import service
 from app.features.candidates.schemas import (
     CreateApplicationRequest,
@@ -35,7 +35,7 @@ async def update_candidate(candidate_id: str, body: UpdateCandidateRequest, auth
 
 
 @router.delete("/{candidate_id}", status_code=204)
-async def delete_candidate(candidate_id: str, auth: CurrentUser, db: DB):
+async def delete_candidate(candidate_id: str, auth: OrgAdmin, db: DB):
     await service.delete_candidate(candidate_id, auth.organization_id, db)
 
 

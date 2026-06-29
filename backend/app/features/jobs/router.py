@@ -1,6 +1,6 @@
 from fastapi import APIRouter, UploadFile
 
-from app.core.dependencies import CurrentUser, DB
+from app.core.dependencies import AdminOrRecruiter, CurrentUser, DB, OrgAdmin
 from app.features.intelligence.engines import generate_interview_questions
 from app.features.jobs import service
 from app.features.jobs.schemas import (
@@ -19,7 +19,7 @@ async def list_jobs(auth: CurrentUser, db: DB):
 
 
 @router.post("", status_code=201)
-async def create_job(body: CreateJobRequest, auth: CurrentUser, db: DB):
+async def create_job(body: CreateJobRequest, auth: AdminOrRecruiter, db: DB):
     return await service.create_job(auth.organization_id, body.model_dump(exclude_none=True), db)
 
 
@@ -29,17 +29,17 @@ async def get_job(job_id: str, auth: CurrentUser, db: DB):
 
 
 @router.put("/{job_id}")
-async def update_job(job_id: str, body: UpdateJobRequest, auth: CurrentUser, db: DB):
+async def update_job(job_id: str, body: UpdateJobRequest, auth: AdminOrRecruiter, db: DB):
     return await service.update_job(job_id, auth.organization_id, body.model_dump(exclude_none=True), db)
 
 
 @router.delete("/{job_id}", status_code=204)
-async def delete_job(job_id: str, auth: CurrentUser, db: DB):
+async def delete_job(job_id: str, auth: OrgAdmin, db: DB):
     await service.delete_job(job_id, auth.organization_id, db)
 
 
 @router.post("/{job_id}/bulk-resumes")
-async def bulk_resumes(job_id: str, files: list[UploadFile], auth: CurrentUser, db: DB):
+async def bulk_resumes(job_id: str, files: list[UploadFile], auth: AdminOrRecruiter, db: DB):
     file_data = [(f.filename or "resume", await f.read()) for f in files]
     return await service.bulk_import_resumes(job_id, auth.organization_id, file_data, db)
 
@@ -63,15 +63,15 @@ async def list_assignments(job_id: str, auth: CurrentUser, db: DB):
 
 
 @router.post("/{job_id}/assignments", status_code=201)
-async def create_assignment(job_id: str, body: CreateAssignmentRequest, auth: CurrentUser, db: DB):
+async def create_assignment(job_id: str, body: CreateAssignmentRequest, auth: AdminOrRecruiter, db: DB):
     return await service.create_assignment(job_id, auth.organization_id, body.userId, body.assignmentRole, db)
 
 
 @router.put("/{job_id}/assignments/{assignment_id}")
-async def update_assignment(job_id: str, assignment_id: str, body: UpdateAssignmentRequest, auth: CurrentUser, db: DB):
+async def update_assignment(job_id: str, assignment_id: str, body: UpdateAssignmentRequest, auth: AdminOrRecruiter, db: DB):
     return await service.update_assignment(assignment_id, job_id, auth.organization_id, body.assignmentRole, db)
 
 
 @router.delete("/{job_id}/assignments/{assignment_id}", status_code=204)
-async def delete_assignment(job_id: str, assignment_id: str, auth: CurrentUser, db: DB):
+async def delete_assignment(job_id: str, assignment_id: str, auth: AdminOrRecruiter, db: DB):
     await service.delete_assignment(assignment_id, job_id, auth.organization_id, db)

@@ -2,7 +2,7 @@ from fastapi import APIRouter, status as http_status
 from pydantic import BaseModel
 from typing import Optional
 
-from app.core.dependencies import CurrentUser, DB
+from app.core.dependencies import CurrentUser, DB, OrgAdmin
 from app.features.applications import service
 from app.features.applications.schemas import LiveAssistRequest
 
@@ -47,7 +47,7 @@ async def live_assist(application_id: str, body: LiveAssistRequest, auth: Curren
 
 
 @router.delete("/{application_id}", status_code=204)
-async def delete_application(application_id: str, auth: CurrentUser, db: DB):
+async def delete_application(application_id: str, auth: OrgAdmin, db: DB):
     await service.delete_application(application_id, auth.organization_id, db)
 
 
