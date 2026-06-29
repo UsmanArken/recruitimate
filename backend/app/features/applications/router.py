@@ -5,6 +5,7 @@ from typing import Optional
 from app.core.dependencies import CurrentUser, DB
 from app.features.applications import service
 from app.features.applications.schemas import LiveAssistRequest
+from app.shared.permissions import require_role, is_hiring_manager, ORG_ADMIN, ORG_OWNER, RECRUITER
 
 router = APIRouter(prefix="/api/applications", tags=["applications"])
 
@@ -21,7 +22,8 @@ class RecruiterReviewRequest(BaseModel):
 
 @router.get("")
 async def list_applications(auth: CurrentUser, db: DB):
-    return await service.list_applications(auth.organization_id, db)
+    user_id = auth.user_id if is_hiring_manager(auth) else None
+    return await service.list_applications(auth.organization_id, db, assigned_user_id=user_id)
 
 
 @router.get("/{application_id}")
@@ -31,6 +33,7 @@ async def get_application(application_id: str, auth: CurrentUser, db: DB):
 
 @router.post("/{application_id}/talent", status_code=http_status.HTTP_202_ACCEPTED)
 async def run_talent(application_id: str, auth: CurrentUser, db: DB):
+    require_role(auth, RECRUITER, ORG_ADMIN, ORG_OWNER)
     return await service.run_talent(application_id, auth.organization_id, db)
 
 

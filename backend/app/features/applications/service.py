@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.shared.models import (
-    Candidate, Decision, Interview, InterviewAnalysis, Job, JobApplication, PipelineStage, TalentProfile, User
+    Candidate, Decision, Interview, InterviewAnalysis, Job, JobApplication, JobAssignment, PipelineStage, TalentProfile, User
 )
 
 
@@ -132,8 +132,8 @@ async def _load_application(app_id: str, org_id: str, db: AsyncSession) -> JobAp
     return app
 
 
-async def list_applications(org_id: str, db: AsyncSession) -> list:
-    result = await db.execute(
+async def list_applications(org_id: str, db: AsyncSession, assigned_user_id: str | None = None) -> list:
+    query = (
         select(JobApplication)
         .where(JobApplication.organizationId == org_id)
         .options(
@@ -143,6 +143,11 @@ async def list_applications(org_id: str, db: AsyncSession) -> list:
             selectinload(JobApplication.decision),
         )
     )
+    if assigned_user_id:
+        query = query.join(JobAssignment, JobAssignment.jobId == JobApplication.jobId).where(
+            JobAssignment.userId == assigned_user_id
+        )
+    result = await db.execute(query)
     apps = result.scalars().all()
     return [{
         "id": a.id,

@@ -3,6 +3,7 @@ from fastapi import APIRouter, Response
 from app.core.dependencies import CurrentUser, DB
 from app.features.interviews import service
 from app.features.interviews.schemas import CreateInterviewRequest
+from app.shared.permissions import require_role, ORG_ADMIN, ORG_OWNER, RECRUITER
 
 router = APIRouter(
     prefix="/api/applications/{application_id}/interviews",
@@ -34,6 +35,7 @@ async def get_token(application_id: str, interview_id: str, auth: CurrentUser, d
 
 @router.post("/{interview_id}/analyze")
 async def analyze(application_id: str, interview_id: str, auth: CurrentUser, db: DB):
+    require_role(auth, RECRUITER, ORG_ADMIN, ORG_OWNER)
     return await service.analyze_interview(interview_id, application_id, auth.organization_id, db)
 
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Building2, Globe, Trash2, Plus, Loader2 } from "lucide-react";
 import { apiFetch, ApiError } from "@/lib/api-fetch";
+import { getStoredUser } from "@/lib/auth-client";
 import { PageHeader, PageBody } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -18,6 +19,9 @@ type Client = {
 };
 
 export default function ClientsSettingsPage() {
+  const currentUser = getStoredUser();
+  const canManage = currentUser?.roleCode !== "HIRING_MANAGER";
+
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -89,85 +93,87 @@ export default function ClientsSettingsPage() {
       />
       <PageBody className="max-w-2xl">
 
-        {/* Add client form */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Plus className="h-4 w-4 text-primary" />
-              Add client company
-            </CardTitle>
-            <CardDescription>
-              Add a company profile so Recruitimate can generate role-specific job descriptions.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleCreate} className="space-y-4">
-              <label className="block">
-                <span className="text-sm font-semibold text-foreground">Company name <span className="text-risk">*</span></span>
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  placeholder="e.g. Acme Corp"
-                  className="input-hr mt-1.5"
-                />
-              </label>
+        {/* Add client form — admins/recruiters only */}
+        {canManage && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Plus className="h-4 w-4 text-primary" />
+                Add client company
+              </CardTitle>
+              <CardDescription>
+                Add a company profile so Recruitimate can generate role-specific job descriptions.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleCreate} className="space-y-4">
+                <label className="block">
+                  <span className="text-sm font-semibold text-foreground">Company name <span className="text-risk">*</span></span>
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    placeholder="e.g. Acme Corp"
+                    className="input-hr mt-1.5"
+                  />
+                </label>
 
-              <label className="block">
-                <span className="text-sm font-semibold text-foreground">Website</span>
-                <input
-                  value={website}
-                  onChange={(e) => setWebsite(e.target.value)}
-                  placeholder="https://acme.com"
-                  type="url"
-                  className="input-hr mt-1.5"
-                />
-              </label>
+                <label className="block">
+                  <span className="text-sm font-semibold text-foreground">Website</span>
+                  <input
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
+                    placeholder="https://acme.com"
+                    type="url"
+                    className="input-hr mt-1.5"
+                  />
+                </label>
 
-              <label className="block">
-                <span className="text-sm font-semibold text-foreground">Company profile</span>
-                <p className="mt-0.5 text-xs text-muted">
-                  Describe this company — culture, tech stack, team size. Used by AI to generate job descriptions.
-                </p>
-                <textarea
-                  value={companyProfile}
-                  onChange={(e) => setCompanyProfile(e.target.value)}
-                  rows={4}
-                  placeholder="A fast-growing fintech startup building payments infrastructure…"
-                  className="input-hr mt-1.5"
-                />
-              </label>
+                <label className="block">
+                  <span className="text-sm font-semibold text-foreground">Company profile</span>
+                  <p className="mt-0.5 text-xs text-muted">
+                    Describe this company — culture, tech stack, team size. Used by AI to generate job descriptions.
+                  </p>
+                  <textarea
+                    value={companyProfile}
+                    onChange={(e) => setCompanyProfile(e.target.value)}
+                    rows={4}
+                    placeholder="A fast-growing fintech startup building payments infrastructure…"
+                    className="input-hr mt-1.5"
+                  />
+                </label>
 
-              <label className="block">
-                <span className="text-sm font-semibold text-foreground">Impression notes</span>
-                <p className="mt-0.5 text-xs text-muted">
-                  Internal recruiter notes about employer brand, candidate experience, or red flags.
-                </p>
-                <textarea
-                  value={impressionNotes}
-                  onChange={(e) => setImpressionNotes(e.target.value)}
-                  rows={2}
-                  className="input-hr mt-1.5"
-                />
-              </label>
+                <label className="block">
+                  <span className="text-sm font-semibold text-foreground">Impression notes</span>
+                  <p className="mt-0.5 text-xs text-muted">
+                    Internal recruiter notes about employer brand, candidate experience, or red flags.
+                  </p>
+                  <textarea
+                    value={impressionNotes}
+                    onChange={(e) => setImpressionNotes(e.target.value)}
+                    rows={2}
+                    className="input-hr mt-1.5"
+                  />
+                </label>
 
-              {formError && (
-                <p className="rounded-lg bg-risk-bg px-3 py-2 text-sm text-risk">{formError}</p>
-              )}
-              {success && (
-                <p className="rounded-lg bg-success-bg px-3 py-2 text-sm text-success">{success}</p>
-              )}
-
-              <Button type="submit" disabled={submitting || !name.trim()}>
-                {submitting ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding…</>
-                ) : (
-                  "Add client"
+                {formError && (
+                  <p className="rounded-lg bg-risk-bg px-3 py-2 text-sm text-risk">{formError}</p>
                 )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+                {success && (
+                  <p className="rounded-lg bg-success-bg px-3 py-2 text-sm text-success">{success}</p>
+                )}
+
+                <Button type="submit" disabled={submitting || !name.trim()}>
+                  {submitting ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding…</>
+                  ) : (
+                    "Add client"
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Client list */}
         <Card>
@@ -214,15 +220,17 @@ export default function ClientsSettingsPage() {
                         <span>{client.jobCount} job{client.jobCount !== 1 ? "s" : ""}</span>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(client)}
-                      disabled={client.jobCount > 0}
-                      title={client.jobCount > 0 ? `Cannot delete — ${client.jobCount} job(s) assigned` : "Delete client"}
-                      className="rounded-md p-1.5 text-muted transition hover:bg-risk-bg hover:text-risk disabled:cursor-not-allowed disabled:opacity-30"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    {canManage && (
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(client)}
+                        disabled={client.jobCount > 0}
+                        title={client.jobCount > 0 ? `Cannot delete — ${client.jobCount} job(s) assigned` : "Delete client"}
+                        className="rounded-md p-1.5 text-muted transition hover:bg-risk-bg hover:text-risk disabled:cursor-not-allowed disabled:opacity-30"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>

@@ -1,8 +1,7 @@
 "use client";
 
 import { useAuth, useSession } from "@/components/providers/auth-provider";
-import Link from "next/link";
-import { LogOut, Users } from "lucide-react";
+import { LogOut } from "lucide-react";
 
 export function UserMenu() {
   const { data: session } = useSession();
@@ -20,13 +19,6 @@ export function UserMenu() {
           </p>
         </div>
       )}
-      <Link
-        href="/settings/team"
-        className="mb-2 flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-brand-foreground/80 hover:bg-white/8"
-      >
-        <Users className="h-4 w-4" />
-        Team & invites
-      </Link>
       <button
         type="button"
         onClick={signOut}

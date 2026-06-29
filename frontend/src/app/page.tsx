@@ -31,6 +31,7 @@ const RECRUITER_VERDICT_LABELS: Record<string, { label: string; cls: string }> =
 export default async function DashboardPage() {
   const user = await getAuthUser();
   if (user.isPlatformAdmin) redirect("/admin");
+  const isHiringManager = user.roleCode === "HIRING_MANAGER";
 
   const applications = await serverFetch<Array<{
     id: string;
@@ -64,10 +65,12 @@ export default async function DashboardPage() {
         title="Hiring dashboard"
         description="Your team's command center for talent review, interview signals, and hire recommendations."
       >
-        <ButtonLink href="/jobs/new">
-          <Briefcase className="h-4 w-4" />
-          Post open role
-        </ButtonLink>
+        {!isHiringManager && (
+          <ButtonLink href="/jobs/new">
+            <Briefcase className="h-4 w-4" />
+            Post open role
+          </ButtonLink>
+        )}
       </PageHeader>
 
       <PageBody>
@@ -91,9 +94,11 @@ export default async function DashboardPage() {
                 Start from your hiring campaigns — add applicants or bulk-upload CVs per role.
               </CardDescription>
             </div>
-            <ButtonLink href="/jobs/new" className="shrink-0">
-              Post role
-            </ButtonLink>
+            {!isHiringManager && (
+              <ButtonLink href="/jobs/new" className="shrink-0">
+                Post role
+              </ButtonLink>
+            )}
           </CardHeader>
           <CardContent className="p-0">
             {jobs.length === 0 ? (
@@ -101,7 +106,7 @@ export default async function DashboardPage() {
                 icon={Briefcase}
                 title="No open roles yet"
                 description="Post a requisition first. Role-fit scoring and pipeline views are organized by open position."
-                primaryAction={{ href: "/jobs/new", label: "Post your first role" }}
+                primaryAction={!isHiringManager ? { href: "/jobs/new", label: "Post your first role" } : undefined}
               />
             ) : (
               <ul>

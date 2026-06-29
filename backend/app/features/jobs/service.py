@@ -29,10 +29,13 @@ def _serialize_job(job: Job, application_count: int = 0) -> dict:
     }
 
 
-async def list_jobs(org_id: str, db: AsyncSession) -> list:
-    result = await db.execute(
-        select(Job).where(Job.organizationId == org_id).options(selectinload(Job.hiring_client))
-    )
+async def list_jobs(org_id: str, db: AsyncSession, assigned_user_id: str | None = None) -> list:
+    query = select(Job).where(Job.organizationId == org_id).options(selectinload(Job.hiring_client))
+    if assigned_user_id:
+        query = query.join(JobAssignment, JobAssignment.jobId == Job.id).where(
+            JobAssignment.userId == assigned_user_id
+        )
+    result = await db.execute(query)
     jobs = result.scalars().all()
     out = []
     for job in jobs:

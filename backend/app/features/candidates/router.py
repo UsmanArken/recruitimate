@@ -10,13 +10,15 @@ from app.features.candidates.schemas import (
     UpdateCandidateRequest,
     UpdateNoteRequest,
 )
+from app.shared.permissions import require_role, is_hiring_manager, HIRING_MANAGER, ORG_ADMIN, ORG_OWNER, RECRUITER
 
 router = APIRouter(prefix="/api/candidates", tags=["candidates"])
 
 
 @router.get("")
 async def list_candidates(auth: CurrentUser, db: DB):
-    return await service.list_candidates(auth.organization_id, db)
+    user_id = auth.user_id if is_hiring_manager(auth) else None
+    return await service.list_candidates(auth.organization_id, db, assigned_user_id=user_id)
 
 
 @router.post("", status_code=201)
@@ -31,11 +33,13 @@ async def get_candidate(candidate_id: str, auth: CurrentUser, db: DB):
 
 @router.patch("/{candidate_id}")
 async def update_candidate(candidate_id: str, body: UpdateCandidateRequest, auth: CurrentUser, db: DB):
+    require_role(auth, HIRING_MANAGER, RECRUITER, ORG_ADMIN, ORG_OWNER)
     return await service.update_candidate(candidate_id, auth.organization_id, body.model_dump(exclude_none=True), db)
 
 
 @router.delete("/{candidate_id}", status_code=204)
 async def delete_candidate(candidate_id: str, auth: CurrentUser, db: DB):
+    require_role(auth, ORG_ADMIN, ORG_OWNER)
     await service.delete_candidate(candidate_id, auth.organization_id, db)
 
 

@@ -7,6 +7,7 @@ from app.features.clients.schemas import (
     GenerateJobDraftRequest,
     UpdateClientRequest,
 )
+from app.shared.permissions import require_role, ORG_ADMIN, ORG_OWNER, RECRUITER
 
 router = APIRouter(prefix="/api/clients", tags=["clients"])
 
@@ -18,6 +19,7 @@ async def list_clients(auth: CurrentUser, db: DB):
 
 @router.post("", status_code=201)
 async def create_client(body: CreateClientRequest, auth: CurrentUser, db: DB):
+    require_role(auth, RECRUITER, ORG_ADMIN, ORG_OWNER)
     return await service.create_client(auth.organization_id, body.model_dump(exclude_none=True), db)
 
 
@@ -33,6 +35,7 @@ async def update_client(client_id: str, body: UpdateClientRequest, auth: Current
 
 @router.delete("/{client_id}", status_code=204)
 async def delete_client(client_id: str, auth: CurrentUser, db: DB):
+    require_role(auth, ORG_ADMIN, ORG_OWNER)
     await service.delete_client(client_id, auth.organization_id, db)
 
 

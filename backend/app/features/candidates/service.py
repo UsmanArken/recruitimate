@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.shared.models import (
-    Candidate, Job, JobApplication, Note, PipelineStage, TalentProfile, Decision
+    Candidate, Job, JobApplication, JobAssignment, Note, PipelineStage, TalentProfile, Decision
 )
 
 
@@ -63,10 +63,19 @@ def _serialize_decision(d: Decision) -> dict:
     }
 
 
-async def list_candidates(org_id: str, db: AsyncSession) -> list:
-    result = await db.execute(
-        select(Candidate).where(Candidate.organizationId == org_id)
-    )
+async def list_candidates(org_id: str, db: AsyncSession, assigned_user_id: str | None = None) -> list:
+    if assigned_user_id:
+        # HM: only candidates who have applications on jobs assigned to this user
+        query = (
+            select(Candidate)
+            .join(JobApplication, JobApplication.candidateId == Candidate.id)
+            .join(JobAssignment, JobAssignment.jobId == JobApplication.jobId)
+            .where(Candidate.organizationId == org_id, JobAssignment.userId == assigned_user_id)
+            .distinct()
+        )
+    else:
+        query = select(Candidate).where(Candidate.organizationId == org_id)
+    result = await db.execute(query)
     return [_serialize_candidate(c) for c in result.scalars().all()]
 
 

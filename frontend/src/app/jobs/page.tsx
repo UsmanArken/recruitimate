@@ -1,4 +1,4 @@
-import { serverFetch } from "@/lib/api-server";
+import { getAuthUser, serverFetch } from "@/lib/api-server";
 import { PageHeader, PageBody } from "@/components/layout/page-header";
 import { ButtonLink } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,7 +10,11 @@ import { Briefcase, Plus } from "lucide-react";
 export const dynamic = "force-dynamic";
 
 export default async function JobsPage() {
-  const jobs = await serverFetch<JobRow[]>("/api/jobs");
+  const [jobs, user] = await Promise.all([
+    serverFetch<JobRow[]>("/api/jobs"),
+    getAuthUser(),
+  ]);
+  const isHiringManager = user.roleCode === "HIRING_MANAGER";
 
   return (
     <>
@@ -18,10 +22,12 @@ export default async function JobsPage() {
         title="Open roles"
         description="Hiring campaigns by client company — score candidates against each requisition."
       >
-        <ButtonLink href="/jobs/new">
-          <Plus className="h-4 w-4" />
-          Post new role
-        </ButtonLink>
+        {!isHiringManager && (
+          <ButtonLink href="/jobs/new">
+            <Plus className="h-4 w-4" />
+            Post new role
+          </ButtonLink>
+        )}
       </PageHeader>
 
       <PageBody>

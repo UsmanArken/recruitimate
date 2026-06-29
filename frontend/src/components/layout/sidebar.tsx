@@ -28,9 +28,15 @@ const settingsNav = [
   { href: "/settings/clients", label: "Client companies", icon: Building2 },
 ];
 
+const HIRING_MANAGER = "HIRING_MANAGER";
+
 export function Sidebar() {
   const { data: session } = useSession();
   const isOperator = Boolean(session?.user?.isPlatformAdmin);
+  const isHiringManager = session?.user?.roleCode === HIRING_MANAGER;
+  const visibleSettingsNav = settingsNav.filter(
+    (item) => !(isHiringManager && item.href === "/settings/clients")
+  );
 
   return (
     <aside className="flex w-64 shrink-0 flex-col bg-brand text-brand-foreground shadow-lg shadow-brand/20">
@@ -72,7 +78,7 @@ export function Sidebar() {
               Settings
             </p>
             <nav className="flex flex-col gap-0.5">
-              {settingsNav.map((item) => (
+              {visibleSettingsNav.map((item) => (
                 <NavLink key={item.href} {...item} />
               ))}
             </nav>

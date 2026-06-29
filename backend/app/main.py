@@ -25,10 +25,11 @@ from app.features.roles.router import router as roles_router
 from app.shared.models import Role, RoleScope
 
 SEED_ROLES = [
+    {"code": "ORG_OWNER",       "name": "Owner",           "scope": RoleScope.ORGANIZATION},
     {"code": "ORG_ADMIN",       "name": "Admin",           "scope": RoleScope.ORGANIZATION},
     {"code": "RECRUITER",       "name": "Recruiter",       "scope": RoleScope.ORGANIZATION},
     {"code": "HIRING_MANAGER",  "name": "Hiring Manager",  "scope": RoleScope.ORGANIZATION},
-    {"code": "INTERVIEWER",     "name": "Interviewer",     "scope": RoleScope.JOB},
+    {"code": "JOB_INTERVIEWER", "name": "Interviewer",     "scope": RoleScope.JOB},
 ]
 
 

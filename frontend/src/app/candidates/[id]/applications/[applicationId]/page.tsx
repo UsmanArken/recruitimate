@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { serverFetch } from "@/lib/api-server";
+import { getAuthUser, serverFetch } from "@/lib/api-server";
 import { ChevronLeft, Briefcase, Mail } from "lucide-react";
 import { Avatar } from "@/components/features/candidates/avatar";
 import { StageBadge } from "@/components/features/candidates/stage-badge";
@@ -26,7 +26,8 @@ export default async function ApplicationDetailPage({
 }) {
   const { id: candidateId, applicationId } = await params;
 
-  const application = await serverFetch<{
+  const [application, user] = await Promise.all([
+    serverFetch<{
     id: string;
     stage: string;
     candidateId: string;
@@ -90,9 +91,12 @@ export default async function ApplicationDetailPage({
         interviewerQuality: unknown;
       } | null;
     }>;
-  }>(`/api/applications/${applicationId}`).catch(() => null);
+  }>(`/api/applications/${applicationId}`).catch(() => null),
+    getAuthUser(),
+  ]);
 
   if (!application || application.candidateId !== candidateId) notFound();
+  const canRunIntelligence = user.roleCode !== "HIRING_MANAGER";
 
   const candidate = application.candidate;
   const tp = application.talentProfile;
@@ -148,7 +152,7 @@ export default async function ApplicationDetailPage({
           <LayerBadge layer="talent" />
           <span className="text-xs font-medium text-muted">Recruitimate review</span>
         </div>
-        <ReanalyzeButton applicationId={application.id} />
+        {canRunIntelligence && <ReanalyzeButton applicationId={application.id} />}
       </div>
 
       <TalentPoller active={!tp} />

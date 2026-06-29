@@ -6,6 +6,25 @@ from app.shared.models import JobAssignment, RolePermission, Permission
 PLATFORM_SUPER_ADMIN_ROLE_CODE = "PLATFORM_SUPER_ADMIN"
 JOB_INTERVIEWER_ROLE_CODE = "JOB_INTERVIEWER"
 
+# Simple role constants
+ORG_OWNER = "ORG_OWNER"
+ORG_ADMIN = "ORG_ADMIN"
+RECRUITER = "RECRUITER"
+HIRING_MANAGER = "HIRING_MANAGER"
+
+
+def require_role(auth, *allowed_codes: str) -> None:
+    """Raise 403 if auth.role_code is not in allowed_codes. Platform admins always pass."""
+    from fastapi import HTTPException, status
+    if auth.is_platform_admin:
+        return
+    if auth.role_code not in allowed_codes:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient role")
+
+
+def is_hiring_manager(auth) -> bool:
+    return auth.role_code == HIRING_MANAGER
+
 # roleId → set of permission codes
 _cache: dict[str, set[str]] = {}
 

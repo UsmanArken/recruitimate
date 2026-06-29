@@ -9,6 +9,9 @@ from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 
+logging.getLogger("websockets").setLevel(logging.WARNING)
+logging.getLogger("deepgram").setLevel(logging.WARNING)
+
 # {room_name: {tasks, wav_files, dg_conns, start_ms, interview_id}}
 _room_state: dict = {}
 
@@ -28,6 +31,7 @@ async def entrypoint(ctx: "JobContext"):
         "dg_conns": {},       # speaker -> Deepgram connection
         "start_ms": int(time.time() * 1000),
         "interview_id": _get_interview_id_by_room(room_name),
+        "shutting_down": False,
     }
 
     @ctx.room.on("track_subscribed")
@@ -70,7 +74,8 @@ async def entrypoint(ctx: "JobContext"):
 
 async def _process_track(track, speaker: str, state: dict):
     """Single loop per track: sends audio to Deepgram AND writes WAV.
-    WAV writes are offloaded to a thread executor to avoid blocking the event loop."""
+    WAV writes are offloaded to a thread executor to avoid blocking the event loop.
+    Deepgram connection is automatically re-established if it drops mid-call."""
     from deepgram import DeepgramClient, LiveOptions, LiveTranscriptionEvents
     from livekit.rtc import AudioStream
     import httpx
@@ -78,72 +83,136 @@ async def _process_track(track, speaker: str, state: dict):
     settings = get_settings()
     loop = asyncio.get_event_loop()
 
-    # --- Deepgram connection setup ---
-    conn = None
-    if settings.DEEPGRAM_API_KEY:
-        dg = DeepgramClient(settings.DEEPGRAM_API_KEY)
-        conn = dg.listen.asyncwebsocket.v("1")
+    RECONNECT_BACKOFF = 1.5  # seconds to wait before reconnecting
 
-        async def on_transcript(self_ref, result, **kwargs):
-            try:
-                sentence = result.channel.alternatives[0].transcript
-                if result.is_final and sentence.strip():
-                    elapsed_ms = int(time.time() * 1000) - state["start_ms"]
-                    interview_id = state.get("interview_id")
-                    if interview_id:
-                        try:
-                            async with httpx.AsyncClient() as client:
-                                await client.post(
-                                    f"http://localhost:8000/internal/interviews/{interview_id}/segment",
-                                    json={"speaker": speaker, "text": sentence, "timestampMs": elapsed_ms},
-                                    timeout=5.0,
-                                )
-                        except Exception:
-                            logger.warning("Failed to POST segment for interview %s", interview_id)
-            except Exception:
-                logger.exception("Transcript callback error for %s", speaker)
+    async def on_transcript(self_ref, result, **kwargs):
+        try:
+            sentence = result.channel.alternatives[0].transcript
+            if result.is_final and sentence.strip():
+                elapsed_ms = int(time.time() * 1000) - state["start_ms"]
+                interview_id = state.get("interview_id")
+                if interview_id:
+                    try:
+                        async with httpx.AsyncClient() as client:
+                            await client.post(
+                                f"http://localhost:8000/internal/interviews/{interview_id}/segment",
+                                json={"speaker": speaker, "text": sentence, "timestampMs": elapsed_ms},
+                                timeout=5.0,
+                            )
+                    except Exception:
+                        logger.warning("Failed to POST segment for interview %s", interview_id)
+        except Exception:
+            logger.exception("Transcript callback error for %s", speaker)
 
-        conn.on(LiveTranscriptionEvents.Transcript, on_transcript)
-
-        opts = LiveOptions(
-            model="nova-2",
-            language="en-US",
-            smart_format=True,
-            interim_results=False,   # only emit finals — no interim noise
-            endpointing=300,         # finalize after 300ms silence (faster than default)
-            encoding="linear16",
-            sample_rate=16000,
-            channels=1,
-        )
-        await conn.start(opts)
-        state["dg_conns"][speaker] = conn
-    else:
-        logger.warning("DEEPGRAM_API_KEY not set — skipping transcription for %s", speaker)
-
-    # --- Single audio loop: fan out to Deepgram + WAV writer ---
     def _write_wav(wf, data: bytes) -> None:
         wf.writeframes(data)
 
-    try:
-        audio_stream = AudioStream(track, sample_rate=16000, num_channels=1)
+    audio_stream = AudioStream(track, sample_rate=16000, num_channels=1)
+
+    if not settings.DEEPGRAM_API_KEY:
+        logger.warning("DEEPGRAM_API_KEY not set — skipping transcription for %s", speaker)
         async for event in audio_stream:
-            raw = bytes(event.frame.data)
-
-            # Send to Deepgram (non-blocking websocket send)
-            if conn is not None:
-                await conn.send(raw)
-
-            # Write to WAV in thread pool — keeps disk I/O off the event loop
             wav_entry = state["wav_files"].get(speaker)
             if wav_entry:
                 _, wf = wav_entry
                 try:
-                    await loop.run_in_executor(None, _write_wav, wf, raw)
+                    await loop.run_in_executor(None, _write_wav, wf, bytes(event.frame.data))
                 except Exception:
                     logger.warning("WAV write error for speaker %s", speaker)
+        return
+
+    dg = DeepgramClient(settings.DEEPGRAM_API_KEY)
+    opts = LiveOptions(
+        model="nova-2",
+        language="en-US",
+        smart_format=True,
+        interim_results=False,
+        endpointing=300,
+        encoding="linear16",
+        sample_rate=16000,
+        channels=1,
+    )
+
+    # Buffer incoming audio frames so we never lose frames during a reconnect window
+    frame_queue: asyncio.Queue = asyncio.Queue()
+
+    async def _feed_queue():
+        try:
+            async for event in audio_stream:
+                await frame_queue.put(bytes(event.frame.data))
+        except Exception:
+            logger.warning("Audio stream error for %s — feed task exiting", speaker)
+        finally:
+            await frame_queue.put(None)  # sentinel — always signal end, even on error
+
+    feed_task = asyncio.create_task(_feed_queue())
+
+    conn = None
+    try:
+        while not state.get("shutting_down"):
+            # (Re)connect to Deepgram
+            conn = dg.listen.asyncwebsocket.v("1")
+            conn.on(LiveTranscriptionEvents.Transcript, on_transcript)
+
+            try:
+                started = await conn.start(opts)
+            except Exception as exc:
+                logger.warning("Deepgram start() raised for %s (%s), retrying in %.1fs", speaker, exc, RECONNECT_BACKOFF)
+                conn = None
+                await asyncio.sleep(RECONNECT_BACKOFF)
+                continue
+
+            if not started:
+                logger.warning("Deepgram connection failed for %s, retrying in %.1fs", speaker, RECONNECT_BACKOFF)
+                conn = None
+                await asyncio.sleep(RECONNECT_BACKOFF)
+                continue
+
+            state["dg_conns"][speaker] = conn
+            logger.info("Deepgram connected for %s", speaker)
+
+            try:
+                while not state.get("shutting_down"):
+                    try:
+                        raw = await asyncio.wait_for(frame_queue.get(), timeout=5.0)
+                    except asyncio.TimeoutError:
+                        continue
+
+                    if raw is None:
+                        # Audio stream ended (cleanly or via error) — exit reconnect loop
+                        return
+
+                    # Send to Deepgram — send() returns False on connection failure (SDK swallows the exception)
+                    ok = await conn.send(raw)
+                    if not ok:
+                        raise ConnectionError("Deepgram send() returned False — connection lost")
+
+                    # Write to WAV
+                    wav_entry = state["wav_files"].get(speaker)
+                    if wav_entry:
+                        _, wf = wav_entry
+                        try:
+                            await loop.run_in_executor(None, _write_wav, wf, raw)
+                        except Exception:
+                            logger.warning("WAV write error for speaker %s", speaker)
+
+            except Exception as exc:
+                logger.warning("Deepgram connection lost for %s (%s), reconnecting in %.1fs", speaker, exc, RECONNECT_BACKOFF)
+                try:
+                    await conn.finish()
+                except Exception:
+                    pass
+                conn = None
+                state["dg_conns"].pop(speaker, None)
+                await asyncio.sleep(RECONNECT_BACKOFF)
+                # Loop continues — reconnects at top of while
     finally:
+        feed_task.cancel()
         if conn is not None:
-            await conn.finish()
+            try:
+                await conn.finish()
+            except Exception:
+                pass
 
 
 async def _flush_and_upload(room_name: str):
@@ -155,6 +224,9 @@ async def _flush_and_upload(room_name: str):
 
     interview_id = state.get("interview_id")
     settings = get_settings()
+
+    # Signal reconnect loops to stop before closing connections
+    state["shutting_down"] = True
 
     # Close Deepgram connections first — lets them send a clean close frame
     # before we cancel the audio loops (which would otherwise trigger 1011)

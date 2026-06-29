@@ -9,17 +9,20 @@ from app.features.jobs.schemas import (
     UpdateAssignmentRequest,
     UpdateJobRequest,
 )
+from app.shared.permissions import require_role, is_hiring_manager, HIRING_MANAGER, ORG_ADMIN, ORG_OWNER, RECRUITER
 
 router = APIRouter(prefix="/api/jobs", tags=["jobs"])
 
 
 @router.get("")
 async def list_jobs(auth: CurrentUser, db: DB):
-    return await service.list_jobs(auth.organization_id, db)
+    user_id = auth.user_id if is_hiring_manager(auth) else None
+    return await service.list_jobs(auth.organization_id, db, assigned_user_id=user_id)
 
 
 @router.post("", status_code=201)
 async def create_job(body: CreateJobRequest, auth: CurrentUser, db: DB):
+    require_role(auth, RECRUITER, ORG_ADMIN, ORG_OWNER)
     return await service.create_job(auth.organization_id, body.model_dump(exclude_none=True), db)
 
 
@@ -30,11 +33,13 @@ async def get_job(job_id: str, auth: CurrentUser, db: DB):
 
 @router.put("/{job_id}")
 async def update_job(job_id: str, body: UpdateJobRequest, auth: CurrentUser, db: DB):
+    require_role(auth, HIRING_MANAGER, RECRUITER, ORG_ADMIN, ORG_OWNER)
     return await service.update_job(job_id, auth.organization_id, body.model_dump(exclude_none=True), db)
 
 
 @router.delete("/{job_id}", status_code=204)
 async def delete_job(job_id: str, auth: CurrentUser, db: DB):
+    require_role(auth, ORG_ADMIN, ORG_OWNER)
     await service.delete_job(job_id, auth.organization_id, db)
 
 
@@ -64,14 +69,17 @@ async def list_assignments(job_id: str, auth: CurrentUser, db: DB):
 
 @router.post("/{job_id}/assignments", status_code=201)
 async def create_assignment(job_id: str, body: CreateAssignmentRequest, auth: CurrentUser, db: DB):
+    require_role(auth, ORG_ADMIN, ORG_OWNER)
     return await service.create_assignment(job_id, auth.organization_id, body.userId, body.assignmentRole, db)
 
 
 @router.put("/{job_id}/assignments/{assignment_id}")
 async def update_assignment(job_id: str, assignment_id: str, body: UpdateAssignmentRequest, auth: CurrentUser, db: DB):
+    require_role(auth, ORG_ADMIN, ORG_OWNER)
     return await service.update_assignment(assignment_id, job_id, auth.organization_id, body.assignmentRole, db)
 
 
 @router.delete("/{job_id}/assignments/{assignment_id}", status_code=204)
 async def delete_assignment(job_id: str, assignment_id: str, auth: CurrentUser, db: DB):
+    require_role(auth, ORG_ADMIN, ORG_OWNER)
     await service.delete_assignment(assignment_id, job_id, auth.organization_id, db)

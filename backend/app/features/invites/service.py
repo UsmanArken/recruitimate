@@ -10,6 +10,73 @@ from app.core.security import create_access_token, hash_password
 from app.shared.models import Invite, Organization, OrganizationMember, Role, User
 
 
+async def list_members(org_id: str, db: AsyncSession) -> list:
+    result = await db.execute(
+        select(OrganizationMember)
+        .where(OrganizationMember.organizationId == org_id)
+        .options(selectinload(OrganizationMember.user), selectinload(OrganizationMember.role))
+    )
+    members = result.scalars().all()
+    return [
+        {
+            "id": m.userId,
+            "name": m.user.name,
+            "email": m.user.email,
+            "role": {"id": m.role.id, "code": m.role.code, "name": m.role.name},
+            "joinedAt": m.createdAt,
+        }
+        for m in members
+    ]
+
+
+async def update_member_role(org_id: str, user_id: str, role_id: str, db: AsyncSession) -> dict:
+    result = await db.execute(
+        select(OrganizationMember)
+        .where(OrganizationMember.organizationId == org_id, OrganizationMember.userId == user_id)
+        .options(selectinload(OrganizationMember.user), selectinload(OrganizationMember.role))
+    )
+    member = result.scalar_one_or_none()
+    if not member:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found")
+
+    role_result = await db.execute(select(Role).where(Role.id == role_id))
+    role = role_result.scalar_one_or_none()
+    if not role:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
+
+    member.roleId = role_id
+    await db.commit()
+    await db.refresh(member)
+
+    result2 = await db.execute(
+        select(OrganizationMember)
+        .where(OrganizationMember.organizationId == org_id, OrganizationMember.userId == user_id)
+        .options(selectinload(OrganizationMember.user), selectinload(OrganizationMember.role))
+    )
+    member = result2.scalar_one()
+    return {
+        "id": member.userId,
+        "name": member.user.name,
+        "email": member.user.email,
+        "role": {"id": member.role.id, "code": member.role.code, "name": member.role.name},
+        "joinedAt": member.createdAt,
+    }
+
+
+async def remove_member(org_id: str, user_id: str, db: AsyncSession) -> None:
+    result = await db.execute(
+        select(OrganizationMember).where(
+            OrganizationMember.organizationId == org_id,
+            OrganizationMember.userId == user_id,
+        )
+    )
+    member = result.scalar_one_or_none()
+    if not member:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found")
+    await db.delete(member)
+    await db.commit()
+
+
 async def list_invites(org_id: str, db: AsyncSession) -> list:
     result = await db.execute(
         select(Invite)
