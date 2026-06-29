@@ -13,6 +13,11 @@ export const applicationDetailInclude = {
   talentProfile: true,
   decision: true,
   interviews: { include: { analysis: true }, orderBy: { createdAt: "desc" as const } },
+  outcome: { include: { recordedBy: { select: { id: true, name: true, email: true } } } },
+  recommendationFeedback: {
+    include: { author: { select: { id: true, name: true, email: true } } },
+    orderBy: { createdAt: "desc" as const },
+  },
 } satisfies Prisma.JobApplicationInclude;
 
 export const candidatePersonInclude = {

@@ -77,9 +77,9 @@ P2-022,Phase 2,Platform,—,Async job queue,Background workers for transcription
 P2-023,Phase 2,UI,—,Kanban pipeline view,Drag-drop candidates across stages,P2,Done,MVP-016,/pipeline kanban + PATCH stage API + job filter
 P2-024,Phase 2,UI,—,Printable candidate brief,Export hire committee PDF summary,P2,Done,,brief page + print/PDF export + GET brief API
 P2-025,Phase 2,Platform,—,Email notifications,Stage change interview analyzed alerts,P2,Done,MVP-028,EmailNotification model + stage/analyze hooks + /settings/notifications
-P3-001,Phase 3,Learning Engine,—,Outcome feedback collection,Record hire/reject/onboarding outcomes,P0,Not Started,,
-P3-002,Phase 3,Learning Engine,—,Recruiter feedback loop,Thumbs up/down on recommendations signals,P1,Not Started,P3-001,
-P3-003,Phase 3,Learning Engine,—,Scoring model improvement,Retrain weights from outcomes over time,P1,Not Started,P3-001,
+P3-001,Phase 3,Learning Engine,—,Outcome feedback collection,Record hire/reject/onboarding outcomes,P0,Done,,HiringOutcome model + outcome panel + /api/applications/[id]/outcome
+P3-002,Phase 3,Learning Engine,—,Recruiter feedback loop,Thumbs up/down on recommendations signals,P1,Done,P3-001,RecommendationFeedback model + thumbs panel + /api/applications/[id]/decision-feedback
+P3-003,Phase 3,Learning Engine,—,Scoring model improvement,Retrain weights from outcomes over time,P1,Done,P3-001,ScoringModelWeights + retrain engine + learned weights in decision + /settings/scoring-model
 P3-004,Phase 3,Analytics,—,Predictive hiring success,Model likelihood of success in role,P1,Not Started,P3-001,
 P3-005,Phase 3,Analytics,—,Org-level hiring analytics,Team dashboards time-to-hire quality metrics,P1,Not Started,,
 P3-006,Phase 3,Analytics,—,Bias and fairness reporting,Aggregate bias indicators across interviews,P1,Not Started,P2-006,

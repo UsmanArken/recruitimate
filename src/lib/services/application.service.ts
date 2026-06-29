@@ -74,6 +74,7 @@ export async function createApplicationForCandidate(
     resumeText: intelligenceText,
     job: { id: job.id, title: job.title, requirements: job.requirements },
     interviews: [],
+    organizationId,
   });
 
   return db.jobApplication.create({
@@ -120,5 +121,6 @@ export async function rerunApplicationIntelligence(
       requirements: application.job.requirements,
     },
     interviews: application.interviews,
+    organizationId: application.organizationId,
   });
 }

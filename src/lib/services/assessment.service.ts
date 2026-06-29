@@ -266,6 +266,7 @@ export async function evaluateAssessmentSubmissionForApplication(
       },
       interviews: fullApp.interviews,
       assessmentScore: bestScore,
+      organizationId: fullApp.organizationId,
     });
   }
 

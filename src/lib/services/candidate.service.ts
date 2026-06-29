@@ -67,6 +67,7 @@ export async function createCandidate(ctx: AuthContext, input: CreateCandidateIn
       requirements: job.requirements,
     },
     interviews: [],
+    organizationId,
   });
 
   const candidate = await db.candidate.create({

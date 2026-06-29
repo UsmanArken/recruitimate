@@ -12,6 +12,7 @@ import { toInterviewIntelligenceResult } from "@/lib/intelligence/mappers";
 import type { TalentIntelligenceResult } from "@/lib/intelligence/types";
 import { upsertTalentProfile } from "@/lib/services/talent-profile.service";
 import { upsertDecision } from "@/lib/services/decision.service";
+import { getActiveWeights } from "@/lib/services/scoring-model.service";
 
 type JobContext = {
   id: string;
@@ -29,12 +30,15 @@ export async function computeTalentAndDecision(input: {
   job: JobContext;
   interviews: InterviewRow[];
   assessmentScore?: number | null;
+  organizationId?: string | null;
 }) {
   const hasRole = hasRoleContext(
     input.job.id,
     input.job.title,
     input.job.requirements
   );
+
+  const learnedWeights = await getActiveWeights(input.organizationId);
 
   const rawTalent = await analyzeTalent(
     input.resumeText,
@@ -55,6 +59,7 @@ export async function computeTalentAndDecision(input: {
     {
       jobId: input.job.id,
       jobTitle: input.job.title,
+      learnedWeights,
     },
     input.assessmentScore != null ? { overallScore: input.assessmentScore } : null
   );
@@ -69,6 +74,7 @@ export async function refreshApplicationIntelligence(input: {
   job: JobContext;
   interviews: InterviewRow[];
   assessmentScore?: number | null;
+  organizationId?: string | null;
 }) {
   const result = await computeTalentAndDecision(input);
   await upsertTalentProfile(input.applicationId, result.talent);
@@ -105,6 +111,7 @@ export async function refreshCandidateApplicationsIntelligence(
         requirements: app.job.requirements,
       },
       interviews: app.interviews,
+      organizationId: candidate.organizationId,
     });
     results.push({ applicationId: app.id, result });
   }

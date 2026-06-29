@@ -26,6 +26,8 @@ model User {
   jobsManaged   Job[]     @relation("JobHiringManager")
   candidateNotes Note[]    @relation("NoteAuthor")
   outreachCampaigns OutreachCampaign[] @relation("OutreachCampaignCreator")
+  hiringOutcomes HiringOutcome[] @relation("OutcomeRecorder")
+  recommendationFeedback RecommendationFeedback[] @relation("FeedbackAuthor")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -81,6 +83,9 @@ model Organization {
   assessmentTasks   AssessmentTask[]
   backgroundJobs    BackgroundJob[]
   emailNotifications EmailNotification[]
+  hiringOutcomes    HiringOutcome[]
+  recommendationFeedback RecommendationFeedback[]
+  scoringModelWeights ScoringModelWeights[]
   createdAt DateTime             @default(now())
   updatedAt DateTime             @updatedAt
 }
@@ -294,6 +299,8 @@ model JobApplication {
   interviews     Interview[]
   decision       Decision?
   assessmentSubmissions AssessmentSubmission[]
+  outcome        HiringOutcome?
+  recommendationFeedback RecommendationFeedback[]
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 
@@ -626,4 +633,89 @@ model EmailNotification {
 
   @@index([organizationId, createdAt])
   @@index([type, createdAt])
+}
+
+// ─── Phase 3: Learning Engine ────────────────────────────────────────────────
+
+/// P3-001 final hiring outcome recorded after the pipeline closes.
+enum HiringOutcomeStatus {
+  HIRED
+  REJECTED
+  WITHDRAWN
+  OFFER_DECLINED
+}
+
+/// P3-001 post-hire onboarding result, used to label "good hire" for learning.
+enum OnboardingStatus {
+  PENDING
+  SUCCESSFUL
+  STRUGGLING
+  LEFT
+}
+
+model HiringOutcome {
+  id             String              @id @default(cuid())
+  organizationId String
+  applicationId  String              @unique
+  status         HiringOutcomeStatus
+  onboardingStatus OnboardingStatus  @default(PENDING)
+  /// Snapshot of decision signals at outcome time so retraining is stable.
+  hireConfidence Float?
+  talentScore    Float?
+  interviewScore Float?
+  assessmentScore Float?
+  recommendation String?
+  notes          String?             @db.Text
+  recordedById   String?
+  recordedAt     DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  application    JobApplication      @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  recordedBy     User?               @relation("OutcomeRecorder", fields: [recordedById], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status])
+}
+
+/// P3-002 recruiter thumbs up/down on a hire recommendation.
+enum RecommendationFeedbackRating {
+  UP
+  DOWN
+}
+
+model RecommendationFeedback {
+  id             String                       @id @default(cuid())
+  organizationId String
+  applicationId  String
+  authorId       String?
+  rating         RecommendationFeedbackRating
+  /// Recommendation that was shown when feedback was given.
+  recommendation String?
+  hireConfidence Float?
+  comment        String?                      @db.Text
+  createdAt      DateTime                     @default(now())
+  organization   Organization                 @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  application    JobApplication               @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  author         User?                        @relation("FeedbackAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@unique([applicationId, authorId])
+  @@index([organizationId, createdAt])
+}
+
+/// P3-003 learned decision-layer weights retrained from outcomes, per org.
+model ScoringModelWeights {
+  id              String       @id @default(cuid())
+  organizationId  String
+  version         Int          @default(1)
+  active          Boolean      @default(true)
+  talentWeight    Float
+  interviewWeight Float
+  assessmentWeight Float
+  sampleSize      Int          @default(0)
+  positiveLabels  Int          @default(0)
+  /// Diagnostics: per-signal predictive strength + notes from the retrain run.
+  metadata        Json?
+  trainedAt       DateTime     @default(now())
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, active])
 }

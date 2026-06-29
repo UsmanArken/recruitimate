@@ -225,6 +225,7 @@ export async function createInterviewAndAnalyze(
       requirements: full?.job.requirements ?? application.job.requirements,
     },
     interviews: full?.interviews ?? [interview],
+    organizationId: full?.organizationId ?? application.organizationId,
   });
 
   const { notifyInterviewAnalyzed } = await import("@/lib/services/notification.service");

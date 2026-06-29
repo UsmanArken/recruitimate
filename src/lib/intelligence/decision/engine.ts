@@ -3,7 +3,7 @@ import {
   buildDeferredDecision,
   getIntelligencePhase,
 } from "../candidate-context";
-import { blendDecisionScores } from "./weights";
+import { blendDecisionScores, type DecisionWeights } from "./weights";
 import type {
   AssessmentSignal,
   DecisionIntelligenceResult,
@@ -40,7 +40,8 @@ function recommendationFromScore(score: number): DecisionIntelligenceResult["rec
 function heuristicDecision(
   talent: TalentIntelligenceResult | null,
   interview: InterviewIntelligenceResult | null,
-  assessment: AssessmentSignal | null
+  assessment: AssessmentSignal | null,
+  learnedWeights?: DecisionWeights | null
 ): DecisionIntelligenceResult {
   const talentScore = talent?.roleFitScore ?? 0.5;
   const interviewScore = interview
@@ -60,6 +61,7 @@ function heuristicDecision(
     assessmentScore,
     hasInterview,
     hasAssessment,
+    learnedWeights,
   });
 
   const riskFactors = [
@@ -107,7 +109,11 @@ export async function generateDecision(
   talent: TalentIntelligenceResult | null,
   interview: InterviewIntelligenceResult | null,
   candidateName: string,
-  context: { jobId: string | null; jobTitle?: string | null },
+  context: {
+    jobId: string | null;
+    jobTitle?: string | null;
+    learnedWeights?: DecisionWeights | null;
+  },
   assessment?: AssessmentSignal | null
 ): Promise<DecisionIntelligenceResult> {
   const phase = getIntelligencePhase(context.jobId, Boolean(interview));
@@ -119,7 +125,12 @@ export async function generateDecision(
     return buildDeferredDecision("talent_screening", context.jobTitle);
   }
 
-  const fallback = heuristicDecision(talent, interview, assessment ?? null);
+  const fallback = heuristicDecision(
+    talent,
+    interview,
+    assessment ?? null,
+    context.learnedWeights
+  );
 
   const userPrompt = `Candidate: ${candidateName}
 Role: ${context.jobTitle ?? "Assigned requisition"}

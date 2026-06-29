@@ -37,6 +37,8 @@ const PERMISSIONS: { code: string; resource: string; action: string; description
   { code: "outreach.update", resource: "outreach", action: "update", description: "Update outreach campaigns and messages" },
   { code: "outreach.send", resource: "outreach", action: "send", description: "Send outreach and record delivery events" },
   { code: "decisions.read", resource: "decisions", action: "read", description: "View decision layer and hire recommendations" },
+  { code: "learning.read", resource: "learning", action: "read", description: "View hiring outcomes, feedback, and scoring model" },
+  { code: "learning.manage", resource: "learning", action: "manage", description: "Record outcomes, give feedback, and retrain scoring model" },
 ];
 
 const ROLE_PERMISSIONS: Record<string, string[]> = {
@@ -63,6 +65,8 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "outreach.update",
     "outreach.send",
     "decisions.read",
+    "learning.read",
+    "learning.manage",
   ],
   HIRING_MANAGER: [
     "org.read",
@@ -81,6 +85,8 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "outreach.create",
     "outreach.update",
     "decisions.read",
+    "learning.read",
+    "learning.manage",
   ],
 };
 
@@ -94,6 +100,7 @@ const JOB_ROLE_INTERVIEWER: string[] = [
   "interviews.read",
   "intelligence.read",
   "decisions.read",
+  "learning.read",
 ];
 
 const ROLES: { code: string; name: string; description: string; scope: RoleScope; permissions: string[] }[] = [

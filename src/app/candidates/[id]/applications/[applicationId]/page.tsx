@@ -27,6 +27,8 @@ import {
 import { ApplicationAssessmentPanel } from "@/components/features/assessment/application-assessment-panel";
 import { ReanalyzeButton } from "@/components/features/candidates/reanalyze-button";
 import { CandidateBriefExportButton } from "@/components/features/candidates/candidate-brief-document";
+import { OutcomePanel } from "@/components/features/learning/outcome-panel";
+import { RecommendationFeedbackPanel } from "@/components/features/learning/recommendation-feedback";
 import { PageBody } from "@/components/layout/page-header";
 import type { Signal } from "@/lib/intelligence/types";
 import { Briefcase, ChevronLeft, Mail } from "lucide-react";
@@ -42,10 +44,12 @@ export default async function ApplicationDetailPage({
 
   let application: Awaited<ReturnType<typeof getApplicationById>> | null = null;
   let readOnly = false;
+  let ctxUserId: string | null = null;
 
   try {
     const ctx = await requireAuthContext();
     readOnly = isPlatformReadOnlyWorkspace(ctx);
+    ctxUserId = ctx.userId;
     application = await getApplicationById(ctx, applicationId);
   } catch {
     notFound();
@@ -69,6 +73,23 @@ export default async function ApplicationDetailPage({
   const interviewerQuality = parseInterviewerQuality(ia?.interviewerQuality);
   const audioSignals = parseAudioSignals(latestInterview?.audioSignals);
   const videoBehavioral = parseVideoBehavioralMetrics(latestInterview?.videoBehavioralMetrics);
+  const outcome = application.outcome
+    ? {
+        status: application.outcome.status,
+        onboardingStatus: application.outcome.onboardingStatus,
+        notes: application.outcome.notes,
+        recordedAt: application.outcome.recordedAt.toISOString(),
+        recordedBy: application.outcome.recordedBy
+          ? {
+              name: application.outcome.recordedBy.name,
+              email: application.outcome.recordedBy.email,
+            }
+          : null,
+      }
+    : null;
+  const myFeedback = application.recommendationFeedback.find(
+    (f) => f.authorId === ctxUserId
+  );
   const signalBreakdown = dec?.signalBreakdown as
     | {
         talentWeight?: number;
@@ -144,6 +165,38 @@ export default async function ApplicationDetailPage({
               </CardHeader>
               <CardContent>
                 <SignalList signals={riskFactors} />
+              </CardContent>
+            </Card>
+          </section>
+        )}
+
+        {!readOnly && phase === "ready_for_decision" && dec?.recommendation && (
+          <section className="mb-8">
+            <RecommendationFeedbackPanel
+              applicationId={application.id}
+              recommendation={dec.recommendation}
+              myRating={myFeedback?.rating ?? null}
+              myComment={myFeedback?.comment ?? null}
+              counts={{
+                up: application.recommendationFeedback.filter((f) => f.rating === "UP").length,
+                down: application.recommendationFeedback.filter((f) => f.rating === "DOWN").length,
+              }}
+            />
+          </section>
+        )}
+
+        {!readOnly && (
+          <section className="mb-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Hiring outcome</CardTitle>
+                <CardDescription>
+                  Record what actually happened. Outcomes train the scoring model and
+                  improve future hire confidence.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <OutcomePanel applicationId={application.id} initialOutcome={outcome} />
               </CardContent>
             </Card>
           </section>

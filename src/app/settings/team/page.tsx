@@ -80,6 +80,10 @@ export default function TeamSettingsPage() {
               <a href="/settings/notifications" className="font-medium text-primary hover:underline">
                 View email notification log
               </a>
+              {" · "}
+              <a href="/settings/scoring-model" className="font-medium text-primary hover:underline">
+                Scoring model
+              </a>
             </CardDescription>
           </CardHeader>
           <CardContent>
