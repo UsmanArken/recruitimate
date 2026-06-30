@@ -32,7 +32,7 @@ export interface InterviewAnalysisData {
   workStyleNotes: string[] | null;
   riskFlags: string[] | null;
   // Interviewer quality (Call 5)
-  interviewerQuality: unknown;
+  interviewerQuality: Record<string, unknown> | null;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

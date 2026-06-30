@@ -89,7 +89,7 @@ export default async function ApplicationDetailPage({
         depthNotes: string[] | null;
         workStyleNotes: string[] | null;
         riskFlags: string[] | null;
-        interviewerQuality: unknown;
+        interviewerQuality: Record<string, unknown> | null;
       } | null;
     }>;
   }>(`/api/applications/${applicationId}`).catch(() => null),
