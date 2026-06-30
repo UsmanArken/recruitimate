@@ -13,33 +13,34 @@ import { Users } from "lucide-react";
 export type PipelineApplicationRow = {
   id: string;
   stage: string;
-  candidate: { id: string; name: string; email: string | null };
-  job: { id: string; title: string };
+  candidate: { id: string; name: string; email: string | null } | null;
+  job: { id: string; title: string } | null;
   talentProfile: { roleFitScore: number | null } | null;
   decision: { recommendation: string | null } | null;
   hireReviewVerdict: string | null;
 };
 
+// Only stages the system actually writes — SHORTLISTED/DECISION/HIRED/REJECTED
+// are never set by any backend task or endpoint.
 const STAGES = [
   "NEW",
   "TALENT_REVIEW",
-  "SHORTLISTED",
   "INTERVIEW_SCHEDULED",
   "INTERVIEWED",
-  "DECISION",
-  "HIRED",
-  "REJECTED",
 ] as const;
 
 const STAGE_LABELS: Record<typeof STAGES[number], string> = {
   NEW:                  "New applicant",
   TALENT_REVIEW:        "Talent review",
-  SHORTLISTED:          "Shortlisted",
   INTERVIEW_SCHEDULED:  "Interview scheduled",
   INTERVIEWED:          "Interviewed",
-  DECISION:             "Decision pending",
-  HIRED:                "Hired",
-  REJECTED:             "Rejected",
+};
+
+const HIRE_VERDICT_LABELS: Record<string, string> = {
+  PASS:    "Pass",
+  HOLD:    "Hold",
+  FAIL:    "Fail",
+  PENDING: "Decision pending",
 };
 
 export function CandidatesPipelineView({
@@ -52,20 +53,25 @@ export function CandidatesPipelineView({
   const [view, setView] = useState<"table" | "cards">("table");
   const [jobId, setJobId] = useState("");
   const [stage, setStage] = useState("");
+  const [hireVerdict, setHireVerdict] = useState("");
   const [search, setSearch] = useState("");
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return applications.filter((app) => {
-      if (jobId && app.job.id !== jobId) return false;
+      if (jobId && app.job?.id !== jobId) return false;
       if (stage && app.stage !== stage) return false;
+      if (hireVerdict) {
+        const verdict = app.hireReviewVerdict ?? "PENDING";
+        if (verdict !== hireVerdict) return false;
+      }
       if (q) {
-        const hay = `${app.candidate.name} ${app.candidate.email ?? ""}`.toLowerCase();
+        const hay = `${app.candidate?.name ?? ""} ${app.candidate?.email ?? ""}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
     });
-  }, [applications, jobId, stage, search]);
+  }, [applications, jobId, stage, hireVerdict, search]);
 
   return (
     <div className="space-y-4">
@@ -78,7 +84,7 @@ export function CandidatesPipelineView({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
             <input
-              className="input-hr pl-9"
+              className="input-hr input-hr--leading-icon"
               placeholder="Name or email…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -99,6 +105,12 @@ export function CandidatesPipelineView({
             <option key={s} value={s}>
               {STAGE_LABELS[s]}
             </option>
+          ))}
+        </FilterSelect>
+        <FilterSelect label="Recruiter decision" value={hireVerdict} onChange={setHireVerdict}>
+          <option value="">All decisions</option>
+          {Object.entries(HIRE_VERDICT_LABELS).map(([k, label]) => (
+            <option key={k} value={k}>{label}</option>
           ))}
         </FilterSelect>
         <div className="flex gap-1 rounded-lg border border-border p-1">
@@ -195,21 +207,25 @@ function TableView({ rows }: { rows: PipelineApplicationRow[] }) {
           {rows.map((app) => (
             <tr key={app.id}>
               <td className="px-5 py-4">
-                <Link
-                  href={`/candidates/${app.candidate.id}`}
-                  className="flex items-center gap-3 font-semibold text-foreground hover:text-primary"
-                >
-                  <Avatar name={app.candidate.name} size="sm" />
-                  {app.candidate.name}
-                </Link>
+                {app.candidate ? (
+                  <Link
+                    href={`/candidates/${app.candidate.id}`}
+                    className="flex items-center gap-3 font-semibold text-foreground hover:text-primary"
+                  >
+                    <Avatar name={app.candidate.name} size="sm" />
+                    {app.candidate.name}
+                  </Link>
+                ) : <span className="text-muted text-sm">—</span>}
               </td>
               <td className="px-5 py-4">
-                <Link
-                  href={`/candidates/${app.candidate.id}/applications/${app.id}`}
-                  className="font-medium text-brand hover:underline"
-                >
-                  {app.job.title}
-                </Link>
+                {app.job && app.candidate ? (
+                  <Link
+                    href={`/candidates/${app.candidate.id}/applications/${app.id}`}
+                    className="font-medium text-brand hover:underline"
+                  >
+                    {app.job.title}
+                  </Link>
+                ) : <span className="text-muted text-sm">{app.job?.title ?? "—"}</span>}
               </td>
               <td className="px-5 py-4">
                 <StageBadge stage={app.stage} />
@@ -224,12 +240,14 @@ function TableView({ rows }: { rows: PipelineApplicationRow[] }) {
                 <RecruiterVerdictBadge verdict={app.hireReviewVerdict} />
               </td>
               <td className="px-5 py-4">
-                <Link
-                  href={`/candidates/${app.candidate.id}/applications/${app.id}`}
-                  className="text-sm font-medium text-brand hover:underline"
-                >
-                  View application →
-                </Link>
+                {app.candidate && (
+                  <Link
+                    href={`/candidates/${app.candidate.id}/applications/${app.id}`}
+                    className="text-sm font-medium text-brand hover:underline"
+                  >
+                    View application →
+                  </Link>
+                )}
               </td>
             </tr>
           ))}
@@ -246,15 +264,17 @@ function CardsView({ rows }: { rows: PipelineApplicationRow[] }) {
         <Card key={app.id} className="transition hover:border-primary/30 hover:shadow-md">
           <CardContent className="p-5">
             <div className="flex items-start gap-3">
-              <Avatar name={app.candidate.name} />
+              <Avatar name={app.candidate?.name ?? "?"} />
               <div className="min-w-0 flex-1">
-                <Link
-                  href={`/candidates/${app.candidate.id}`}
-                  className="font-semibold text-foreground hover:text-primary"
-                >
-                  {app.candidate.name}
-                </Link>
-                <p className="mt-0.5 text-sm text-muted">{app.job.title}</p>
+                {app.candidate ? (
+                  <Link
+                    href={`/candidates/${app.candidate.id}`}
+                    className="font-semibold text-foreground hover:text-primary"
+                  >
+                    {app.candidate.name}
+                  </Link>
+                ) : <span className="font-semibold text-muted">Unknown</span>}
+                <p className="mt-0.5 text-sm text-muted">{app.job?.title ?? "—"}</p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <StageBadge stage={app.stage} />
                   <span className={`text-sm font-bold tabular-nums ${scoreColor(app.talentProfile?.roleFitScore)}`}>
@@ -265,12 +285,14 @@ function CardsView({ rows }: { rows: PipelineApplicationRow[] }) {
                   <AiRecBadge recommendation={app.decision?.recommendation ?? null} />
                   <RecruiterVerdictBadge verdict={app.hireReviewVerdict} />
                 </div>
-                <Link
-                  href={`/candidates/${app.candidate.id}/applications/${app.id}`}
-                  className="mt-3 inline-block text-sm font-semibold text-primary hover:underline"
-                >
-                  View application →
-                </Link>
+                {app.candidate && (
+                  <Link
+                    href={`/candidates/${app.candidate.id}/applications/${app.id}`}
+                    className="mt-3 inline-block text-sm font-semibold text-primary hover:underline"
+                  >
+                    View application →
+                  </Link>
+                )}
               </div>
             </div>
           </CardContent>
