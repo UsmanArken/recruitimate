@@ -31,6 +31,17 @@ const STAGES = [
   "REJECTED",
 ] as const;
 
+const STAGE_LABELS: Record<typeof STAGES[number], string> = {
+  NEW:                  "New applicant",
+  TALENT_REVIEW:        "Talent review",
+  SHORTLISTED:          "Shortlisted",
+  INTERVIEW_SCHEDULED:  "Interview scheduled",
+  INTERVIEWED:          "Interviewed",
+  DECISION:             "Decision pending",
+  HIRED:                "Hired",
+  REJECTED:             "Rejected",
+};
+
 export function CandidatesPipelineView({
   applications,
   jobs,
@@ -86,7 +97,7 @@ export function CandidatesPipelineView({
           <option value="">All stages</option>
           {STAGES.map((s) => (
             <option key={s} value={s}>
-              {s.replace(/_/g, " ")}
+              {STAGE_LABELS[s]}
             </option>
           ))}
         </FilterSelect>
@@ -177,7 +188,7 @@ function TableView({ rows }: { rows: PipelineApplicationRow[] }) {
             <th className="px-5 py-3.5">Role fit</th>
             <th className="px-5 py-3.5">AI recommendation</th>
             <th className="px-5 py-3.5">Recruiter decision</th>
-            <th className="px-5 py-3.5">Talent review</th>
+            <th className="px-5 py-3.5"></th>
           </tr>
         </thead>
         <tbody>
@@ -214,10 +225,10 @@ function TableView({ rows }: { rows: PipelineApplicationRow[] }) {
               </td>
               <td className="px-5 py-4">
                 <Link
-                  href={`/candidates/${app.candidate.id}/applications/${app.id}?tab=talent`}
+                  href={`/candidates/${app.candidate.id}/applications/${app.id}`}
                   className="text-sm font-medium text-brand hover:underline"
                 >
-                  Open talent review →
+                  View application →
                 </Link>
               </td>
             </tr>
@@ -255,10 +266,10 @@ function CardsView({ rows }: { rows: PipelineApplicationRow[] }) {
                   <RecruiterVerdictBadge verdict={app.hireReviewVerdict} />
                 </div>
                 <Link
-                  href={`/candidates/${app.candidate.id}/applications/${app.id}?tab=talent`}
+                  href={`/candidates/${app.candidate.id}/applications/${app.id}`}
                   className="mt-3 inline-block text-sm font-semibold text-primary hover:underline"
                 >
-                  Open talent review →
+                  View application →
                 </Link>
               </div>
             </div>
