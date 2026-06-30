@@ -9,6 +9,7 @@ import { JobPipelineTable } from "@/components/features/jobs/job-pipeline-table"
 import { InterviewQuestionBankPanel } from "@/components/features/jobs/interview-question-bank-panel";
 import { SignupLinkCard } from "@/components/features/jobs/signup-link-card";
 import { DeleteJobButton } from "@/components/features/jobs/delete-job-button";
+import { JobEditForm } from "@/components/features/jobs/job-edit-form";
 import { Building2, ChevronLeft, Globe, Users } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -49,6 +50,8 @@ export default async function JobDetailPage({
   if (!job) notFound();
 
   const canManageTeam = !user.isPlatformAdmin;
+  const CAN_EDIT_ROLES = ["RECRUITER", "ORG_ADMIN", "ORG_OWNER"];
+  const canEdit = CAN_EDIT_ROLES.includes(user.roleCode ?? "") && !user.isPlatformAdmin;
 
   return (
     <>
@@ -61,7 +64,21 @@ export default async function JobDetailPage({
             <ChevronLeft className="h-4 w-4" />
             Back to open roles
           </Link>
-          <DeleteJobButton jobId={job.id} jobTitle={job.title} />
+          <div className="flex items-center gap-2">
+            {canEdit && (
+              <JobEditForm
+                jobId={job.id}
+                initial={{
+                  title: job.title,
+                  description: job.description,
+                  requirements: job.requirements,
+                  jobPostDocument: job.jobPostDocument,
+                }}
+                hasApplications={job.applicationCount > 0}
+              />
+            )}
+            <DeleteJobButton jobId={job.id} jobTitle={job.title} />
+          </div>
         </div>
       </div>
 

@@ -39,7 +39,7 @@ export function Sidebar() {
   );
 
   return (
-    <aside className="flex w-64 shrink-0 flex-col bg-brand text-brand-foreground shadow-lg shadow-brand/20">
+    <aside className="flex h-screen w-64 shrink-0 flex-col overflow-y-auto bg-brand text-brand-foreground shadow-lg shadow-brand/20">
       <div className="border-b border-white/10 px-5 py-6">
         <RecruitimateLogo
           href={isOperator ? "/admin" : "/"}

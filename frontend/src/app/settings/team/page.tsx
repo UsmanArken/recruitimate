@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Copy, Check } from "lucide-react";
 import { apiFetch, ApiError } from "@/lib/api-fetch";
 import { getStoredUser } from "@/lib/auth-client";
 import { PageHeader, PageBody } from "@/components/layout/page-header";
@@ -11,6 +12,7 @@ type Role = { id: string; code: string; name: string };
 type Invite = {
   id: string;
   email: string;
+  token: string;
   expiresAt: string;
   role: { name: string; code: string };
 };
@@ -25,21 +27,34 @@ type Member = {
 const ADMIN_ROLES = ["ORG_OWNER", "ORG_ADMIN"];
 
 export default function TeamSettingsPage() {
+  const [mounted, setMounted] = useState(false);
   const [roles, setRoles] = useState<Role[]>([]);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [email, setEmail] = useState("");
   const [roleId, setRoleId] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [newInviteToken, setNewInviteToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [memberError, setMemberError] = useState<string | null>(null);
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
 
-  const currentUser = getStoredUser();
+  function inviteUrl(token: string) {
+    return `${window.location.origin}/invite/${token}`;
+  }
+
+  async function copyLink(token: string) {
+    await navigator.clipboard.writeText(inviteUrl(token));
+    setCopiedToken(token);
+    setTimeout(() => setCopiedToken(null), 2000);
+  }
+
+  const currentUser = mounted ? getStoredUser() : null;
   const isAdmin = ADMIN_ROLES.includes(currentUser?.roleCode ?? "");
   const currentUserId = currentUser?.id;
 
   useEffect(() => {
+    setMounted(true);
     apiFetch<Role[]>("/api/roles")
       .then((data) => {
         const filtered = data.filter((r) => r.code !== "ORG_OWNER");
@@ -67,15 +82,14 @@ export default function TeamSettingsPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    setInviteLink(null);
+    setNewInviteToken(null);
 
     try {
       const data = await apiFetch<{ token: string }>("/api/invites", {
         method: "POST",
         body: JSON.stringify({ email, roleId }),
       });
-      const link = `${window.location.origin}/invite/${data.token}`;
-      setInviteLink(link);
+      setNewInviteToken(data.token);
       setEmail("");
       loadInvites();
     } catch (err) {
@@ -154,10 +168,26 @@ export default function TeamSettingsPage() {
                 {error && (
                   <p className="rounded-lg bg-risk-bg px-3 py-2 text-sm text-risk">{error}</p>
                 )}
-                {inviteLink && (
-                  <div className="rounded-lg bg-success-bg/50 p-3 text-sm">
-                    <p className="font-semibold text-success">Invite link (share securely):</p>
-                    <p className="mt-1 break-all text-foreground">{inviteLink}</p>
+                {newInviteToken && (
+                  <div className="rounded-lg border border-success/20 bg-success-bg/40 p-3">
+                    <p className="mb-2 text-xs font-semibold text-success">
+                      Invite created — share this link with the recipient:
+                    </p>
+                    <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2">
+                      <code className="min-w-0 flex-1 truncate text-xs text-foreground">
+                        {inviteUrl(newInviteToken)}
+                      </code>
+                      <button
+                        type="button"
+                        onClick={() => copyLink(newInviteToken)}
+                        className="shrink-0 rounded p-1 text-muted transition hover:text-foreground"
+                        title="Copy invite link"
+                      >
+                        {copiedToken === newInviteToken
+                          ? <Check className="h-3.5 w-3.5 text-success" />
+                          : <Copy className="h-3.5 w-3.5" />}
+                      </button>
+                    </div>
                   </div>
                 )}
                 <Button type="submit" disabled={loading}>
@@ -232,13 +262,23 @@ export default function TeamSettingsPage() {
             <CardContent>
               <ul className="space-y-2 text-sm">
                 {invites.map((inv) => (
-                  <li key={inv.id} className="flex justify-between border-b border-border-subtle py-2 last:border-0">
-                    <span>
-                      {inv.email} · {inv.role.name}
-                    </span>
-                    <span className="text-muted">
-                      expires {new Date(inv.expiresAt).toLocaleDateString()}
-                    </span>
+                  <li key={inv.id} className="flex items-center justify-between gap-3 border-b border-border-subtle py-2.5 last:border-0">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-foreground">{inv.email}</p>
+                      <p className="text-xs text-muted">
+                        {inv.role.name} · expires {new Date(inv.expiresAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => copyLink(inv.token)}
+                      title="Copy invite link"
+                      className="flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-muted transition hover:bg-muted/40 hover:text-foreground"
+                    >
+                      {copiedToken === inv.token
+                        ? <><Check className="h-3.5 w-3.5 text-success" /> Copied</>
+                        : <><Copy className="h-3.5 w-3.5" /> Copy link</>}
+                    </button>
                   </li>
                 ))}
               </ul>

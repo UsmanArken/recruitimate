@@ -11,6 +11,7 @@ import { DeleteCandidateButton } from "@/components/features/candidates/delete-c
 import { CandidateSourceProfile } from "@/components/features/candidates/candidate-source-profile";
 import { CandidateMarkingControl } from "@/components/features/candidates/candidate-marking-control";
 import { CandidateApplicationsList } from "@/components/features/candidates/candidate-applications-list";
+import { CandidateEditForm } from "@/components/features/candidates/candidate-edit-form";
 import { ChevronLeft, Mail } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +33,7 @@ export default async function CandidatePersonPage({
       portfolioUrl: string | null;
       resumeText: string | null;
       marking: string;
+      source: "portal" | "manual";
       applications: Array<{
         id: string;
         stage: string;
@@ -75,6 +77,12 @@ export default async function CandidatePersonPage({
               <CandidateMarkingControl
                 candidateId={candidate.id}
                 initialMarking={candidate.marking}
+              />
+              <CandidateEditForm
+                candidateId={candidate.id}
+                initialName={candidate.name}
+                initialEmail={candidate.email}
+                source={candidate.source}
               />
               <DeleteCandidateButton candidateId={candidate.id} candidateName={candidate.name} />
             </div>

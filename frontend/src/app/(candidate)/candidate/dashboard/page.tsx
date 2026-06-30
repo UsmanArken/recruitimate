@@ -1,17 +1,7 @@
 import { getCandidateMe } from "@/lib/api-candidate-server";
 import { ProfileEditForm } from "./profile-edit-form";
 import { LogoutButton } from "./logout-button";
-
-const STAGE_LABELS: Record<string, { label: string; color: string }> = {
-  NEW: { label: "Under Review", color: "bg-blue-100 text-blue-700" },
-  TALENT_REVIEW: { label: "Under Review", color: "bg-blue-100 text-blue-700" },
-  SHORTLISTED: { label: "Shortlisted", color: "bg-green-100 text-green-700" },
-  INTERVIEW_SCHEDULED: { label: "Interview Scheduled", color: "bg-purple-100 text-purple-700" },
-  INTERVIEWED: { label: "Interviewed", color: "bg-purple-100 text-purple-700" },
-  DECISION: { label: "Final Decision", color: "bg-yellow-100 text-yellow-700" },
-  HIRED: { label: "Hired", color: "bg-green-100 text-green-700" },
-  REJECTED: { label: "Not Progressing", color: "bg-red-100 text-red-700" },
-};
+import { StageBadge } from "@/components/features/candidates/stage-badge";
 
 export default async function CandidateDashboardPage() {
   const me = await getCandidateMe();
@@ -36,50 +26,43 @@ export default async function CandidateDashboardPage() {
             <p className="text-sm text-muted">No applications yet.</p>
           ) : (
             <ul className="space-y-3">
-              {me.applications.map((app) => {
-                const stageInfo = STAGE_LABELS[app.stage] ?? STAGE_LABELS.NEW;
-                return (
-                  <li
-                    key={app.id}
-                    className="rounded-xl border border-border px-4 py-4"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-medium text-foreground">
-                          {app.jobTitle ?? "Role"}
-                        </p>
-                        {app.interviews.length > 0 && (
-                          <ul className="mt-2 space-y-1">
-                            {app.interviews.map((iv) => (
-                              <li key={iv.id} className="flex items-center gap-2 text-xs text-muted">
-                                <span className="font-medium text-foreground">{iv.title}</span>
-                                {iv.scheduledAt && (
-                                  <span>— {new Date(iv.scheduledAt).toLocaleString()}</span>
-                                )}
-                                {(iv.candidateJoinUrl || iv.meetingUrl) && (
-                                  <a
-                                    href={iv.candidateJoinUrl ?? iv.meetingUrl ?? "#"}
-                                    target={iv.candidateJoinUrl ? "_self" : "_blank"}
-                                    rel="noopener noreferrer"
-                                    className="ml-1 inline-flex items-center gap-1 rounded bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
-                                  >
-                                    Join Interview
-                                  </a>
-                                )}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                      <span
-                        className={`shrink-0 inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${stageInfo.color}`}
-                      >
-                        {stageInfo.label}
-                      </span>
+              {me.applications.map((app) => (
+                <li
+                  key={app.id}
+                  className="rounded-xl border border-border px-4 py-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">
+                        {app.jobTitle ?? "Role"}
+                      </p>
+                      {app.interviews.length > 0 && (
+                        <ul className="mt-2 space-y-1">
+                          {app.interviews.map((iv) => (
+                            <li key={iv.id} className="flex items-center gap-2 text-xs text-muted">
+                              <span className="font-medium text-foreground">{iv.title}</span>
+                              {iv.scheduledAt && (
+                                <span>— {new Date(iv.scheduledAt).toLocaleString()}</span>
+                              )}
+                              {(iv.candidateJoinUrl || iv.meetingUrl) && (
+                                <a
+                                  href={iv.candidateJoinUrl ?? iv.meetingUrl ?? "#"}
+                                  target={iv.candidateJoinUrl ? "_self" : "_blank"}
+                                  rel="noopener noreferrer"
+                                  className="ml-1 inline-flex items-center gap-1 rounded bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                                >
+                                  Join Interview
+                                </a>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
-                  </li>
-                );
-              })}
+                    <StageBadge stage={app.stage} />
+                  </div>
+                </li>
+              ))}
             </ul>
           )}
         </section>

@@ -30,6 +30,7 @@ async def get_client(client_id: str, auth: CurrentUser, db: DB):
 
 @router.patch("/{client_id}")
 async def update_client(client_id: str, body: UpdateClientRequest, auth: CurrentUser, db: DB):
+    require_role(auth, RECRUITER, ORG_ADMIN, ORG_OWNER)
     return await service.update_client(client_id, auth.organization_id, body.model_dump(exclude_none=True), db)
 
 

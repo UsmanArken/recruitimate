@@ -7,6 +7,7 @@ import { StageBadge } from "@/components/features/candidates/stage-badge";
 import { LayerBadge } from "@/components/features/intelligence/layer-badge";
 import { ReanalyzeButton } from "@/components/features/candidates/reanalyze-button";
 import { TalentPoller } from "@/components/features/candidates/talent-poller";
+import { InterviewPoller } from "@/components/features/candidates/interview-poller";
 import { InterviewSection } from "@/components/features/candidates/interview-section";
 import { VerdictCard } from "@/components/features/candidates/verdict-card";
 import { SkillMatchBar } from "@/components/features/candidates/skill-match-bar";
@@ -140,6 +141,12 @@ export default async function ApplicationDetailPage({
   }));
 
   const hasInterview = analysedInterviews.length > 0;
+  // Poll when an interview is being analysed by Celery but hasn't landed yet.
+  // Exclude agentStatus="finished" — those are Phase 2 placeholder interviews that
+  // will never receive analysis (recording uploaded but no audio pipeline yet).
+  const interviewAnalysisPending = application.interviews.some(
+    (i) => i.status === "COMPLETED" && i.analysis === null && i.agentStatus !== "finished",
+  );
   const hiddenSignals = (tp?.hiddenSignals ?? []) as string[];
   const reasonsToHire = (dec?.reasonsToHire ?? []) as string[];
   const reasonsToReject = (dec?.reasonsToReject ?? []) as string[];
@@ -267,6 +274,7 @@ export default async function ApplicationDetailPage({
   const interviewContent = (
     <div className="space-y-4">
       <LayerBadge layer="interview" />
+      <InterviewPoller active={interviewAnalysisPending} />
       <InterviewSection
         analysedInterviews={analysedInterviews}
         applicationId={application.id}

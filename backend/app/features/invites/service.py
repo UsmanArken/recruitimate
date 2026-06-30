@@ -88,6 +88,7 @@ async def list_invites(org_id: str, db: AsyncSession) -> list:
         {
             "id": inv.id,
             "email": inv.email,
+            "token": inv.token,
             "role": {"id": inv.role.id, "code": inv.role.code, "name": inv.role.name},
             "expiresAt": inv.expiresAt,
             "createdAt": inv.createdAt,

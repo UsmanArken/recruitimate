@@ -3,9 +3,9 @@ import { PlatformOperatorBanner } from "@/components/layout/platform-operator-ba
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen overflow-hidden">
       <Sidebar />
-      <div className="app-canvas flex min-h-screen flex-1 flex-col">
+      <div className="app-canvas flex flex-1 flex-col overflow-y-auto">
         <PlatformOperatorBanner />
         {children}
       </div>

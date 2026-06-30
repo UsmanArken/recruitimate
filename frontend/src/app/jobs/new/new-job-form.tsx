@@ -123,7 +123,10 @@ export function NewJobForm() {
                   {copied ? "Copied!" : "Copy"}
                 </button>
               </div>
-              <Button onClick={() => router.push("/jobs")}>Go to jobs list</Button>
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={() => router.push(`/jobs/${createdJob.id}`)}>Go to job detail</Button>
+                <Button variant="secondary" onClick={() => router.push("/jobs")}>Back to jobs list</Button>
+              </div>
             </CardContent>
           </Card>
         </PageBody>

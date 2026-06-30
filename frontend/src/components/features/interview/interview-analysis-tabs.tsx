@@ -209,6 +209,7 @@ export function InterviewAnalysisTabs({ data }: { data: InterviewAnalysisData })
     { label: "Clarity", value: data.clarityScore ?? 0 },
     { label: "Pacing", value: data.pacingScore ?? 0 },
     { label: "Filler words", value: data.fillerScore ?? 0, invert: true },
+    { label: "Energy", value: data.energyLevel != null ? Math.round(data.energyLevel * 100) : 0 },
     { label: "Exp. range", value: data.emotionalVariance != null ? Math.round(data.emotionalVariance * 100) : 0 },
   ];
 
@@ -229,6 +230,7 @@ export function InterviewAnalysisTabs({ data }: { data: InterviewAnalysisData })
             <ScoreRow label="Clarity"      value={data.clarityScore} />
             <ScoreRow label="Pacing"       value={data.pacingScore} />
             <ScoreRow label="Filler words" value={data.fillerScore} invert />
+            <ScoreRow label="Energy"       value={data.energyLevel != null ? Math.round(data.energyLevel * 100) : null} />
             <ScoreRow label="Exp. range"   value={data.emotionalVariance != null ? Math.round(data.emotionalVariance * 100) : null} />
 
             {/* Dominant tone pill */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, CheckCircle2, AlertCircle, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,8 @@ export function ProfileEditForm({ initialName, initialEmail, initialLinkedInUrl,
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [reanalysing, setReanalysing] = useState(false);
-  const [reanalysingTimer, setReanalysingTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const reanalysingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollStartRef = useRef(0);
 
   async function onSave(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -57,11 +58,28 @@ export function ProfileEditForm({ initialName, initialEmail, initialLinkedInUrl,
       const fd = new FormData();
       fd.append("file", file);
       await candidateFetch("/api/candidate/me/resume", { method: "POST", body: fd });
-      if (reanalysingTimer) clearTimeout(reanalysingTimer);
+      if (reanalysingRef.current) clearInterval(reanalysingRef.current);
       setReanalysing(true);
-      // Auto-clear the "re-analysing" banner after 60s — Celery task completes in the background
-      const t = setTimeout(() => setReanalysing(false), 60_000);
-      setReanalysingTimer(t);
+      pollStartRef.current = Date.now();
+      // Poll /api/candidate/me until roleFitScore appears (meaning Celery finished)
+      reanalysingRef.current = setInterval(async () => {
+        if (Date.now() - pollStartRef.current >= 120_000) {
+          clearInterval(reanalysingRef.current!);
+          setReanalysing(false);
+          return;
+        }
+        try {
+          const data = await candidateFetch<{ applications: Array<{ roleFitScore: number | null }> }>("/api/candidate/me");
+          const allScored = data.applications.every((a) => a.roleFitScore !== null);
+          if (allScored) {
+            clearInterval(reanalysingRef.current!);
+            setReanalysing(false);
+            router.refresh();
+          }
+        } catch {
+          // keep polling
+        }
+      }, 4000);
       router.refresh();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to upload resume.");

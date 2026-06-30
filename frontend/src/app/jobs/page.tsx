@@ -38,7 +38,7 @@ export default async function JobsPage() {
                 icon={Briefcase}
                 title="No open roles yet"
                 description="Every hiring campaign starts with a requisition. Add the role title, description, and requirements so Recruitimate can score role fit on resumes."
-                primaryAction={{ href: "/jobs/new", label: "Post your first role" }}
+                primaryAction={!isHiringManager ? { href: "/jobs/new", label: "Post your first role" } : undefined}
                 secondaryAction={{ href: "/settings/team", label: "Team & access" }}
               />
             </CardContent>

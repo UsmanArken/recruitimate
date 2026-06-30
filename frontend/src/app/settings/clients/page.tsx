@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Building2, Globe, Trash2, Plus, Loader2 } from "lucide-react";
+import { Building2, Globe, Trash2, Plus, Loader2, Pencil, X, Check } from "lucide-react";
 import { apiFetch, ApiError } from "@/lib/api-fetch";
 import { getStoredUser } from "@/lib/auth-client";
 import { PageHeader, PageBody } from "@/components/layout/page-header";
@@ -18,16 +18,132 @@ type Client = {
   jobCount: number;
 };
 
+const CAN_MANAGE_ROLES = ["RECRUITER", "ORG_ADMIN", "ORG_OWNER"];
+
+// ── Inline edit form for a single client row ──────────────────────────────────
+
+function ClientEditRow({
+  client,
+  onSave,
+  onCancel,
+}: {
+  client: Client;
+  onSave: (updated: Client) => void;
+  onCancel: () => void;
+}) {
+  const [name, setName] = useState(client.name);
+  const [website, setWebsite] = useState(client.website ?? "");
+  const [companyProfile, setCompanyProfile] = useState(client.companyProfile ?? "");
+  const [impressionNotes, setImpressionNotes] = useState(client.impressionNotes ?? "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const updated = await apiFetch<Client>(`/api/clients/${client.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          name: name.trim(),
+          website: website.trim() || null,
+          companyProfile: companyProfile.trim() || null,
+          impressionNotes: impressionNotes.trim() || null,
+        }),
+      });
+      onSave({ ...updated, jobCount: client.jobCount });
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to save changes.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <li className="border-t border-border-subtle px-6 py-5 first:border-t-0">
+      <form onSubmit={save} className="space-y-3">
+        <div className="flex items-center gap-2">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand/10">
+            <Building2 className="h-4 w-4 text-brand" />
+          </div>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            placeholder="Company name"
+            className="input-hr flex-1"
+          />
+        </div>
+
+        <label className="block">
+          <span className="text-xs font-semibold text-muted">Website</span>
+          <input
+            value={website}
+            onChange={(e) => setWebsite(e.target.value)}
+            placeholder="https://acme.com"
+            type="url"
+            className="input-hr mt-1"
+          />
+        </label>
+
+        <label className="block">
+          <span className="text-xs font-semibold text-muted">Company profile</span>
+          <p className="mt-0.5 text-xs text-muted/70">Used by AI to generate job descriptions.</p>
+          <textarea
+            value={companyProfile}
+            onChange={(e) => setCompanyProfile(e.target.value)}
+            rows={3}
+            placeholder="Culture, tech stack, team size…"
+            className="input-hr mt-1"
+          />
+        </label>
+
+        <label className="block">
+          <span className="text-xs font-semibold text-muted">Impression notes</span>
+          <p className="mt-0.5 text-xs text-muted/70">Internal notes about employer brand or red flags.</p>
+          <textarea
+            value={impressionNotes}
+            onChange={(e) => setImpressionNotes(e.target.value)}
+            rows={2}
+            className="input-hr mt-1"
+          />
+        </label>
+
+        {error && (
+          <p className="rounded-lg bg-risk-bg px-3 py-2 text-sm text-risk">{error}</p>
+        )}
+
+        <div className="flex gap-2">
+          <Button type="submit" disabled={saving || !name.trim()} className="h-8 px-3 text-xs">
+            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+            {saving ? "Saving…" : "Save"}
+          </Button>
+          <Button type="button" variant="secondary" onClick={onCancel} className="h-8 px-3 text-xs">
+            <X className="h-3.5 w-3.5" />
+            Cancel
+          </Button>
+        </div>
+      </form>
+    </li>
+  );
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+
 export default function ClientsSettingsPage() {
   const currentUser = getStoredUser();
-  const canManage = currentUser?.roleCode !== "HIRING_MANAGER";
+  const roleCode = currentUser?.roleCode ?? "";
+  const canManage = CAN_MANAGE_ROLES.includes(roleCode);
 
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
-  // Form state
+  // Create form state
   const [name, setName] = useState("");
   const [website, setWebsite] = useState("");
   const [companyProfile, setCompanyProfile] = useState("");
@@ -85,6 +201,11 @@ export default function ClientsSettingsPage() {
     }
   }
 
+  function handleSaved(updated: Client) {
+    setClients((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+    setEditingId(null);
+  }
+
   return (
     <>
       <PageHeader
@@ -93,7 +214,7 @@ export default function ClientsSettingsPage() {
       />
       <PageBody className="max-w-2xl">
 
-        {/* Add client form — admins/recruiters only */}
+        {/* Add client form — recruiters/admins only */}
         {canManage && (
           <Card className="mb-8">
             <CardHeader>
@@ -108,7 +229,9 @@ export default function ClientsSettingsPage() {
             <CardContent>
               <form onSubmit={handleCreate} className="space-y-4">
                 <label className="block">
-                  <span className="text-sm font-semibold text-foreground">Company name <span className="text-risk">*</span></span>
+                  <span className="text-sm font-semibold text-foreground">
+                    Company name <span className="text-risk">*</span>
+                  </span>
                   <input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
@@ -180,7 +303,9 @@ export default function ClientsSettingsPage() {
           <CardHeader>
             <CardTitle>Your clients</CardTitle>
             <CardDescription>
-              {clients.length === 0 ? "No clients yet." : `${clients.length} client${clients.length !== 1 ? "s" : ""}`}
+              {clients.length === 0
+                ? "No clients yet."
+                : `${clients.length} client${clients.length !== 1 ? "s" : ""}`}
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
@@ -195,44 +320,67 @@ export default function ClientsSettingsPage() {
               <p className="px-6 py-8 text-sm text-muted">No clients yet. Add one above.</p>
             ) : (
               <ul>
-                {clients.map((client) => (
-                  <li
-                    key={client.id}
-                    className="flex items-center gap-4 border-t border-border-subtle px-6 py-4 first:border-t-0"
-                  >
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand/10">
-                      <Building2 className="h-4 w-4 text-brand" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-foreground">{client.name}</p>
-                      <div className="mt-0.5 flex flex-wrap items-center gap-3 text-xs text-muted">
-                        {client.website && (
-                          <a
-                            href={client.website}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1 hover:text-primary"
-                          >
-                            <Globe className="h-3 w-3" />
-                            {client.website.replace(/^https?:\/\//, "")}
-                          </a>
-                        )}
-                        <span>{client.jobCount} job{client.jobCount !== 1 ? "s" : ""}</span>
+                {clients.map((client) =>
+                  editingId === client.id ? (
+                    <ClientEditRow
+                      key={client.id}
+                      client={client}
+                      onSave={handleSaved}
+                      onCancel={() => setEditingId(null)}
+                    />
+                  ) : (
+                    <li
+                      key={client.id}
+                      className="flex items-center gap-4 border-t border-border-subtle px-6 py-4 first:border-t-0"
+                    >
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand/10">
+                        <Building2 className="h-4 w-4 text-brand" />
                       </div>
-                    </div>
-                    {canManage && (
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(client)}
-                        disabled={client.jobCount > 0}
-                        title={client.jobCount > 0 ? `Cannot delete — ${client.jobCount} job(s) assigned` : "Delete client"}
-                        className="rounded-md p-1.5 text-muted transition hover:bg-risk-bg hover:text-risk disabled:cursor-not-allowed disabled:opacity-30"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    )}
-                  </li>
-                ))}
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-foreground">{client.name}</p>
+                        <div className="mt-0.5 flex flex-wrap items-center gap-3 text-xs text-muted">
+                          {client.website && (
+                            <a
+                              href={client.website}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 hover:text-primary"
+                            >
+                              <Globe className="h-3 w-3" />
+                              {client.website.replace(/^https?:\/\//, "")}
+                            </a>
+                          )}
+                          <span>{client.jobCount} job{client.jobCount !== 1 ? "s" : ""}</span>
+                        </div>
+                      </div>
+                      {canManage && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setEditingId(client.id)}
+                            title="Edit client"
+                            className="rounded-md p-1.5 text-muted transition hover:bg-muted/40 hover:text-foreground"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(client)}
+                            disabled={client.jobCount > 0}
+                            title={
+                              client.jobCount > 0
+                                ? `Cannot delete — ${client.jobCount} job(s) assigned`
+                                : "Delete client"
+                            }
+                            className="rounded-md p-1.5 text-muted transition hover:bg-risk-bg hover:text-risk disabled:cursor-not-allowed disabled:opacity-30"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      )}
+                    </li>
+                  )
+                )}
               </ul>
             )}
           </CardContent>
