@@ -39,15 +39,17 @@ export function Sidebar() {
   );
 
   return (
-    <aside className="flex h-screen w-64 shrink-0 flex-col overflow-y-auto bg-brand text-brand-foreground shadow-lg shadow-brand/20">
-      <div className="border-b border-white/10 px-5 py-6">
+    <aside className="flex h-screen w-64 shrink-0 flex-col bg-brand text-brand-foreground shadow-lg shadow-brand/20">
+      {/* ── Zone 1: Logo (fixed top) ─────────────────────────── */}
+      <div className="shrink-0 border-b border-white/10 px-5 py-6">
         <RecruitimateLogo
           href={isOperator ? "/admin" : "/"}
           tagline={isOperator ? "Platform operations" : "Hiring intelligence"}
         />
       </div>
 
-      <div className="flex flex-1 flex-col px-3 py-4">
+      {/* ── Zone 2: Nav body (scrollable if content overflows) ── */}
+      <div className="flex flex-1 flex-col overflow-y-auto px-3 py-4">
         {isOperator ? (
           <>
             <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-brand-foreground/45">
@@ -107,18 +109,21 @@ export function Sidebar() {
         )}
       </div>
 
-      {!isOperator && (
-        <div className="p-4">
-          <Link
-            href="/candidates/new"
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition hover:bg-primary-hover"
-          >
-            <UserPlus className="h-4 w-4" />
-            Add candidate
-          </Link>
-        </div>
-      )}
-      <UserMenu />
+      {/* ── Zone 3: Footer (pinned to bottom, never scrolls away) */}
+      <div className="shrink-0">
+        {!isOperator && (
+          <div className="px-4 pb-3 pt-2">
+            <Link
+              href="/candidates/new"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition hover:bg-primary-hover"
+            >
+              <UserPlus className="h-4 w-4" />
+              Add candidate
+            </Link>
+          </div>
+        )}
+        <UserMenu />
+      </div>
     </aside>
   );
 }
