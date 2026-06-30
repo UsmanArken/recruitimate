@@ -8,10 +8,11 @@ import { LayerBadge } from "@/components/features/intelligence/layer-badge";
 import { ResumeUploadField } from "@/components/features/candidates/resume-upload-field";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { TrustBanner } from "@/components/features/intelligence/trust-banner";
-import { Briefcase } from "lucide-react";
+import { Briefcase, Sparkles } from "lucide-react";
 import type { JobOption } from "@/lib/api/jobs-client";
 import { JobPositionPicker } from "@/components/features/candidates/job-position-picker";
 import { LinkedInImportField } from "@/components/features/candidates/linkedin-import-field";
+import { cn } from "@/lib/utils";
 
 export function NewCandidateForm({
   jobs,
@@ -25,6 +26,32 @@ export function NewCandidateForm({
   const [linkedInText, setLinkedInText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Controlled fields so we can auto-fill from the parsed CV
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [autoFilledName, setAutoFilledName] = useState(false);
+  const [autoFilledEmail, setAutoFilledEmail] = useState(false);
+
+  function handleIdentityExtracted(identity: { name?: string | null; email?: string | null }) {
+    if (identity.name) {
+      // Only auto-fill if the field is empty — never overwrite user input
+      if (!name.trim()) {
+        setName(identity.name);
+        setAutoFilledName(true);
+      }
+    } else {
+      setAutoFilledName(false);
+    }
+    if (identity.email) {
+      if (!email.trim()) {
+        setEmail(identity.email);
+        setAutoFilledEmail(true);
+      }
+    } else {
+      setAutoFilledEmail(false);
+    }
+  }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -43,8 +70,8 @@ export function NewCandidateForm({
       const candidate = await apiFetch<{ id: string; applications?: Array<{ id: string }> }>("/api/candidates", {
         method: "POST",
         body: JSON.stringify({
-          name: fd.get("name"),
-          email: fd.get("email") || undefined,
+          name: name.trim(),
+          email: email.trim() || undefined,
           jobId,
           resumeText: resumeText.trim(),
           linkedInText: linkedInText.trim() || undefined,
@@ -74,9 +101,8 @@ export function NewCandidateForm({
             Applicant intake
           </CardTitle>
           <CardDescription>
-            Choose the open position first, then upload or paste the resume. Role fit and next
-            steps are scoped to that requisition — we do not show fake hire scores without
-            context.
+            Upload the CV first — name and email are filled in automatically. Then choose the
+            open position and submit.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -96,6 +122,14 @@ export function NewCandidateForm({
             </div>
           ) : (
             <form onSubmit={onSubmit} className="space-y-4">
+              {/* CV upload first — drives auto-fill */}
+              <ResumeUploadField
+                resumeText={resumeText}
+                onResumeTextChange={setResumeText}
+                onIdentityExtracted={handleIdentityExtracted}
+                required
+              />
+
               <label className="block">
                 <span className="text-sm font-semibold text-foreground">
                   Open position (hiring campaign) <span className="text-risk">*</span>
@@ -105,16 +139,28 @@ export function NewCandidateForm({
                   Role fit compares this resume to the position requirements.
                 </p>
               </label>
-              <Field label="Full name" name="name" required />
-              <Field label="Email" name="email" type="email" />
+
+              <AutoFillField
+                label="Full name"
+                name="name"
+                required
+                value={name}
+                onChange={(v) => { setName(v); setAutoFilledName(false); }}
+                autoFilled={autoFilledName}
+              />
+              <AutoFillField
+                label="Email"
+                name="email"
+                type="email"
+                value={email}
+                onChange={(v) => { setEmail(v); setAutoFilledEmail(false); }}
+                autoFilled={autoFilledEmail}
+              />
+
               <Field label="LinkedIn profile URL" name="linkedInUrl" />
               <LinkedInImportField onProfileText={setLinkedInText} />
               <Field label="GitHub / portfolio" name="githubUrl" />
-              <ResumeUploadField
-                resumeText={resumeText}
-                onResumeTextChange={setResumeText}
-                required
-              />
+
               <TrustBanner>
                 Preliminary screening is advisory. Final hire recommendations require
                 interview signals — never from resume alone.
@@ -125,7 +171,7 @@ export function NewCandidateForm({
               <Button
                 type="submit"
                 disabled={
-                  loading || resumeText.trim().length + linkedInText.trim().length < 20
+                  loading || !name.trim() || resumeText.trim().length + linkedInText.trim().length < 20
                 }
               >
                 {loading ? "Analyzing for this role…" : "Add & screen candidate"}
@@ -135,6 +181,50 @@ export function NewCandidateForm({
         </CardContent>
       </Card>
     </>
+  );
+}
+
+function AutoFillField({
+  label,
+  name,
+  required,
+  type = "text",
+  value,
+  onChange,
+  autoFilled,
+}: {
+  label: string;
+  name: string;
+  required?: boolean;
+  type?: string;
+  value: string;
+  onChange: (v: string) => void;
+  autoFilled?: boolean;
+}) {
+  return (
+    <label className="block">
+      <span className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+        {label}
+        {required && <span className="text-risk">*</span>}
+        {autoFilled && (
+          <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+            <Sparkles className="h-2.5 w-2.5" />
+            From CV
+          </span>
+        )}
+      </span>
+      <input
+        name={name}
+        type={type}
+        required={required}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={cn(
+          "input-hr mt-1.5 transition-colors",
+          autoFilled && "border-primary/40 bg-primary/5"
+        )}
+      />
+    </label>
   );
 }
 

@@ -10,15 +10,19 @@ type ParseResult = {
   format: string;
   fileName: string;
   characterCount: number;
+  name?: string | null;
+  email?: string | null;
 };
 
 export function ResumeUploadField({
   resumeText,
   onResumeTextChange,
+  onIdentityExtracted,
   required = true,
 }: {
   resumeText: string;
   onResumeTextChange: (text: string) => void;
+  onIdentityExtracted?: (identity: { name?: string | null; email?: string | null }) => void;
   required?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -40,6 +44,9 @@ export function ResumeUploadField({
       });
       setUploadedFile(result);
       onResumeTextChange(result.text);
+      if (onIdentityExtracted) {
+        onIdentityExtracted({ name: result.name, email: result.email });
+      }
     } catch (err) {
       setUploadError(err instanceof ApiError ? err.message : "Could not parse file");
       setUploadedFile(null);
@@ -59,6 +66,7 @@ export function ResumeUploadField({
     setUploadError(null);
     onResumeTextChange("");
     if (inputRef.current) inputRef.current.value = "";
+    if (onIdentityExtracted) onIdentityExtracted({ name: null, email: null });
   }
 
   return (
