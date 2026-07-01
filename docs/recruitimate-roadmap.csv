@@ -83,8 +83,8 @@ P3-003,Phase 3,Learning Engine,—,Scoring model improvement,Retrain weights fro
 P3-004,Phase 3,Analytics,—,Predictive hiring success,Model likelihood of success in role,P1,Done,P3-001,success-prediction engine + /api/applications/[id]/success-prediction + application panel
 P3-005,Phase 3,Analytics,—,Org-level hiring analytics,Team dashboards time-to-hire quality metrics,P1,Done,,analytics.service funnel/time-to-hire/quality/accuracy + /analytics dashboard
 P3-006,Phase 3,Analytics,—,Bias and fairness reporting,Aggregate bias indicators across interviews,P1,Done,P2-006,aggregateBias across interviewerQuality + fairness section on /analytics
-P3-007,Phase 3,Talent Intelligence,Talent,Passive candidate signals,External labor market data integration,P2,Not Started,,
-P3-008,Phase 3,Talent Intelligence,Talent,Career trajectory modeling,Long-term growth consistency signals,P2,Not Started,,
+P3-007,Phase 3,Talent Intelligence,Talent,Passive candidate signals,External labor market data integration,P2,Done,,LaborMarket provider mock/http + PassiveCandidateLead + job passive-signals API + UI
+P3-008,Phase 3,Talent Intelligence,Talent,Career trajectory modeling,Long-term growth consistency signals,P2,Done,,career-trajectory-engine + Candidate.careerTrajectory + API + candidate UI
 P3-009,Phase 3,Platform,—,Multi-tenant organizations,Organization model slug org-scoped jobs and candidates signup per tenant,P1,Done,MVP-028,MVP baseline
 P3-010,Phase 3,Platform,—,Team and seat management,Invite users org roles settings/team job interviewer assignments,P1,Done,MVP-029|MVP-029b
 P3-011,Phase 3,Platform,—,Platform admin enhancements,Tenant impersonation usage analytics billing hooks,P2,Not Started,MVP-029c,Extends CP-024

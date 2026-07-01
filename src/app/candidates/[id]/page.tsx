@@ -11,6 +11,7 @@ import { Avatar } from "@/components/features/candidates/avatar";
 import { ApplyToPosition } from "@/components/features/candidates/apply-to-position";
 import { CandidateNotesPanel } from "@/components/features/candidates/candidate-notes-panel";
 import { LinkedInEnrichPanel } from "@/components/features/candidates/linkedin-enrich-panel";
+import { CareerTrajectoryPanel } from "@/components/features/talent/career-trajectory-panel";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronLeft, Mail, Briefcase } from "lucide-react";
 
@@ -147,6 +148,21 @@ export default async function CandidatePersonPage({
             />
           </section>
         )}
+
+        <section className="mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Career trajectory</CardTitle>
+              <CardDescription>
+                Long-term growth and tenure consistency signals parsed from resume and LinkedIn
+                history.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CareerTrajectoryPanel candidateId={candidate.id} readOnly={readOnly} />
+            </CardContent>
+          </Card>
+        </section>
 
         <section className="mb-8">
           <CandidateNotesPanel

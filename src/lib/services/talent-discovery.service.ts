@@ -11,6 +11,7 @@ import {
   mapPrismaSource,
   mapPrismaSourceToDiscovery,
 } from "@/lib/intelligence/talent/discovery-engine";
+import { modelCareerTrajectory } from "@/lib/intelligence/talent/career-trajectory-engine";
 import type { TalentDiscoveryIngestResult } from "@/lib/intelligence/types";
 import type {
   createTalentPoolSchema,
@@ -136,6 +137,8 @@ export async function ingestTalentProfile(
       searchDocument: doc.searchDocument,
       searchSkills: doc.searchSkills as Prisma.InputJsonValue,
       discoveryIndexedAt: new Date(),
+      careerTrajectory: modelCareerTrajectory(doc.searchDocument) as Prisma.InputJsonValue,
+      careerTrajectoryComputedAt: new Date(),
     },
   });
 

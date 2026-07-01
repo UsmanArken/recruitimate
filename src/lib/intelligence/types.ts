@@ -229,6 +229,52 @@ export type TalentSuggestResult = {
   explanation: string;
 };
 
+export type PassiveCandidateLeadResult = {
+  id: string;
+  externalRef: string;
+  name: string;
+  headline: string | null;
+  location: string | null;
+  skills: string[];
+  opennessLikelihood: number;
+  marketDemandScore: number;
+  skillScarcity: number;
+  matchScore: number;
+  provider: string;
+  explanation: string;
+};
+
+export type PassiveSignalsResult = {
+  jobId: string;
+  jobTitle: string;
+  provider: string;
+  marketContext: {
+    demandScore: number;
+    talentPoolEstimate: number;
+    scarceSkills: string[];
+    averageOpenness: number;
+    explanation: string;
+  };
+  leads: PassiveCandidateLeadResult[];
+  fetchedAt: string;
+};
+
+export type CareerRoleEntry = {
+  title: string;
+  company?: string;
+  period?: string;
+  seniorityLevel: number;
+};
+
+export type CareerTrajectoryResult = {
+  growthConsistencyScore: number;
+  tenureStabilityScore: number;
+  promotionVelocity: "slow" | "steady" | "fast" | "unknown";
+  rolesIdentified: CareerRoleEntry[];
+  signals: Signal[];
+  explanation: string;
+};
+
 export type OutreachTemplateVariables = {
   candidateName: string;
   candidateEmail?: string | null;

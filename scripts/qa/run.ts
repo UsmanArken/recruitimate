@@ -70,6 +70,7 @@ async function main() {
       "scripts/qa/email-notifications.test.ts",
       "scripts/qa/learning.test.ts",
       "scripts/qa/analytics.test.ts",
+      "scripts/qa/talent-intelligence.test.ts",
     ])
   );
 

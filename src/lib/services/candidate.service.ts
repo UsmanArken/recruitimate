@@ -13,6 +13,7 @@ import type { CreateCandidateInput } from "@/lib/validators/candidate";
 import { getJobById } from "@/lib/services/job.service";
 import { buildCandidateIntelligenceText } from "@/lib/candidate/intelligence-text";
 import { buildDiscoveryDocument } from "@/lib/intelligence/talent/discovery-engine";
+import { modelCareerTrajectory } from "@/lib/intelligence/talent/career-trajectory-engine";
 import {
   computeTalentAndDecision,
   talentForStorage,
@@ -84,6 +85,8 @@ export async function createCandidate(ctx: AuthContext, input: CreateCandidateIn
       searchDocument: discoveryDoc.searchDocument || null,
       searchSkills: discoveryDoc.searchSkills as Prisma.InputJsonValue,
       discoveryIndexedAt: new Date(),
+      careerTrajectory: modelCareerTrajectory(intelligenceText) as Prisma.InputJsonValue,
+      careerTrajectoryComputedAt: new Date(),
       applications: {
         create: {
           organizationId,

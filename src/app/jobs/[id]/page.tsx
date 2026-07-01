@@ -10,6 +10,7 @@ import { JobAssignmentsPanel } from "@/components/features/jobs/job-assignments-
 import { BulkResumeUploadPanel } from "@/components/features/jobs/bulk-resume-upload-panel";
 import { InterviewQuestionBankPanel } from "@/components/features/jobs/interview-question-bank-panel";
 import { SuggestedCandidatesPanel } from "@/components/features/jobs/suggested-candidates-panel";
+import { PassiveSignalsPanel } from "@/components/features/talent/passive-signals-panel";
 import { AssessmentTaskPanel } from "@/components/features/jobs/assessment-task-panel";
 import { ChevronLeft, Users } from "lucide-react";
 
@@ -115,6 +116,19 @@ export default async function JobDetailPage({
           </CardHeader>
           <CardContent>
             <AssessmentTaskPanel jobId={job.id} jobTitle={job.title} />
+          </CardContent>
+        </Card>
+
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Passive market signals</CardTitle>
+            <CardDescription>
+              External labor market integration — discover passive candidates with openness and
+              demand signals for this role.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PassiveSignalsPanel jobId={job.id} jobTitle={job.title} />
           </CardContent>
         </Card>
 

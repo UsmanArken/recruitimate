@@ -86,6 +86,7 @@ model Organization {
   hiringOutcomes    HiringOutcome[]
   recommendationFeedback RecommendationFeedback[]
   scoringModelWeights ScoringModelWeights[]
+  passiveCandidateLeads PassiveCandidateLead[]
   createdAt DateTime             @default(now())
   updatedAt DateTime             @updatedAt
 }
@@ -212,6 +213,7 @@ model Job {
   applications  JobApplication[]
   outreachCampaigns OutreachCampaign[]
   assessmentTasks   AssessmentTask[]
+  passiveCandidateLeads PassiveCandidateLead[]
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
@@ -250,6 +252,9 @@ model Candidate {
   notes          Note[]
   poolMemberships TalentPoolMember[]
   outreachMessages OutreachMessage[]
+  /// P3-008 long-term growth consistency signals derived from resume/LinkedIn
+  careerTrajectory Json?
+  careerTrajectoryComputedAt DateTime?
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
@@ -718,4 +723,28 @@ model ScoringModelWeights {
   organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, active])
+}
+
+// ─── Phase 3: Talent Intelligence ────────────────────────────────────────────
+
+/// P3-007 external passive candidate leads from labor market providers.
+model PassiveCandidateLead {
+  id             String       @id @default(cuid())
+  organizationId String
+  jobId          String
+  provider       String
+  externalRef    String
+  name           String
+  headline       String?
+  location       String?
+  skills         Json         @default("[]")
+  /// opennessLikelihood, marketDemandScore, skillScarcity, matchScore, etc.
+  signals        Json
+  matchScore     Float?
+  fetchedAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  job            Job          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, jobId, provider, externalRef])
+  @@index([organizationId, jobId, fetchedAt])
 }
