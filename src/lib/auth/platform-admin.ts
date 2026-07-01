@@ -48,11 +48,16 @@ export function assertTenantWorkspaceWrite(ctx: AuthContext): void {
   );
 }
 
-/** Org filter for tenant-scoped queries; empty for platform super admin (all tenants). */
+/** Org filter for tenant-scoped queries; impersonation scopes platform admin to one tenant. */
 export function organizationFilter(
   ctx: AuthContext
 ): { organizationId: string } | Record<string, never> {
-  if (isPlatformSuperAdmin(ctx)) return {};
+  if (isPlatformSuperAdmin(ctx)) {
+    if (ctx.actingOrganizationId) {
+      return { organizationId: ctx.actingOrganizationId };
+    }
+    return {};
+  }
   return { organizationId: ctx.organizationId };
 }
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Shield } from "lucide-react";
+import { ImpersonationBannerActions } from "@/components/features/admin/impersonation-banner-actions";
 
 export function PlatformOperatorBanner() {
   const pathname = usePathname();
@@ -19,8 +20,7 @@ export function PlatformOperatorBanner() {
           <span className="font-semibold">Platform operator mode</span>
           <span className="text-amber-900/80">
             {" "}
-            — read-only across customer workspaces. Hiring changes require tenant impersonation
-            (coming soon).
+            — use read-only browse or impersonate a tenant to make hiring changes.
           </span>
         </p>
         <div className="flex shrink-0 flex-wrap gap-2">
@@ -31,6 +31,7 @@ export function PlatformOperatorBanner() {
             <Shield className="h-3.5 w-3.5" />
             Platform admin
           </Link>
+          <ImpersonationBannerActions />
           <button
             type="button"
             onClick={() => {

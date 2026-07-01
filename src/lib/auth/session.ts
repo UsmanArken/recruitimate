@@ -1,15 +1,29 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { cookies } from "next/headers";
 import { unauthorized } from "@/lib/api/errors";
 import {
   PLATFORM_SUPER_ADMIN_ROLE_CODE,
   SYSTEM_ORG_SLUG,
+  customerOrganizationWhere,
   syncPlatformAdminOnLogin,
 } from "@/lib/auth/platform-admin";
+import { IMPERSONATE_ORG_COOKIE } from "@/lib/auth/impersonation";
 import type { AuthContext } from "@/lib/auth/types";
 
-export async function getSession() {
-  return auth();
+async function resolveActingOrganizationId(
+  isPlatformAdmin: boolean
+): Promise<string | null> {
+  if (!isPlatformAdmin) return null;
+  const cookieStore = await cookies();
+  const orgId = cookieStore.get(IMPERSONATE_ORG_COOKIE)?.value?.trim();
+  if (!orgId) return null;
+
+  const org = await db.organization.findFirst({
+    where: { id: orgId, ...customerOrganizationWhere() },
+    select: { id: true },
+  });
+  return org?.id ?? null;
 }
 
 export async function getAuthContext(): Promise<AuthContext | null> {
@@ -29,6 +43,8 @@ export async function getAuthContext(): Promise<AuthContext | null> {
   });
 
   if (!user) return null;
+
+  const actingOrganizationId = await resolveActingOrganizationId(user.isPlatformAdmin);
 
   const systemMember = user.memberships.find(
     (m) => m.organization.slug === SYSTEM_ORG_SLUG
@@ -50,7 +66,7 @@ export async function getAuthContext(): Promise<AuthContext | null> {
     userEmail: user.email,
     userName: user.name,
     isPlatformAdmin: user.isPlatformAdmin,
-    actingOrganizationId: null,
+    actingOrganizationId,
   };
 }
 

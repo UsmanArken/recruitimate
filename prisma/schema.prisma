@@ -87,6 +87,8 @@ model Organization {
   recommendationFeedback RecommendationFeedback[]
   scoringModelWeights ScoringModelWeights[]
   passiveCandidateLeads PassiveCandidateLead[]
+  billing           OrganizationBilling?
+  billingEvents     BillingEvent[]
   createdAt DateTime             @default(now())
   updatedAt DateTime             @updatedAt
 }
@@ -747,4 +749,43 @@ model PassiveCandidateLead {
 
   @@unique([organizationId, jobId, provider, externalRef])
   @@index([organizationId, jobId, fetchedAt])
+}
+
+// ─── Phase 3: Platform admin (P3-011) ────────────────────────────────────────
+
+enum BillingPlan {
+  FREE
+  STARTER
+  GROWTH
+  ENTERPRISE
+}
+
+enum BillingEventType {
+  SEAT_USAGE_SNAPSHOT
+  PLAN_ASSIGNED
+  WEBHOOK_RECEIVED
+  INVOICE_PAID
+}
+
+model OrganizationBilling {
+  id                 String       @id @default(cuid())
+  organizationId     String       @unique
+  plan               BillingPlan  @default(FREE)
+  seatLimit          Int          @default(5)
+  externalCustomerId String?
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  updatedAt          DateTime     @updatedAt
+  createdAt          DateTime     @default(now())
+}
+
+model BillingEvent {
+  id             String           @id @default(cuid())
+  organizationId String?
+  type           BillingEventType
+  payload        Json
+  organization   Organization?    @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  createdAt      DateTime         @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([type, createdAt])
 }

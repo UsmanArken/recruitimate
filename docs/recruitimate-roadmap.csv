@@ -87,7 +87,7 @@ P3-007,Phase 3,Talent Intelligence,Talent,Passive candidate signals,External lab
 P3-008,Phase 3,Talent Intelligence,Talent,Career trajectory modeling,Long-term growth consistency signals,P2,Done,,career-trajectory-engine + Candidate.careerTrajectory + API + candidate UI
 P3-009,Phase 3,Platform,—,Multi-tenant organizations,Organization model slug org-scoped jobs and candidates signup per tenant,P1,Done,MVP-028,MVP baseline
 P3-010,Phase 3,Platform,—,Team and seat management,Invite users org roles settings/team job interviewer assignments,P1,Done,MVP-029|MVP-029b
-P3-011,Phase 3,Platform,—,Platform admin enhancements,Tenant impersonation usage analytics billing hooks,P2,Not Started,MVP-029c,Extends CP-024
+P3-011,Phase 3,Platform,—,Platform admin enhancements,Tenant impersonation usage analytics billing hooks,P2,Done,MVP-029c,Extends CP-024
 CP-001,Complete Product,Platform,—,Production infrastructure,HA Postgres Redis CDN monitoring alerting,P0,Not Started,MVP-035,
 CP-002,Complete Product,Platform,—,CI/CD pipeline,Automated test lint build deploy on merge,P0,Not Started,,
 CP-003,Complete Product,Platform,—,Automated test suite,Unit integration E2E for intelligence engines,P0,Not Started,,

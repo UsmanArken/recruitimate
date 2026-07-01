@@ -1,6 +1,7 @@
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 import { logApiRequest } from "@/lib/logging/request-log";
+import { IMPERSONATE_ORG_COOKIE } from "@/lib/auth/impersonation";
 
 const publicPaths = ["/login", "/signup", "/invite"];
 const OPERATOR_BROWSE_COOKIE = "recruitimate-operator-browse";
@@ -15,7 +16,8 @@ function isHiringWorkspacePath(pathname: string): boolean {
 
 function operatorBrowseEnabled(req: NextRequest): boolean {
   if (req.nextUrl.searchParams.get("operatorBrowse") === "1") return true;
-  return req.cookies.get(OPERATOR_BROWSE_COOKIE)?.value === "1";
+  if (req.cookies.get(OPERATOR_BROWSE_COOKIE)?.value === "1") return true;
+  return Boolean(req.cookies.get(IMPERSONATE_ORG_COOKIE)?.value?.trim());
 }
 
 function isPublicPath(pathname: string): boolean {
@@ -23,6 +25,7 @@ function isPublicPath(pathname: string): boolean {
     return true;
   }
   if (pathname.startsWith("/api/auth")) return true;
+  if (pathname === "/api/billing/webhook") return true;
   if (pathname === "/api/invites/accept") return true;
   if (pathname.startsWith("/api/invites/") && pathname !== "/api/invites") {
     return true;

@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { badRequest } from "@/lib/api/errors";
 import { isReservedSuperAdminEmail } from "@/lib/auth/platform-admin";
+import { ensureOrganizationBilling } from "@/lib/services/billing.service";
 
 function slugify(name: string): string {
   const base = name
@@ -71,5 +72,8 @@ export async function signupWithOrganization(input: {
     });
 
     return { user, organization };
+  }).then(async (result) => {
+    await ensureOrganizationBilling(result.organization.id);
+    return result;
   });
 }
