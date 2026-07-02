@@ -28,12 +28,13 @@ Tracking progress against product team requests (Chunks 1–3). Updated as chunk
 | Filtering profiles | **Done** | Search, role, stage, profile status; list/card views |
 | Schedule interview as calendar | **Done** | Month grid calendar + time picker; `.ics` download unchanged |
 | Edit job role | **Done** | `/jobs/[id]/edit` + PATCH API |
-| Create role / JD | **Done** | Post role form + **Generate JD from company profile** |
+| Create role / JD | **Done** | Post role form + **Role Spark** (keywords) + **Generate JD from company profile** |
 | Job post document (required) | **Done** | Required on create; shown on job detail |
 | Client company profile + website | **Done** | Settings → Client companies |
 | Consent for company web data | **Done** | Checkbox stored as `webDataConsentAt` |
 | Glassdoor / employer brand research | **Not started** | Consent + notes field only; no external fetch |
 | JD generation from company profile | **Done** | `POST /api/clients/[id]/job-draft` |
+| **Role Spark** (JD from keywords, no client) | **Done** | `POST /api/jobs/role-spark` on post/edit role form |
 | Interviewer script from company profile | **Not started** | Planned with question bank / live assist |
 | Create job ad copy | **Not started** | Later |
 | Post job to job boards | **Not started** | Integrations page lists planned providers |

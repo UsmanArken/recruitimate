@@ -5,6 +5,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
 import { formatApiValidationError } from "@/lib/validators/job";
+import { RoleSparkPanel } from "@/components/features/jobs/role-spark-panel";
+import type { RoleSparkDraft } from "@/lib/validators/role-spark";
 
 export type HiringClientOption = {
   id: string;
@@ -72,6 +74,16 @@ export function JobForm({
       description: draft.description ?? v.description,
       requirements: draft.requirements ?? v.requirements,
       jobPostDocument: draft.jobPostDocument ?? v.jobPostDocument,
+    }));
+  }
+
+  function applyRoleSpark(draft: RoleSparkDraft) {
+    setError(null);
+    setValues((v) => ({
+      ...v,
+      description: draft.description,
+      requirements: draft.requirements,
+      jobPostDocument: draft.jobPostDocument,
     }));
   }
 
@@ -157,16 +169,29 @@ export function JobForm({
         placeholder="e.g. Senior Backend Engineer"
       />
 
+      <RoleSparkPanel
+        title={values.title}
+        disabled={loading || draftLoading}
+        onGenerated={applyRoleSpark}
+        onError={(message) => setError(message || null)}
+      />
+
       {values.hiringClientId && (
-        <Button
-          type="button"
-          variant="secondary"
-          disabled={draftLoading || !values.title.trim()}
-          onClick={() => void generateFromClient()}
-        >
-          <Sparkles className="h-4 w-4" />
-          {draftLoading ? "Generating…" : "Generate JD from company profile"}
-        </Button>
+        <div className="rounded-lg border border-border-subtle bg-muted/5 p-4">
+          <p className="mb-2 text-sm font-semibold text-foreground">Or draft from client profile</p>
+          <p className="mb-3 text-xs text-muted">
+            Uses the company profile you saved for this client — best for agency recruiting.
+          </p>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={draftLoading || !values.title.trim()}
+            onClick={() => void generateFromClient()}
+          >
+            <Sparkles className="h-4 w-4" />
+            {draftLoading ? "Generating…" : "Generate JD from company profile"}
+          </Button>
+        </div>
       )}
 
       <Field

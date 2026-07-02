@@ -104,7 +104,8 @@ Mark each: **Pass** · **Fail** · **N/A** · **Blocked**
 | B2 | Open role detail | Click a role | Pipeline table; bulk upload zone |
 | B3 | Talent review CTA | Pipeline → Talent review | Application Screen tab (`?tab=screen`) |
 | B4 | Create role | Post new role; job post ≥20 chars | 201; role in list |
-| B5 | Generate JD | Select client → Generate JD from company profile | Description/requirements/post filled |
+| B4b | **Role Spark** | Title + keywords → Spark my job description | All three JD fields filled; no client required |
+| B5 | Generate JD (client) | Select client → Generate JD from company profile | Description/requirements/post filled |
 | B6 | Edit role | Job detail → Edit → save | Changes persist |
 | B7 | Delete role | Delete a test role you created | Removed from list |
 | B8 | Client company | Settings → Client companies → add/edit | Saved; usable on new role |

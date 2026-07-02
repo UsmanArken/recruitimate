@@ -67,6 +67,7 @@ MVP-057,Product Feedback,Integrations,—,Integrations catalog,Settings page lis
 MVP-058,Product Feedback,Platform,—,Demo workspace,One-click demo login seed-demo workspace banner,P1,Done,MVP-028,/api/auth/demo npm run db:seed-demo
 MVP-059,Product Feedback,UI,—,Navigation loading states,Route loaders and top progress bar during slow navigation,P2,Done,F-008,loading.tsx NavigationProgress notifyNavigationStart
 MVP-060,Product Feedback,Documentation,—,Tester guide,docs/TESTER-GUIDE.md production QA handout for manual testing,P1,Done,MVP-034,Share with QA; complements QA.md automation
+MVP-061,Product Feedback,Pipeline,—,Role Spark JD generator,Keyword-driven job description from title and signals without client profile,P1,Done,MVP-050,POST /api/jobs/role-spark RoleSparkPanel
 MVP-036,MVP,Decision Intelligence,Decision,Phased hiring intelligence,Role fit and hire confidence only with campaign + interview; honest pending states,P1,Done,MVP-015b,candidate-context IntelligencePhasePanel
 MVP-037,MVP,UI,—,Applicant intake position picker,Server-loaded open roles; compact custom dropdown (scrollable menu),P1,Done,MVP-014|MVP-023,/candidates/new
 MVP-038,MVP,Platform,—,JobApplication DB migration,prisma/migrate-to-applications.ts for legacy Candidate.jobId upgrades,P2,Done,MVP-015b,npm run db:migrate-applications

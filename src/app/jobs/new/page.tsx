@@ -13,7 +13,7 @@ export default async function NewJobPage() {
   return (
     <JobFormShell
       title="Post new role"
-      description="Create a requisition with a required job post document. Optionally link a client company."
+      description="Create a requisition with Role Spark or a client-linked JD draft. Job post document is required."
       submitLabel="Create role"
     />
   );

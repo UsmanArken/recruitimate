@@ -34,8 +34,8 @@ export async function JobFormShell({
           <CardHeader>
             <CardTitle>Role details</CardTitle>
             <CardDescription>
-              Job post document is required. Link a client company to generate JD copy from their
-              profile.
+              Use <strong className="font-semibold text-foreground">Role Spark</strong> for a
+              keyword-driven JD in seconds, or link a client to draft from their company profile.
             </CardDescription>
           </CardHeader>
           <CardContent>
