@@ -1,4 +1,5 @@
 import { chatJson } from "@/lib/intelligence/ai";
+import { normalizeJobDraft } from "@/lib/jobs/normalize-job-draft";
 import { handleRouteError, jsonOk } from "@/lib/api/response";
 import { requireApiAuth } from "@/lib/api/context";
 import { parseJsonBody } from "@/lib/api/request";
@@ -45,10 +46,12 @@ Generate a job requisition draft as JSON:
   "jobPostDocument": "public job post copy candidates would read"
 }`;
 
-    const draft = await chatJson<JobDraft>(
-      "You are a recruiting copywriter. Output valid JSON only.",
-      prompt,
-      fallback
+    const draft = normalizeJobDraft(
+      await chatJson<JobDraft>(
+        "You are a recruiting copywriter. Output valid JSON only.",
+        prompt,
+        fallback
+      )
     );
 
     return jsonOk(draft);

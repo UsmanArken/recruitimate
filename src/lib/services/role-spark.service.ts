@@ -1,4 +1,5 @@
 import { chatJson } from "@/lib/intelligence/ai";
+import { normalizeJobDraft } from "@/lib/jobs/normalize-job-draft";
 import type { RoleSparkDraft, RoleSparkInput } from "@/lib/validators/role-spark";
 
 const SENIORITY_LABEL: Record<NonNullable<RoleSparkInput["seniority"]>, string> = {
@@ -68,9 +69,11 @@ Output JSON only:
 
 Tone: professional, inclusive, specific to the keywords. No placeholder brackets.`;
 
-  return chatJson<RoleSparkDraft>(
+  const raw = await chatJson<RoleSparkDraft>(
     "You are an expert recruiting copywriter. Output valid JSON only.",
     prompt,
     fallback
   );
+
+  return normalizeJobDraft(raw);
 }

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
 import { formatApiValidationError } from "@/lib/validators/job";
+import { normalizeJobDraft } from "@/lib/jobs/normalize-job-draft";
 import { RoleSparkPanel } from "@/components/features/jobs/role-spark-panel";
 import type { RoleSparkDraft } from "@/lib/validators/role-spark";
 
@@ -68,22 +69,23 @@ export function JobForm({
       setError(typeof data.error === "string" ? data.error : "Could not generate draft");
       return;
     }
-    const draft = await res.json();
+    const draft = normalizeJobDraft(await res.json());
     setValues((v) => ({
       ...v,
-      description: draft.description ?? v.description,
-      requirements: draft.requirements ?? v.requirements,
-      jobPostDocument: draft.jobPostDocument ?? v.jobPostDocument,
+      description: draft.description || v.description,
+      requirements: draft.requirements || v.requirements,
+      jobPostDocument: draft.jobPostDocument || v.jobPostDocument,
     }));
   }
 
   function applyRoleSpark(draft: RoleSparkDraft) {
+    const normalized = normalizeJobDraft(draft);
     setError(null);
     setValues((v) => ({
       ...v,
-      description: draft.description,
-      requirements: draft.requirements,
-      jobPostDocument: draft.jobPostDocument,
+      description: normalized.description,
+      requirements: normalized.requirements,
+      jobPostDocument: normalized.jobPostDocument,
     }));
   }
 
@@ -92,13 +94,16 @@ export function JobForm({
     setLoading(true);
     setError(null);
 
-    const description = values.description.trim();
+    const description = normalizeJobDraft({ description: values.description }).description;
+    const jobPostDocumentRaw = normalizeJobDraft({
+      jobPostDocument: values.jobPostDocument,
+    }).jobPostDocument;
     const jobPostDocument =
-      values.jobPostDocument.trim().length >= 20
-        ? values.jobPostDocument.trim()
+      jobPostDocumentRaw.length >= 20
+        ? jobPostDocumentRaw
         : description.length >= 20
           ? description
-          : values.jobPostDocument.trim();
+          : jobPostDocumentRaw;
 
     if (jobPostDocument.length < 20) {
       setLoading(false);
@@ -120,7 +125,7 @@ export function JobForm({
         description,
         jobPostDocument,
         hiringClientId: values.hiringClientId || undefined,
-        requirements: values.requirements.trim() || undefined,
+        requirements: normalizeJobDraft({ requirements: values.requirements }).requirements || undefined,
       }),
     });
 
